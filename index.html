@@ -301,7 +301,8 @@
   <div class="notes">
     <h3>Important Notes</h3>
     <ul>
-      <li><b>Weekly schedule:</b> Sat Legs · Sun Push · Mon Pull · Tue rest (football) · Wed Lower · Thu Upper · Fri rest. Every muscle 2&times;/week with 3-4 days between, both rest days off the back of a leg day, and 48 h between heavy squats and deadlifts.</li>
+      <li><b>Weekly schedule:</b> Sat Legs · Sun Push · Mon Pull · Tue rest (football) · Wed Lower · Thu Upper · Fri rest. Every muscle 2&times;/week with 3-4 days between; both rest days follow an upper day so football fits Tuesday; the heavy barbell squat + RDL sit on Legs day while Lower day stays spine-friendly (hack squat, hip thrust).</li>
+      <li><b>Exercise swaps:</b> machine and cable picks can be swapped for the nearest equivalent your gym has. If shoulders lag, trade the Push cable fly for a machine shoulder press; if lower back is fried, drop a set from the RDL.</li>
       <li><b>Progressive overload:</b> add a little weight or a rep whenever you hit the top of the rep range with good form — aim to beat last session's numbers (shown on each card).</li>
       <li><b>Train close to failure:</b> stop most working sets 1-3 reps before failure; on isolation moves (raises, curls, extensions, calves) push to 0-1.</li>
       <li><b>Warm-up:</b> 5-10 minutes of light cardio, then 1-2 light ramp-up sets before the first heavy lift of the session.</li>
@@ -340,43 +341,44 @@
 // ---------------- DATA ----------------
 const DAYS = [
   { id:"push", label:"Push", muscles:"Chest, Shoulders, Triceps", exercises:[
-    {id:"push_bench", en:"Barbell Bench Press", sets:4, reps:"6-8", rest:120, vid:"0cXAp6WhSj4"},
-    {id:"push_incline_db", en:"Incline Dumbbell Press", sets:3, reps:"8-10", rest:90, vid:"8fXfwG4ftaQ"},
-    {id:"push_ohp", en:"Barbell Overhead Press", sets:3, reps:"8-10", rest:90, vid:"4LBVP2Oe7fg"},
-    {id:"push_lateral", en:"Dumbbell Lateral Raise", sets:3, reps:"12-15", rest:60, vid:"Kl3LEzQ5Zqs"},
-    {id:"push_dips", en:"Triceps Dips", sets:3, reps:"10-12", rest:60, vid:"ekgvqS_4Ee4"},
+    {id:"push_bench", en:"Barbell Bench Press", sets:4, reps:"6-8", rest:150, vid:"0cXAp6WhSj4"},
+    {id:"push_incline_db", en:"Incline Dumbbell Press", sets:3, reps:"8-10", rest:120, vid:"8fXfwG4ftaQ"},
+    {id:"push_fly", en:"Cable Chest Fly", sets:3, reps:"12-15", rest:60, vid:"I-Ue34qLxc4"},
+    {id:"push_cable_lateral", en:"Cable Lateral Raise", sets:3, reps:"15-20", rest:60, vid:"HCfU6LGpgMk"},
+    {id:"push_oh_ext", en:"Overhead Cable Triceps Extension", sets:3, reps:"10-15", rest:60, vid:"tPIWaCKWFF8"},
     {id:"push_pushdown", en:"Cable Rope Pushdown", sets:3, reps:"12-15", rest:45, vid:"7OF77JMEXhM"},
   ]},
-  { id:"pull", label:"Pull", muscles:"Back, Biceps", exercises:[
-    {id:"pull_deadlift", en:"Deadlift", sets:4, reps:"5-6", rest:150, vid:"ZaTM37cfiDs"},
-    {id:"pull_lat", en:"Lat Pulldown / Pull-up", sets:4, reps:"8-10", rest:90, vid:"bNmvKpJSWKM"},
-    {id:"pull_row", en:"Bent-over Barbell Row", sets:3, reps:"8-10", rest:90, vid:"Zk2aJrwJm5M"},
+  { id:"pull", label:"Pull", muscles:"Back, Rear Delts, Biceps", exercises:[
+    {id:"pull_lat", en:"Lat Pulldown / Pull-up", sets:4, reps:"8-10", rest:120, vid:"bNmvKpJSWKM"},
+    {id:"pull_csrow", en:"Chest-Supported Row", sets:4, reps:"8-10", rest:90, vid:"uhwcRYpkjvc"},
     {id:"pull_cablerow", en:"Seated Cable Row", sets:3, reps:"10-12", rest:75, vid:"8QuMq1GMMng"},
+    {id:"pull_reardelt", en:"Reverse Pec Deck (Rear Delt Fly)", sets:3, reps:"15-20", rest:45, vid:"v0CxZlWX9zQ"},
     {id:"pull_curl", en:"Barbell Curl", sets:3, reps:"10-12", rest:60, vid:"9_ijHhcwlkM"},
-    {id:"pull_concentration", en:"Dumbbell Concentration Curl", sets:3, reps:"12-15", rest:45, vid:"YEgmqqn9obo"},
+    {id:"pull_incline_curl", en:"Incline Dumbbell Curl", sets:3, reps:"10-12", rest:45, vid:"XhIsIcjIbCw"},
   ]},
-  { id:"legs", label:"Legs", muscles:"Full Legs", exercises:[
-    {id:"legs_squat", en:"Barbell Squat", sets:4, reps:"6-8", rest:150, vid:"tNUq6b5t11Q"},
-    {id:"legs_press", en:"Leg Press", sets:3, reps:"10-12", rest:100, vid:"nDh_BlnLCGc"},
-    {id:"legs_rdl_db", en:"Dumbbell Romanian Deadlift", sets:3, reps:"8-10", rest:90, vid:"hu3jRvTc_po"},
+  { id:"legs", label:"Legs", muscles:"Quads, Hamstrings, Calves", exercises:[
+    {id:"legs_squat", en:"Barbell Back Squat", sets:4, reps:"6-8", rest:150, vid:"tNUq6b5t11Q"},
+    {id:"legs_press", en:"Leg Press", sets:3, reps:"10-12", rest:120, vid:"nDh_BlnLCGc"},
+    {id:"legs_rdl", en:"Barbell Romanian Deadlift", sets:3, reps:"8-10", rest:90, vid:"zdip4iexlxg"},
     {id:"legs_curl", en:"Lying Leg Curl", sets:3, reps:"12-15", rest:60, vid:"bgfHeL6eR9Q"},
-    {id:"legs_ext", en:"Leg Extension", sets:3, reps:"12-15", rest:60, vid:"iQ92TuvBqRo"},
-    {id:"legs_calf", en:"Standing Calf Raise", sets:4, reps:"15-20", rest:45, vid:"B30JglFGx8Y"},
+    {id:"legs_ext", en:"Leg Extension", sets:3, reps:"15-20", rest:60, vid:"iQ92TuvBqRo"},
+    {id:"legs_calf", en:"Standing Calf Raise", sets:4, reps:"12-15", rest:45, vid:"B30JglFGx8Y"},
   ]},
-  { id:"upper", label:"Upper", muscles:"General Upper Body", exercises:[
+  { id:"upper", label:"Upper", muscles:"Chest, Back, Delts, Arms", exercises:[
     {id:"upper_db_bench", en:"Dumbbell Bench Press", sets:3, reps:"8-10", rest:90, vid:"Gf65Yy0-wGI"},
     {id:"upper_tbar", en:"T-Bar Row", sets:3, reps:"8-10", rest:90, vid:"1iQSSqin3ro"},
-    {id:"upper_shoulder", en:"Dumbbell Shoulder Press", sets:3, reps:"10-12", rest:75, vid:"k6tzKisR3NY"},
-    {id:"upper_pulldown", en:"Wide-grip Pulldown", sets:3, reps:"10-12", rest:75, vid:"02Qci1-0Aao"},
-    {id:"upper_superset", en:"Biceps/Triceps Superset", sets:3, reps:"12", rest:60, vid:"8UIbEovL-xU"},
+    {id:"upper_shoulder", en:"Seated Dumbbell Shoulder Press", sets:3, reps:"8-12", rest:75, vid:"k6tzKisR3NY"},
+    {id:"upper_pulldown", en:"Wide-grip Lat Pulldown", sets:3, reps:"10-12", rest:75, vid:"02Qci1-0Aao"},
+    {id:"upper_lateral", en:"Dumbbell Lateral Raise", sets:3, reps:"15-20", rest:45, vid:"Kl3LEzQ5Zqs"},
+    {id:"upper_arms", en:"Biceps + Triceps Superset", sets:3, reps:"12-15", rest:60, vid:"8UIbEovL-xU"},
   ]},
-  { id:"lower", label:"Lower", muscles:"General Lower Body", exercises:[
-    {id:"lower_front", en:"Front Squat / Hack Squat", sets:4, reps:"8-10", rest:100, vid:"g9i05umL5vc"},
-    {id:"lower_rdl", en:"Barbell Romanian Deadlift", sets:3, reps:"8-10", rest:90, vid:"zdip4iexlxg"},
-    {id:"lower_lunges", en:"Dumbbell Lunges", sets:3, reps:"10-12/leg", rest:75, vid:"jmkd8o_2A6Y"},
+  { id:"lower", label:"Lower", muscles:"Quads, Glutes, Hamstrings, Abs", exercises:[
+    {id:"lower_front", en:"Hack Squat", sets:4, reps:"8-10", rest:120, vid:"g9i05umL5vc"},
+    {id:"lower_bss", en:"Bulgarian Split Squat", sets:3, reps:"10-12/leg", rest:75, vid:"uODWo4YqbT8"},
+    {id:"lower_hipthrust", en:"Barbell Hip Thrust", sets:3, reps:"8-12", rest:90, vid:"GAZC6bt30Yg"},
     {id:"lower_curl", en:"Seated Leg Curl", sets:3, reps:"12-15", rest:60, vid:"xdbEG3xGLI8"},
     {id:"lower_calf", en:"Seated Calf Raise", sets:3, reps:"15-20", rest:45, vid:"NrHJPauB01I"},
-    {id:"lower_abs", en:"Ab Crunch & Plank", sets:3, reps:"as needed", rest:45, vid:"fWW5d1ZFhk4"},
+    {id:"lower_crunch", en:"Weighted Cable Crunch", sets:3, reps:"12-15", rest:45, vid:"Bvhz7Rfnrr4"},
   ]},
 ];
 
