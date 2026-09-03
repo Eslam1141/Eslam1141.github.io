@@ -173,6 +173,17 @@
   }
   .expand-btn svg{ width:15px; height:15px; fill:#fff; }
 
+  .warmup-card{
+    background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    padding:16px 16px 14px; margin:4px 0 14px;
+  }
+  .warmup-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .warmup-head h3{ margin:0; font-size:15px; color:var(--rust); }
+  #warmupWrap{ margin:12px 0 0; }
+  .warmup-steps{ margin:12px 0 0; padding-inline-start:20px; }
+  .warmup-steps li{ margin-bottom:8px; color:var(--paper-dim); font-size:12.5px; line-height:1.5; }
+  .warmup-steps li b{ color:var(--paper); }
+
   .notes{
     background:var(--panel); border:1px solid var(--line); border-radius:12px;
     padding:20px 18px; margin:24px 0 20px;
@@ -287,6 +298,25 @@
   </div>
   <div class="bar-track"><div class="bar-fill" id="barFill"></div></div>
 
+  <div class="warmup-card">
+    <div class="warmup-head">
+      <h3>Warm-up &mdash; do this first</h3>
+      <button class="btn-sm video-toggle" id="warmupVidBtn">
+        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        Video
+      </button>
+    </div>
+    <div class="video-wrap" id="warmupWrap">
+      <div class="video-frame" id="warmupFrame"></div>
+    </div>
+    <ol class="warmup-steps">
+      <li><b>Raise your temperature</b> &mdash; 5 min easy cardio (bike, incline walk or rower) until you break a light sweat.</li>
+      <li><b>Loosen the day's joints</b> &mdash; 5-8 slow reps each. Push / Pull / Upper: band pull-aparts, shoulder dislocates, arm circles, cat-cow. Legs / Lower: leg swings front &amp; side, hip circles, 10 bodyweight squats, walking lunges.</li>
+      <li><b>Ramp up the first lift only</b> &mdash; empty bar &times;10, then ~50% &times;5, ~70% &times;3, ~85% &times;1. Rest 60-90 s and stop each set well short of effort.</li>
+      <li><b>Start working set 1.</b> Isolation moves (raises, curls, extensions) need just one light feeder set.</li>
+    </ol>
+  </div>
+
   <div id="exList"></div>
 
   <div class="reset-link" id="resetLink">Reset today's checklist</div>
@@ -305,7 +335,8 @@
       <li><b>Exercise swaps:</b> machine and cable picks can be swapped for the nearest equivalent your gym has. If shoulders lag, trade the Push cable fly for a machine shoulder press; if lower back is fried, drop a set from the RDL.</li>
       <li><b>Progressive overload:</b> add a little weight or a rep whenever you hit the top of the rep range with good form — aim to beat last session's numbers (shown on each card).</li>
       <li><b>Train close to failure:</b> stop most working sets 1-3 reps before failure; on isolation moves (raises, curls, extensions, calves) push to 0-1.</li>
-      <li><b>Warm-up:</b> 5-10 minutes of light cardio, then 1-2 light ramp-up sets before the first heavy lift of the session.</li>
+      <li><b>Warm-up:</b> follow the warm-up card at the top of each day before your first set.</li>
+      <li><b>Core:</b> trained 3&times;/week — hanging leg raise (Pull, lower abs), Pallof press (Upper, anti-rotation), weighted cable crunch (Lower, upper abs). Brace as if bracing for a punch; move through the abs, don't yank with the hip flexors. Add load once you clear the top of the rep range.</li>
       <li><b>Recover:</b> 7-9 h sleep — muscle is built between sessions. Football counts as leg load, so keep it to Tuesday and off the day before Legs.</li>
       <li><b>Deload:</b> every 5-8 weeks take an easy week (about &#8532; the weight or half the sets) to clear fatigue and keep progressing.</li>
       <li><b>Protein:</b> 1.6-2.2 g per kg of body weight daily, spread across 3-5 meals.</li>
@@ -355,6 +386,7 @@ const DAYS = [
     {id:"pull_reardelt", en:"Reverse Pec Deck (Rear Delt Fly)", sets:3, reps:"15-20", rest:45, vid:"v0CxZlWX9zQ"},
     {id:"pull_curl", en:"Barbell Curl", sets:3, reps:"10-12", rest:60, vid:"9_ijHhcwlkM"},
     {id:"pull_incline_curl", en:"Incline Dumbbell Curl", sets:3, reps:"10-12", rest:45, vid:"XhIsIcjIbCw"},
+    {id:"pull_leg_raise", en:"Hanging Leg Raise (core)", sets:3, reps:"10-15", rest:45, vid:"0wSUjj5j1xo"},
   ]},
   { id:"legs", label:"Legs", muscles:"Quads, Hamstrings, Calves", exercises:[
     {id:"legs_squat", en:"Barbell Back Squat", sets:4, reps:"6-8", rest:150, vid:"tNUq6b5t11Q"},
@@ -371,6 +403,7 @@ const DAYS = [
     {id:"upper_pulldown", en:"Wide-grip Lat Pulldown", sets:3, reps:"10-12", rest:75, vid:"02Qci1-0Aao"},
     {id:"upper_lateral", en:"Dumbbell Lateral Raise", sets:3, reps:"15-20", rest:45, vid:"Kl3LEzQ5Zqs"},
     {id:"upper_arms", en:"Biceps + Triceps Superset", sets:3, reps:"12-15", rest:60, vid:"8UIbEovL-xU"},
+    {id:"upper_pallof", en:"Pallof Press (core)", sets:3, reps:"12/side", rest:45, vid:"P1H4IzD9rbQ"},
   ]},
   { id:"lower", label:"Lower", muscles:"Quads, Glutes, Hamstrings, Abs", exercises:[
     {id:"lower_front", en:"Hack Squat", sets:4, reps:"8-10", rest:120, vid:"g9i05umL5vc"},
@@ -378,7 +411,7 @@ const DAYS = [
     {id:"lower_hipthrust", en:"Barbell Hip Thrust", sets:3, reps:"8-12", rest:90, vid:"GAZC6bt30Yg"},
     {id:"lower_curl", en:"Seated Leg Curl", sets:3, reps:"12-15", rest:60, vid:"xdbEG3xGLI8"},
     {id:"lower_calf", en:"Seated Calf Raise", sets:3, reps:"15-20", rest:45, vid:"NrHJPauB01I"},
-    {id:"lower_crunch", en:"Weighted Cable Crunch", sets:3, reps:"12-15", rest:45, vid:"Bvhz7Rfnrr4"},
+    {id:"lower_crunch", en:"Weighted Cable Crunch (core)", sets:3, reps:"12-15", rest:45, vid:"Bvhz7Rfnrr4"},
   ]},
 ];
 
@@ -778,6 +811,22 @@ document.getElementById("restoreInput").onchange = (e)=>{
   reader.readAsText(f);
   e.target.value = "";
 };
+
+// ---------------- WARM-UP VIDEO ----------------
+const warmupBtn = document.getElementById("warmupVidBtn");
+if(warmupBtn){
+  warmupBtn.onclick = ()=>{
+    const wrap = document.getElementById("warmupWrap");
+    const frame = document.getElementById("warmupFrame");
+    const open = !wrap.classList.contains("open");
+    wrap.classList.toggle("open", open);
+    warmupBtn.classList.toggle("on", open);
+    frame.innerHTML = open
+      ? `<iframe src="${ytEmbedSrc('gDSRFzs6k_s', false)}" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`
+      : "";
+    warmupBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg> ${open ? 'Hide video' : 'Video'}`;
+  };
+}
 
 renderAll();
 </script>
