@@ -184,7 +184,19 @@
 
   .reset-link{
     display:block; text-align:center; color:var(--paper-dim);
-    font-size:12px; margin:6px 0 30px; text-decoration:underline; cursor:pointer;
+    font-size:12px; margin:6px 0 14px; text-decoration:underline; cursor:pointer;
+  }
+
+  .backup-row{ display:flex; gap:10px; margin:2px 0 6px; }
+  .backup-row button{
+    flex:1; background:var(--panel2); border:1px solid var(--line);
+    color:var(--paper); font-family:inherit; font-weight:700; font-size:13px;
+    padding:11px 8px; border-radius:10px; cursor:pointer;
+  }
+  .backup-row button:active{ background:var(--rust); border-color:var(--rust); color:#fff; }
+  .backup-hint{
+    display:block; text-align:center; color:var(--paper-dim);
+    font-size:11px; margin:0 0 26px;
   }
 
   #timerBar{
@@ -279,6 +291,13 @@
 
   <div class="reset-link" id="resetLink">Reset today's checklist</div>
 
+  <div class="backup-row">
+    <button id="backupBtn">&#8681; Back up progress</button>
+    <button id="restoreBtn">&#8679; Restore</button>
+  </div>
+  <span class="backup-hint">Save the backup file to iCloud Drive / Files. Restore it if you clear your browser or switch phones.</span>
+  <input type="file" id="restoreInput" accept="application/json,.json" hidden>
+
   <div class="notes">
     <h3>Important Notes</h3>
     <ul>
@@ -286,7 +305,7 @@
       <li><b>Warm-up:</b> 5-10 minutes of light cardio + a light warm-up set before each main lift.</li>
       <li><b>Suggested schedule:</b> Sat Push, Sun Pull, Mon Legs, Tue rest, Wed Upper, Thu Lower, Fri rest.</li>
       <li><b>Protein:</b> spread it across the day — aim for 1.6-2.2 g per kg of body weight daily.</li>
-      <li>Your data (checklists, weights, session times) is saved on your device only — no server, no one else sees it.</li>
+      <li>Your data is saved on your device only — no server, no one else sees it. Tap <b>Back up progress</b> every week or two and keep the file in iCloud Drive so a cleared browser or a new phone can't wipe your history.</li>
     </ul>
   </div>
 </div>
@@ -688,6 +707,72 @@ if("serviceWorker" in navigator){
     navigator.serviceWorker.register("service-worker.js").catch(()=>{});
   });
 }
+
+// ---------------- PERSISTENT STORAGE + BACKUP ----------------
+// Ask the browser not to auto-evict our data (iOS/Safari can clear it otherwise).
+if(navigator.storage && navigator.storage.persist){
+  navigator.storage.persist().catch(()=>{});
+}
+
+const GYM_KEYS = ["gym_active_day","gym_checks","gym_weights","gym_sessions","gym_session_active"];
+
+function collectBackup(){
+  const data = {};
+  GYM_KEYS.forEach(k=>{
+    const v = localStorage.getItem(k);
+    if(v !== null) data[k] = v;
+  });
+  return { app:"muscle-building-plan", version:1, exportedAt:new Date().toISOString(), data };
+}
+
+async function doBackup(){
+  const payload = JSON.stringify(collectBackup(), null, 2);
+  const fname = "gym-progress-" + todayStr + ".json";
+  try {
+    const file = new File([payload], fname, { type:"application/json" });
+    if(navigator.canShare && navigator.canShare({ files:[file] })){
+      await navigator.share({ files:[file], title:"Gym progress backup" });
+      return;
+    }
+  } catch(e){
+    if(e && e.name === "AbortError") return; // user cancelled the share sheet
+  }
+  const url = URL.createObjectURL(new Blob([payload], { type:"application/json" }));
+  const a = document.createElement("a");
+  a.href = url; a.download = fname;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 4000);
+}
+
+function applyRestore(obj){
+  if(!obj || typeof obj !== "object" || !obj.data || typeof obj.data !== "object"){
+    alert("That file doesn't look like a gym backup."); return;
+  }
+  const keys = Object.keys(obj.data).filter(k=>GYM_KEYS.includes(k));
+  if(!keys.length){ alert("No progress found in that file."); return; }
+  const when = obj.exportedAt ? new Date(obj.exportedAt).toLocaleString() : "an unknown date";
+  if(!confirm("Restore backup from " + when + "?\nThis replaces the progress currently on this device.")) return;
+  keys.forEach(k=>{
+    const v = obj.data[k];
+    if(typeof v === "string") localStorage.setItem(k, v);
+  });
+  alert("Progress restored. Reloading…");
+  location.reload();
+}
+
+document.getElementById("backupBtn").onclick = doBackup;
+document.getElementById("restoreBtn").onclick = ()=> document.getElementById("restoreInput").click();
+document.getElementById("restoreInput").onchange = (e)=>{
+  const f = e.target.files && e.target.files[0];
+  if(!f) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    try { applyRestore(JSON.parse(reader.result)); }
+    catch(err){ alert("Couldn't read that file — is it a valid backup?"); }
+  };
+  reader.readAsText(f);
+  e.target.value = "";
+};
 
 renderAll();
 </script>
