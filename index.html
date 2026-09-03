@@ -18,12 +18,19 @@
     --bg:#14120f; --bg-alt:#1b1815; --panel:#201d19; --panel2:#262220;
     --rust:#c1440e; --rust-soft:#7a2c0a; --green:#3f8a52; --green-soft:#1f4a2a;
     --paper:#f2ece2; --paper-dim:#b8b0a3; --line:#35302a;
+    --glow:rgba(193,68,14,0.14); --nav-bg:rgba(20,18,15,0.95);
+  }
+  :root[data-plan="female"]{
+    --bg:#1b1220; --bg-alt:#241730; --panel:#271a33; --panel2:#31213f;
+    --rust:#e85c9a; --rust-soft:#8a3a63; --green:#5cc0a0; --green-soft:#244d43;
+    --paper:#f6ebf2; --paper-dim:#c7abbf; --line:#3d2c48;
+    --glow:rgba(232,92,154,0.17); --nav-bg:rgba(27,18,32,0.95);
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{margin:0; padding:0; height:100%;}
   body{
     background:
-      radial-gradient(1100px 600px at 85% -10%, rgba(193,68,14,0.14), transparent 60%),
+      radial-gradient(1100px 600px at 85% -10%, var(--glow), transparent 60%),
       var(--bg);
     color:var(--paper);
     font-family:-apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
@@ -38,10 +45,37 @@
   header.hero h1{ font-size:23px; font-weight:900; margin:0 0 2px; }
   header.hero .sub{ color:var(--paper-dim); font-size:13px; }
 
+  .plan-toggle{ display:flex; gap:6px; margin-top:12px; max-width:260px; }
+  .plan-toggle button{
+    flex:1; padding:7px 10px; border-radius:8px; cursor:pointer;
+    font-family:inherit; font-weight:700; font-size:12px;
+    background:transparent; border:1px solid var(--line); color:var(--paper-dim);
+  }
+  .plan-toggle button.on{ background:var(--rust); border-color:var(--rust); color:#fff; }
+
+  #planChooser{
+    position:fixed; inset:0; z-index:200; background:var(--bg);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:14px; padding:32px; text-align:center;
+  }
+  #planChooser[hidden]{ display:none; }
+  #planChooser h2{ margin:0; font-size:20px; font-weight:900; }
+  #planChooser p{ margin:0 0 8px; color:var(--paper-dim); font-size:13px; }
+  #planChooser .pc-btns{ display:flex; gap:14px; flex-wrap:wrap; justify-content:center; }
+  #planChooser button{
+    min-width:132px; padding:18px 20px; border-radius:14px; cursor:pointer;
+    font-family:inherit; font-weight:800; font-size:15px;
+    background:var(--panel); border:1px solid var(--line); color:var(--paper);
+  }
+  #planChooser button .sub{ display:block; font-weight:600; font-size:11px; color:var(--paper-dim); margin-top:4px; }
+  #pcMale{ border-color:#c1440e; }
+  #pcFemale{ border-color:#e85c9a; background:#271a33; color:#f6ebf2; }
+  #pcFemale .sub{ color:#c7abbf; }
+
   .daynav{
     display:flex; gap:6px;
     position:sticky; top:0; z-index:20;
-    background:rgba(20,18,15,0.95);
+    background:var(--nav-bg);
     backdrop-filter:blur(8px);
     padding:10px 4px;
     margin-bottom:6px;
@@ -268,10 +302,23 @@
 </head>
 <body>
 
+<div id="planChooser" hidden>
+  <h2>Choose your plan</h2>
+  <p>You can switch anytime from the top of the app.</p>
+  <div class="pc-btns">
+    <button data-choose="male" id="pcMale">Male<span class="sub">5-day gym plan</span></button>
+    <button data-choose="female" id="pcFemale">Female<span class="sub">4-day home plan</span></button>
+  </div>
+</div>
+
 <div class="wrap">
   <header class="hero">
     <h1>Muscle Building Plan</h1>
     <div class="sub" id="todayLabel"></div>
+    <div class="plan-toggle">
+      <button data-plan-btn="male">&#9794; Male</button>
+      <button data-plan-btn="female">&#9792; Female</button>
+    </div>
   </header>
 
   <div class="install-tip" id="installTip">
@@ -311,7 +358,7 @@
     </div>
     <ol class="warmup-steps">
       <li><b>Raise your temperature</b> &mdash; 5 min easy cardio (bike, incline walk or rower) until you break a light sweat.</li>
-      <li><b>Loosen the day's joints</b> &mdash; 5-8 slow reps each. Push / Pull / Upper: band pull-aparts, shoulder dislocates, arm circles, cat-cow. Legs / Lower: leg swings front &amp; side, hip circles, 10 bodyweight squats, walking lunges.</li>
+      <li><b>Loosen the day's joints</b> &mdash; 5-8 slow reps each. Upper-body days: band pull-aparts, shoulder dislocates, arm circles, cat-cow. Lower-body days: leg swings front &amp; side, hip circles, 10 bodyweight squats, walking lunges.</li>
       <li><b>Ramp up the first lift only</b> &mdash; empty bar &times;10, then ~50% &times;5, ~70% &times;3, ~85% &times;1. Rest 60-90 s and stop each set well short of effort.</li>
       <li><b>Start working set 1.</b> Isolation moves (raises, curls, extensions) need just one light feeder set.</li>
     </ol>
@@ -328,7 +375,21 @@
   <span class="backup-hint">Save the backup file to iCloud Drive / Files. Restore it if you clear your browser or switch phones.</span>
   <input type="file" id="restoreInput" accept="application/json,.json" hidden>
 
-  <div class="notes">
+  <div class="notes" id="notesFemale" hidden>
+    <h3>Important Notes</h3>
+    <ul>
+      <li><b>Weekly layout:</b> Sat Lower A · Sun Upper A · Tue Lower B · Wed Upper B. Other days: rest or a walk — keep at least one full rest day.</li>
+      <li><b>Goal &mdash; lean &amp; tone:</b> the lifting keeps your muscle while a modest calorie deficit does the fat loss. The short rests already lift your heart rate; keep the reps controlled, don't turn every set into a race.</li>
+      <li><b>Conditioning:</b> 7-9k steps a day, plus 2-3 brisk or incline walks of 25-35 min. Optional 6-8 min finisher after Lower B or Upper B &mdash; 40 s work / 20 s rest: goblet squats, RDLs, jumping jacks, mountain climbers.</li>
+      <li><b>Progression:</b> add reps to the top of the range first, then a little weight. Keep 1-2 reps in reserve.</li>
+      <li><b>Form first:</b> single-leg moves (split squat, single-leg RDL) are about control &mdash; go light until your balance is steady.</li>
+      <li><b>Warm-up:</b> follow the warm-up card at the top of each day before your first set.</li>
+      <li><b>Nutrition:</b> follow your meal-timing plan; aim for ~1.6-2 g protein per kg of body weight daily.</li>
+      <li>Your data is saved on this device only. Tap <b>Back up progress</b> every week or two and keep the file in iCloud Drive / Files.</li>
+    </ul>
+  </div>
+
+  <div class="notes" id="notesMale">
     <h3>Important Notes</h3>
     <ul>
       <li><b>Weekly schedule:</b> Sat Legs · Sun Push · Mon Pull · Tue rest (football) · Wed Lower · Thu Upper · Fri rest. Every muscle 2&times;/week with 3-4 days between; both rest days follow an upper day so football fits Tuesday; the heavy barbell squat + RDL sit on Legs day while Lower day stays spine-friendly (hack squat, hip thrust).</li>
@@ -370,7 +431,7 @@
 
 <script>
 // ---------------- DATA ----------------
-const DAYS = [
+const DAYS_MALE = [
   { id:"push", label:"Push", muscles:"Chest, Shoulders, Triceps", exercises:[
     {id:"push_bench", en:"Barbell Bench Press", sets:4, reps:"6-8", rest:150, vid:"0cXAp6WhSj4"},
     {id:"push_incline_db", en:"Incline Dumbbell Press", sets:3, reps:"8-10", rest:120, vid:"8fXfwG4ftaQ"},
@@ -415,9 +476,48 @@ const DAYS = [
   ]},
 ];
 
+const DAYS_FEMALE = [
+  { id:"f_lowerA", label:"Lower A", muscles:"Glutes & Quads", exercises:[
+    {id:"fla_goblet", en:"Goblet Squat", sets:3, reps:"12-15", rest:60, vid:"0OWbS1WiUGU"},
+    {id:"fla_rdl", en:"Dumbbell Romanian Deadlift", sets:3, reps:"12-15", rest:60, vid:"hu3jRvTc_po"},
+    {id:"fla_lunge", en:"Reverse Lunge (Dumbbell)", sets:3, reps:"10-12/leg", rest:60, vid:"YXL_f378hLM"},
+    {id:"fla_bridge", en:"Dumbbell Glute Bridge", sets:3, reps:"15-20", rest:45, vid:"12m6GW59LvQ"},
+    {id:"fla_calf", en:"Standing Calf Raise", sets:3, reps:"15-20", rest:30, vid:"B30JglFGx8Y"},
+    {id:"fla_deadbug", en:"Dead Bug (core)", sets:3, reps:"10-12/side", rest:30, vid:"XcYtWYMz39w"},
+  ]},
+  { id:"f_upperA", label:"Upper A", muscles:"Push focus", exercises:[
+    {id:"fua_bench", en:"Dumbbell Bench Press", sets:3, reps:"10-12", rest:60, vid:"Gf65Yy0-wGI"},
+    {id:"fua_row", en:"One-Arm Dumbbell Row", sets:3, reps:"12-15/arm", rest:45, vid:"H8jf3DwlIlo"},
+    {id:"fua_press", en:"Seated Dumbbell Shoulder Press", sets:3, reps:"12-15", rest:45, vid:"k6tzKisR3NY"},
+    {id:"fua_pullapart", en:"Band Pull-Apart", sets:3, reps:"15-20", rest:30, vid:"qi2y-eI_kuI"},
+    {id:"fua_lateral", en:"Dumbbell Lateral Raise", sets:3, reps:"15-20", rest:30, vid:"Kl3LEzQ5Zqs"},
+    {id:"fua_arms", en:"Biceps Curl + Triceps Extension (superset)", sets:3, reps:"12-15", rest:45, vid:"8UIbEovL-xU"},
+  ]},
+  { id:"f_lowerB", label:"Lower B", muscles:"Hamstrings & Glutes", exercises:[
+    {id:"flb_sumo", en:"Dumbbell Sumo Squat", sets:3, reps:"12-15", rest:60, vid:"bRCjBCtBGIo"},
+    {id:"flb_sldl", en:"Single-Leg Dumbbell RDL", sets:3, reps:"10-12/leg", rest:45, vid:"kQf5g0y0mO4"},
+    {id:"flb_bss", en:"Bulgarian Split Squat", sets:3, reps:"10-12/leg", rest:60, vid:"uODWo4YqbT8"},
+    {id:"flb_kickback", en:"Band Glute Kickback", sets:3, reps:"15-20/leg", rest:30, vid:"aw9WClmz5jw"},
+    {id:"flb_calf", en:"Seated Calf Raise (Dumbbell)", sets:3, reps:"15-20", rest:30, vid:"NrHJPauB01I"},
+    {id:"flb_legraise", en:"Lying Leg Raise (core)", sets:3, reps:"12-15", rest:30, vid:"jrSWj0huh5o"},
+  ]},
+  { id:"f_upperB", label:"Upper B", muscles:"Pull focus & core", exercises:[
+    {id:"fub_incline", en:"Incline Dumbbell Press", sets:3, reps:"12-15", rest:60, vid:"8fXfwG4ftaQ"},
+    {id:"fub_row", en:"Chest-Supported Dumbbell Row", sets:3, reps:"12-15", rest:45, vid:"09wri23R4SU"},
+    {id:"fub_arnold", en:"Arnold Press", sets:3, reps:"12-15", rest:45, vid:"AjB-UXErljM"},
+    {id:"fub_facepull", en:"Band Face Pull", sets:3, reps:"15-20", rest:30, vid:"C45c3fR4o28"},
+    {id:"fub_hammer", en:"Hammer Curl", sets:3, reps:"12-15", rest:30, vid:"K9LiwcGuqA0"},
+    {id:"fub_plank", en:"Plank (core)", sets:3, reps:"30-45s", rest:30, vid:"fWW5d1ZFhk4"},
+  ]},
+];
+
+// ---------------- PLAN + STATE ----------------
+let activePlan = localStorage.getItem("gym_plan"); // "male" | "female" | null (first run)
+let DAYS = activePlan === "female" ? DAYS_FEMALE : DAYS_MALE;
+
 // ---------------- STATE ----------------
 const todayStr = new Date().toISOString().slice(0,10);
-let activeDay = localStorage.getItem("gym_active_day") || DAYS[0].id;
+let activeDay = localStorage.getItem("gym_active_day_" + (activePlan || "male")) || DAYS[0].id;
 let openVideoId = null; // which exercise currently has an inline player mounted
 
 function loadJSON(key, fallback){
@@ -450,7 +550,7 @@ function renderNav(){
     const btn = document.createElement("button");
     btn.textContent = d.label;
     if(d.id === activeDay) btn.classList.add("active");
-    btn.onclick = ()=>{ activeDay = d.id; localStorage.setItem("gym_active_day", activeDay); openVideoId = null; renderAll(); };
+    btn.onclick = ()=>{ activeDay = d.id; localStorage.setItem("gym_active_day_" + (activePlan || "male"), activeDay); openVideoId = null; renderAll(); };
     dayNav.appendChild(btn);
   });
 }
@@ -752,7 +852,7 @@ if(navigator.storage && navigator.storage.persist){
   navigator.storage.persist().catch(()=>{});
 }
 
-const GYM_KEYS = ["gym_active_day","gym_checks","gym_weights","gym_sessions","gym_session_active"];
+const GYM_KEYS = ["gym_plan","gym_active_day","gym_active_day_male","gym_active_day_female","gym_checks","gym_weights","gym_sessions","gym_session_active"];
 
 function collectBackup(){
   const data = {};
@@ -828,7 +928,37 @@ if(warmupBtn){
   };
 }
 
-renderAll();
+// ---------------- PLAN: His / Hers ----------------
+function applyPlan(plan, persist){
+  activePlan = plan;
+  if(persist) localStorage.setItem("gym_plan", plan);
+  DAYS = plan === "female" ? DAYS_FEMALE : DAYS_MALE;
+  document.documentElement.dataset.plan = plan;
+  const tc = document.querySelector('meta[name="theme-color"]');
+  if(tc) tc.setAttribute("content", plan === "female" ? "#1b1220" : "#14120f");
+  activeDay = localStorage.getItem("gym_active_day_" + plan) || DAYS[0].id;
+  if(!DAYS.some(d=>d.id===activeDay)) activeDay = DAYS[0].id;
+  openVideoId = null;
+  const nm = document.getElementById("notesMale"), nf = document.getElementById("notesFemale");
+  if(nm) nm.hidden = plan !== "male";
+  if(nf) nf.hidden = plan !== "female";
+  document.querySelectorAll("[data-plan-btn]").forEach(b=> b.classList.toggle("on", b.dataset.planBtn === plan));
+  renderAll();
+}
+
+document.querySelectorAll("[data-choose]").forEach(b=>{
+  b.onclick = ()=>{ applyPlan(b.dataset.choose, true); document.getElementById("planChooser").hidden = true; };
+});
+document.querySelectorAll("[data-plan-btn]").forEach(b=>{
+  b.onclick = ()=> applyPlan(b.dataset.planBtn, true);
+});
+
+if(activePlan){
+  applyPlan(activePlan, false);
+} else {
+  document.getElementById("planChooser").hidden = false;
+  applyPlan("male", false); // render something behind the chooser
+}
 </script>
 </body>
 </html>
