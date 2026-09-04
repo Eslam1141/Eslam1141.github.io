@@ -207,7 +207,8 @@ const T = {
   settings:["Settings","الإعدادات"],
   planLabel:["Plan","الخطة"],
   programLabel:["Program","البرنامج"],
-  langLabel:["Language","اللغة"]
+  langLabel:["Language","اللغة"],
+  daysLabel:["Days","الأيام"]
 };
 const NOTES = {
   male_gym:{ en:[
@@ -495,8 +496,10 @@ function updateProgress(){
 }
 
 function renderAll(){
+  renderTitle();
   renderDate();
   renderNav();
+  renderDaysPanel();
   renderExercises();
   updateProgress();
   updateSessionUI();
@@ -778,23 +781,54 @@ function applyState(persist){
   renderAll();
 }
 
-// ---------------- SETTINGS SIDE PANEL ----------------
+// ---------------- SLIDE-IN PANELS (settings + days) ----------------
 const sidePanel = document.getElementById("sidePanel");
+const daysPanel = document.getElementById("daysPanel");
 const panelScrim = document.getElementById("panelScrim");
-function openPanel(){
+let openPanelEl = null;
+function openPanel(el){
+  openPanelEl = el;
   panelScrim.hidden = false;
-  requestAnimationFrame(()=>{ panelScrim.classList.add("show"); sidePanel.classList.add("open"); });
-  sidePanel.setAttribute("aria-hidden", "false");
+  requestAnimationFrame(()=>{ panelScrim.classList.add("show"); el.classList.add("open"); });
+  el.setAttribute("aria-hidden", "false");
 }
 function closePanel(){
   panelScrim.classList.remove("show");
-  sidePanel.classList.remove("open");
-  sidePanel.setAttribute("aria-hidden", "true");
+  [sidePanel, daysPanel].forEach(p=>{ p.classList.remove("open"); p.setAttribute("aria-hidden", "true"); });
+  openPanelEl = null;
   setTimeout(()=>{ panelScrim.hidden = true; }, 300);
 }
-document.getElementById("menuBtn").onclick = openPanel;
-document.getElementById("panelClose").onclick = closePanel;
+document.getElementById("menuBtn").onclick = ()=> openPanel(sidePanel);
+document.getElementById("daysBtn").onclick = ()=> openPanel(daysPanel);
+document.querySelectorAll(".panelClose").forEach(b=> b.onclick = closePanel);
 panelScrim.onclick = closePanel;
+
+function renderDaysPanel(){
+  const list = document.getElementById("daysList");
+  list.innerHTML = "";
+  DAYS.forEach(d=>{
+    const b = document.createElement("button");
+    b.textContent = dayLabel(d);
+    if(d.id === activeDay) b.classList.add("active");
+    b.onclick = ()=>{
+      activeDay = d.id;
+      localStorage.setItem(activeDayStoreKey(), activeDay);
+      openVideoId = null;
+      closePanel();
+      window.scrollTo(0, 0);
+      renderAll();
+    };
+    list.appendChild(b);
+  });
+}
+
+function renderTitle(){
+  const planWord  = t(activePlan === "female" ? "female" : "male");
+  const styleWord = t(activeStyle === "cal" ? "styleCal" : "styleGym");
+  const full = t("appTitle") + " · " + planWord + " · " + styleWord;
+  document.getElementById("appTitleEl").textContent = full;
+  document.title = t("appTitle") + " · " + planWord + " · " + styleWord;
+}
 
 document.querySelectorAll("[data-choose]").forEach(b=>{
   b.onclick = ()=>{
