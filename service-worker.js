@@ -1,6 +1,8 @@
-const CACHE_NAME = "gym-plan-v3";
+const CACHE_NAME = "gym-plan-v5";
 const ASSETS = [
   "./index.html",
+  "./styles.css",
+  "./app.js",
   "./manifest.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
