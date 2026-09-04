@@ -330,7 +330,6 @@ let activeSession = loadJSON("gym_session_active", null);
 function sessionKey(dayId){ return todayStr + "_" + dayId; }
 
 // ---------------- RENDER ----------------
-const dayNav = document.getElementById("dayNav");
 const exList = document.getElementById("exList");
 const dayMuscles = document.getElementById("dayMuscles");
 const progressPill = document.getElementById("progressPill");
@@ -340,17 +339,6 @@ const todayLabel = document.getElementById("todayLabel");
 function renderDate(){
   const loc = activeLang === "ar" ? "ar-EG" : "en-US";
   todayLabel.textContent = new Date().toLocaleDateString(loc, { weekday:"long", day:"numeric", month:"long" });
-}
-
-function renderNav(){
-  dayNav.innerHTML = "";
-  DAYS.forEach(d=>{
-    const btn = document.createElement("button");
-    btn.textContent = dayLabel(d);
-    if(d.id === activeDay) btn.classList.add("active");
-    btn.onclick = ()=>{ activeDay = d.id; localStorage.setItem(activeDayStoreKey(), activeDay); openVideoId = null; renderAll(); };
-    dayNav.appendChild(btn);
-  });
 }
 
 function lastLog(exId){
@@ -498,7 +486,6 @@ function updateProgress(){
 function renderAll(){
   renderTitle();
   renderDate();
-  renderNav();
   renderDaysPanel();
   renderExercises();
   updateProgress();
