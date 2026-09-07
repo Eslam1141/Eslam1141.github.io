@@ -1,9 +1,10 @@
-const CACHE_NAME = "gym-plan-v7";
+const CACHE_NAME = "gym-plan-v8";
 const ASSETS = [
   "./index.html",
   "./styles.css",
   "./app.js",
   "./manifest.json",
+  "./icons/logo.svg",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/apple-touch-icon.png"

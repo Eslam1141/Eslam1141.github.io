@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Muscle Building Plan logo">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4c9dff"/>
+      <stop offset="1" stop-color="#2f6fd6"/>
+    </linearGradient>
+    <radialGradient id="hi" cx="0.3" cy="0.22" r="0.95">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.34"/>
+      <stop offset="0.55" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" rx="114" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="114" fill="url(#hi)"/>
+  <g transform="rotate(-18 256 256)" fill="#ffffff">
+    <rect x="181" y="240" width="150" height="32" rx="16"/>
+    <rect x="165" y="196" width="40" height="120" rx="18" opacity="0.97"/>
+    <rect x="307" y="196" width="40" height="120" rx="18" opacity="0.97"/>
+    <rect x="132" y="176" width="36" height="160" rx="17"/>
+    <rect x="344" y="176" width="36" height="160" rx="17"/>
+    <rect x="110" y="218" width="24" height="76" rx="12" opacity="0.9"/>
+    <rect x="378" y="218" width="24" height="76" rx="12" opacity="0.9"/>
+  </g>
+</svg>

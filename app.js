@@ -315,6 +315,7 @@ const todayStr = new Date().toISOString().slice(0,10);
 let activeDay = localStorage.getItem(activeDayStoreKey()) || DAYS[0].id;
 if(!DAYS.some(d=>d.id===activeDay)) activeDay = DAYS[0].id;
 let openVideoId = null; // which exercise currently has an inline player mounted
+let animateCards = true; // replay the card entrance only on a real context change (day/plan/language)
 
 function loadJSON(key, fallback){
   try { return JSON.parse(localStorage.getItem(key)) || fallback; }
@@ -351,6 +352,26 @@ function ytEmbedSrc(vid, autoplay){
   return `https://www.youtube-nocookie.com/embed/${vid}?rel=0&modestbranding=1&playsinline=1${autoplay ? '&autoplay=1' : ''}`;
 }
 
+const IC_SAVE = '<svg viewBox="0 0 24 24"><path d="M17 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>';
+const IC_PLAY = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+function saveBtnInner(){ return IC_SAVE + " " + t("save"); }
+function videoBtnInner(open){ return IC_PLAY + " " + (open ? t("hideVideo") : t("video")); }
+function videoFrameInner(ex){
+  return `<iframe src="${ytEmbedSrc(ex.vid,false)}" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          <button class="expand-btn" data-expand="${ex.id}" aria-label="Fullscreen">
+            <svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7zm-2-4h2V7h3V5H5zm12 7h-3v2h5v-5h-2zM14 5v2h3v3h2V5z"/></svg>
+          </button>`;
+}
+// tear an inline player down without rebuilding the list
+function closeInlineVideo(id){
+  const wrap  = document.getElementById("vwrap-" + id);
+  const frame = document.getElementById("vframe-" + id);
+  if(wrap)  wrap.classList.remove("open");
+  if(frame) frame.innerHTML = "";
+  const btn = document.querySelector(`[data-video="${id}"]`);
+  if(btn){ btn.classList.remove("on"); btn.innerHTML = videoBtnInner(false); }
+}
+
 function renderExercises(){
   const day = DAYS.find(d=>d.id===activeDay);
   dayMuscles.textContent = dayLabel(day) + " — " + musLabel(day);
@@ -362,8 +383,8 @@ function renderExercises(){
     const done = !!dayChecks[ex.id];
     const isOpen = openVideoId === ex.id;
     const card = document.createElement("div");
-    card.className = "ex-card" + (done ? " done" : "");
-    card.style.animationDelay = (i * 45) + "ms";
+    card.className = "ex-card" + (done ? " done" : "") + (animateCards ? " anim-in" : "");
+    if(animateCards) card.style.animationDelay = (i * 45) + "ms";
 
     const last = lastLog(ex.id);
     const lastText = last ? t("lastLog").replace("{w}", last.w).replace("{r}", last.r) : t("noLog");
@@ -404,29 +425,32 @@ function renderExercises(){
       </div>
       <div class="video-wrap ${isOpen?'open':''}" id="vwrap-${ex.id}">
         <div class="video-frame" id="vframe-${ex.id}">
-          ${isOpen ? `<iframe src="${ytEmbedSrc(ex.vid,false)}" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-          <button class="expand-btn" data-expand="${ex.id}">
-            <svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7zm-2-4h2V7h3V5H5zm12 7h-3v2h5v-5h-2zM14 5v2h3v3h2V5z"/></svg>
-          </button>` : ''}
+          ${isOpen ? videoFrameInner(ex) : ''}
         </div>
       </div>
       <div class="lastlog">${lastText}</div>
     `;
     exList.appendChild(card);
   });
+  animateCards = false;
 
+  // --- checkbox: flip just this card, no list rebuild ---
   exList.querySelectorAll(".check").forEach(el=>{
     el.onclick = ()=>{
       const id = el.dataset.id;
-      const key = sessionKey(activeDay);
-      checks[key] = checks[key] || {};
-      checks[key][id] = !checks[key][id];
+      const k = sessionKey(activeDay);
+      checks[k] = checks[k] || {};
+      checks[k][id] = !checks[k][id];
       saveJSON("gym_checks", checks);
-      renderExercises();
+      const on = !!checks[k][id];
+      el.classList.toggle("on", on);
+      const card = el.closest(".ex-card");
+      if(card) card.classList.toggle("done", on);
       updateProgress();
     };
   });
 
+  // --- save weight: update this card in place, no list rebuild ---
   exList.querySelectorAll("[data-save]").forEach(btn=>{
     btn.onclick = ()=>{
       const id = btn.dataset.save;
@@ -442,7 +466,14 @@ function renderExercises(){
       else weights[id].push(entry);
       saveJSON("gym_weights", weights);
       btn.innerHTML = t("saved");
-      setTimeout(()=>renderExercises(), 700);
+      const card = btn.closest(".ex-card");
+      if(card){
+        const ll = card.querySelector(".lastlog");
+        if(ll) ll.textContent = t("lastLog").replace("{w}", w).replace("{r}", r);
+      }
+      wInput.value = ""; rInput.value = "";
+      wInput.placeholder = w; rInput.placeholder = r;
+      setTimeout(()=>{ btn.innerHTML = saveBtnInner(); }, 900);
     };
   });
 
@@ -450,18 +481,42 @@ function renderExercises(){
     btn.onclick = ()=> startRestTimer(parseInt(btn.dataset.rest), btn.dataset.name);
   });
 
+  // --- video toggle: mount / unmount just this player ---
   exList.querySelectorAll("[data-video]").forEach(btn=>{
     btn.onclick = ()=>{
       const id = btn.dataset.video;
-      openVideoId = (openVideoId === id) ? null : id;
-      renderExercises();
+      const willOpen = openVideoId !== id;
+      if(openVideoId && openVideoId !== id) closeInlineVideo(openVideoId);
+      if(willOpen){
+        openVideoId = id;
+        const ex = day.exercises.find(x=>x.id===id);
+        const wrap  = document.getElementById("vwrap-" + id);
+        const frame = document.getElementById("vframe-" + id);
+        frame.innerHTML = videoFrameInner(ex);
+        wrap.classList.add("open");
+        btn.classList.add("on");
+        btn.innerHTML = videoBtnInner(true);
+      } else {
+        closeInlineVideo(id);
+        openVideoId = null;
+      }
     };
   });
 
+  // --- expand: real fullscreen on the existing player; overlay fallback ---
   exList.querySelectorAll("[data-expand]").forEach(btn=>{
     btn.onclick = (e)=>{
       e.stopPropagation();
-      openVideoModal(day.exercises.find(x=>x.id===btn.dataset.expand));
+      const id = btn.dataset.expand;
+      const frame = document.getElementById("vframe-" + id);
+      const ex = day.exercises.find(x=>x.id===id);
+      if(frame && frame.requestFullscreen){
+        frame.requestFullscreen().catch(()=> openVideoModal(ex));
+      } else if(frame && frame.webkitRequestFullscreen){
+        frame.webkitRequestFullscreen();
+      } else {
+        openVideoModal(ex);
+      }
     };
   });
 }
@@ -497,6 +552,7 @@ document.getElementById("resetLink").onclick = ()=>{
   if(!confirm(t("resetConfirm"))) return;
   delete checks[sessionKey(activeDay)];
   saveJSON("gym_checks", checks);
+  animateCards = true;
   renderAll();
 };
 
@@ -506,6 +562,8 @@ const modalFrame = document.getElementById("modalFrame");
 const modalTitle = document.getElementById("modalTitle");
 
 function openVideoModal(ex){
+  // never leave a second player running underneath
+  if(openVideoId){ closeInlineVideo(openVideoId); openVideoId = null; }
   modalTitle.textContent = exName(ex);
   modalFrame.innerHTML = `<iframe src="${ytEmbedSrc(ex.vid,true)}" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
   videoModal.classList.add("show");
@@ -749,12 +807,14 @@ function applyLang(lang, persist){
   document.documentElement.lang = lang === "ar" ? "ar" : "en";
   document.documentElement.dir  = lang === "ar" ? "rtl" : "ltr";
   applyStaticI18n();
+  animateCards = true;
   renderAll();
 }
 
 // ---------------- PLAN + STYLE ----------------
 function applyState(persist){
   DAYS = pickDays();
+  animateCards = true;
   document.documentElement.dataset.plan = activePlan || "male";
   const tc = document.querySelector('meta[name="theme-color"]');
   if(tc) tc.setAttribute("content", activePlan === "female" ? "#17121a" : "#0d1117");
@@ -801,6 +861,7 @@ function renderDaysPanel(){
       activeDay = d.id;
       localStorage.setItem(activeDayStoreKey(), activeDay);
       openVideoId = null;
+      animateCards = true;
       closePanel();
       window.scrollTo(0, 0);
       renderAll();
