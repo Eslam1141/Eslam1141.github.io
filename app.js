@@ -179,6 +179,9 @@ const T = {
   startWorkout:["Start Workout","ابدأ التمرين"],
   endWorkout:["End Workout","أنهِ التمرين"],
   inProgress:["In progress…","جارٍ التنفيذ…"],
+  pause:["Pause","إيقاف مؤقت"],
+  resume:["Resume","استئناف"],
+  paused:["Paused","متوقّف مؤقتاً"],
   lastSession:["Last {d} session: {n} min","آخر جلسة {d}: {n} دقيقة"],
   warmupTitle:["Warm-up — do this first","الإحماء — ابدأ به أولاً"],
   video:["Video","فيديو"], hideVideo:["Hide video","إخفاء الفيديو"],
@@ -327,6 +330,12 @@ let checks = loadJSON("gym_checks", {});
 let weights = loadJSON("gym_weights", {});
 let sessions = loadJSON("gym_sessions", {});
 let activeSession = loadJSON("gym_session_active", null);
+// migrate the old { dayId, startTime } shape to the pausable model
+if(activeSession && activeSession.segStart === undefined){
+  const t0 = activeSession.startTime || Date.now();
+  activeSession = { dayId: activeSession.dayId, startedAt: t0, running: true, accumSec: 0, segStart: t0 };
+  saveJSON("gym_session_active", activeSession);
+}
 
 function sessionKey(dayId){ return todayStr + "_" + dayId; }
 
@@ -354,6 +363,7 @@ function ytEmbedSrc(vid, autoplay){
 
 const IC_SAVE = '<svg viewBox="0 0 24 24"><path d="M17 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>';
 const IC_PLAY = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+const IC_PAUSE = '<svg viewBox="0 0 24 24"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>';
 function saveBtnInner(){ return IC_SAVE + " " + t("save"); }
 function videoBtnInner(open){ return IC_PLAY + " " + (open ? t("hideVideo") : t("video")); }
 function videoFrameInner(ex){
@@ -629,6 +639,11 @@ const sessionCard = document.getElementById("sessionCard");
 const sessionTimeEl = document.getElementById("sessionTime");
 const sessionHintEl = document.getElementById("sessionHint");
 const sessionBtn = document.getElementById("sessionBtn");
+const sessionPauseBtn = document.getElementById("sessionPauseBtn");
+const miniTimer = document.getElementById("miniTimer");
+const miniLabel = document.getElementById("miniLabel");
+const miniTime = document.getElementById("miniTime");
+const miniPause = document.getElementById("miniPause");
 let sessionInterval = null;
 
 function fmtHMS(totalSec){
@@ -644,21 +659,56 @@ function lastSessionFor(dayId){
   return arr[arr.length-1];
 }
 
+// elapsed seconds for the running session, honouring paused segments
+function sessionElapsedSec(){
+  if(!activeSession) return 0;
+  let s = activeSession.accumSec || 0;
+  if(activeSession.running && activeSession.segStart) s += (Date.now() - activeSession.segStart) / 1000;
+  return Math.floor(s);
+}
+
+function renderSessionTime(){
+  const txt = fmtHMS(sessionElapsedSec());
+  sessionTimeEl.textContent = txt;
+  miniTime.textContent = txt;
+}
+
+// show the floating timer once the session card has scrolled out of view
+function updateMiniTimer(){
+  const active = activeSession && activeSession.dayId === activeDay;
+  if(!active){ miniTimer.classList.remove("show"); return; }
+  const gone = sessionCard.getBoundingClientRect().bottom < 8;
+  miniTimer.classList.toggle("show", gone);
+}
+
 function updateSessionUI(){
   clearInterval(sessionInterval);
   const isThisDayActive = activeSession && activeSession.dayId === activeDay;
 
   if(isThisDayActive){
+    const running = !!activeSession.running;
     sessionCard.classList.add("active");
     sessionBtn.textContent = t("endWorkout");
     sessionBtn.classList.add("stop");
-    sessionHintEl.textContent = t("inProgress");
-    tickSession();
-    sessionInterval = setInterval(tickSession, 1000);
+    sessionPauseBtn.hidden = false;
+    sessionPauseBtn.textContent = running ? t("pause") : t("resume");
+    sessionPauseBtn.classList.toggle("resumed", !running);
+    sessionHintEl.textContent = running ? t("inProgress") : t("paused");
+
+    miniLabel.textContent = dayLabel(DAYS.find(d=>d.id===activeDay));
+    miniTimer.classList.toggle("paused", !running);
+    miniPause.innerHTML = running ? IC_PAUSE : IC_PLAY;
+    miniPause.setAttribute("aria-label", running ? t("pause") : t("resume"));
+
+    renderSessionTime();
+    if(running) sessionInterval = setInterval(renderSessionTime, 1000);
+    updateMiniTimer();
   } else {
     sessionCard.classList.remove("active");
     sessionBtn.textContent = t("startWorkout");
     sessionBtn.classList.remove("stop");
+    sessionPauseBtn.hidden = true;
+    miniTimer.classList.remove("show");
     const last = lastSessionFor(activeDay);
     const dObj = DAYS.find(d=>d.id===activeDay);
     sessionTimeEl.textContent = "00:00:00";
@@ -668,22 +718,37 @@ function updateSessionUI(){
   }
 }
 
-function tickSession(){
+function togglePauseSession(){
   if(!activeSession) return;
-  const elapsed = Math.floor((Date.now() - activeSession.startTime)/1000);
-  sessionTimeEl.textContent = fmtHMS(elapsed);
+  if(activeSession.running){
+    activeSession.accumSec = (activeSession.accumSec || 0) + (Date.now() - activeSession.segStart) / 1000;
+    activeSession.running = false;
+    activeSession.segStart = null;
+  } else {
+    activeSession.running = true;
+    activeSession.segStart = Date.now();
+  }
+  saveJSON("gym_session_active", activeSession);
+  updateSessionUI();
 }
+sessionPauseBtn.onclick = togglePauseSession;
+miniPause.onclick = (e)=>{ e.stopPropagation(); togglePauseSession(); };
+miniTimer.onclick = ()=>{
+  try { window.scrollTo({ top:0, behavior:"smooth" }); }
+  catch(e){ window.scrollTo(0,0); }
+};
 
 sessionBtn.onclick = ()=>{
   if(activeSession && activeSession.dayId === activeDay){
-    const durationSec = Math.floor((Date.now() - activeSession.startTime)/1000);
+    const durationSec = sessionElapsedSec();
     sessions[activeDay] = sessions[activeDay] || [];
     sessions[activeDay].push({ date: todayStr, durationSec });
     saveJSON("gym_sessions", sessions);
     activeSession = null;
     localStorage.removeItem("gym_session_active");
   } else {
-    activeSession = { dayId: activeDay, startTime: Date.now() };
+    const now = Date.now();
+    activeSession = { dayId: activeDay, startedAt: now, running: true, accumSec: 0, segStart: now };
     saveJSON("gym_session_active", activeSession);
   }
   updateSessionUI();
@@ -788,6 +853,7 @@ if(warmupBtn){
 const toTopBtn = document.getElementById("toTop");
 window.addEventListener("scroll", ()=>{
   toTopBtn.classList.toggle("show", window.scrollY > 260);
+  updateMiniTimer();
 }, { passive:true });
 toTopBtn.onclick = ()=>{
   try { window.scrollTo({ top:0, behavior:"smooth" }); }
