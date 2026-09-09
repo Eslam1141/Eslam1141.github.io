@@ -1,8 +1,10 @@
-const CACHE_NAME = "gym-plan-v9";
+const CACHE_NAME = "gym-plan-v10";
 const ASSETS = [
   "./index.html",
   "./styles.css",
   "./app.js",
+  "./sync.js",
+  "./config.js",
   "./manifest.json",
   "./icons/logo.svg",
   "./icons/icon-192.png",
@@ -28,6 +30,16 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
+
+  const url = new URL(event.request.url);
+  // Never intercept API or Google Identity traffic — sync freshness and auth
+  // are handled in sync.js, and these must always hit the network.
+  if (url.pathname.startsWith("/api/") ||
+      url.hostname.endsWith("googleapis.com") ||
+      url.hostname === "accounts.google.com") {
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then((cached) => {
       const fetchPromise = fetch(event.request)

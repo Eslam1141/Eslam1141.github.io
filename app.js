@@ -324,7 +324,23 @@ function loadJSON(key, fallback){
   try { return JSON.parse(localStorage.getItem(key)) || fallback; }
   catch(e){ return fallback; }
 }
-function saveJSON(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
+function saveJSON(key, val){
+  localStorage.setItem(key, JSON.stringify(val));
+  notifySync(key);
+}
+// setPref writes a plain (already-string) gym_* value and notifies the sync layer.
+function setPref(key, val){
+  localStorage.setItem(key, val);
+  notifySync(key);
+}
+// notifySync tells the optional offline-first sync layer (sync.js) that a
+// gym_* key changed. No-op when sync.js is not loaded (GitHub Pages / file://).
+function notifySync(key){
+  if (key && key.indexOf("gym_") === 0 && key !== "gym_meta_updatedAt" &&
+      window.GymSync && typeof window.GymSync.onLocalWrite === "function") {
+    window.GymSync.onLocalWrite(key);
+  }
+}
 
 let checks = loadJSON("gym_checks", {});
 let weights = loadJSON("gym_weights", {});
@@ -833,6 +849,12 @@ document.getElementById("restoreInput").onchange = (e)=>{
   e.target.value = "";
 };
 
+// Called by sync.js after it writes newer progress pulled from the server.
+// Reuses the same refresh path applyRestore() relies on.
+window.GymApplyExternalUpdate = function(){
+  try { location.reload(); } catch(e){}
+};
+
 // ---------------- WARM-UP VIDEO ----------------
 const warmupBtn = document.getElementById("warmupVidBtn");
 if(warmupBtn){
@@ -869,7 +891,7 @@ function applyStaticI18n(){
 }
 function applyLang(lang, persist){
   activeLang = lang;
-  if(persist) localStorage.setItem("gym_lang", lang);
+  if(persist) setPref("gym_lang", lang);
   document.documentElement.lang = lang === "ar" ? "ar" : "en";
   document.documentElement.dir  = lang === "ar" ? "rtl" : "ltr";
   applyStaticI18n();
@@ -889,8 +911,8 @@ function applyState(persist){
   openVideoId = null;
   document.querySelectorAll("[data-plan-btn]").forEach(b=> b.classList.toggle("on", b.dataset.planBtn === (activePlan || "male")));
   document.querySelectorAll("[data-style-btn]").forEach(b=> b.classList.toggle("on", b.dataset.styleBtn === activeStyle));
-  if(persist && activePlan) localStorage.setItem("gym_plan", activePlan);
-  if(persist) localStorage.setItem("gym_style", activeStyle);
+  if(persist && activePlan) setPref("gym_plan", activePlan);
+  if(persist) setPref("gym_style", activeStyle);
   renderAll();
 }
 
@@ -925,7 +947,7 @@ function renderDaysPanel(){
     if(d.id === activeDay) b.classList.add("active");
     b.onclick = ()=>{
       activeDay = d.id;
-      localStorage.setItem(activeDayStoreKey(), activeDay);
+      setPref(activeDayStoreKey(), activeDay);
       openVideoId = null;
       animateCards = true;
       closePanel();
