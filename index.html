@@ -48,112 +48,143 @@
   </div>
 </div>
 
-<div id="panelScrim" hidden></div>
+<nav id="appNav" aria-label="Primary">
+  <button type="button" data-tab="plan" aria-current="page">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.57 14.86 22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 8.43 3.43 9.86 7 6.29 15.57 14.86 12 18.43l1.43 1.43 1.43-1.43 1.43 1.43 2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43z"/></svg>
+    <span data-i18n="navPlan">Plan</span>
+  </button>
+  <button type="button" data-tab="coach">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 9V7c0-1.1-.9-2-2-2h-3c0-1.66-1.34-3-3-3S9 3.34 9 5H6c-1.1 0-2 .9-2 2v2c-1.66 0-3 1.34-3 3s1.34 3 3 3v4c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4c1.66 0 3-1.34 3-3s-1.34-3-3-3zM9 13c-.83 0-1.5-.67-1.5-1.5S8.17 10 9 10s1.5.67 1.5 1.5S9.83 13 9 13zm7.5-1.5c0 .83-.67 1.5-1.5 1.5s-1.5-.67-1.5-1.5S14.17 10 15 10s1.5.67 1.5 1.5zM16 17H8v-2h8v2z"/></svg>
+    <span data-i18n="navCoach">Coach</span>
+  </button>
+  <button type="button" data-tab="more">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/></svg>
+    <span data-i18n="navMore">More</span>
+  </button>
+</nav>
 
-<aside id="daysPanel" aria-hidden="true">
-  <div class="sp-head">
-    <span data-i18n="daysLabel">Days</span>
-    <button class="panelClose" aria-label="Close">&#10005;</button>
+<!-- ===================== PLAN SCREEN ===================== -->
+<div id="screen-plan" class="screen">
+  <div class="wrap">
+    <header class="hero">
+      <img class="hero-logo" src="icons/logo.svg" alt="" width="46" height="46">
+      <h1 id="appTitleEl">Muscle Building Plan</h1>
+      <div class="sub" id="todayLabel"></div>
+    </header>
   </div>
-  <div class="days-list" id="daysList"></div>
-</aside>
 
-<aside id="sidePanel" aria-hidden="true">
-  <div class="sp-head">
-    <span data-i18n="settings">Settings</span>
-    <button class="panelClose" aria-label="Close">&#10005;</button>
+  <div class="wrap">
+    <div class="day-tabs" id="dayTabs" role="tablist" aria-label="Training day"></div>
   </div>
-  <div class="sp-group">
-    <div class="sp-label" data-i18n="planLabel">Plan</div>
-    <div class="plan-toggle">
-      <button data-plan-btn="male">&#9794; <span data-i18n="male">Male</span></button>
-      <button data-plan-btn="female">&#9792; <span data-i18n="female">Female</span></button>
+
+  <div class="wrap">
+
+    <div class="session-card" id="sessionCard">
+      <div class="session-info">
+        <div class="label" data-i18n="workoutTimer">Workout Timer</div>
+        <div class="time" id="sessionTime">00:00:00</div>
+        <div class="hint" id="sessionHint" data-i18n="notStarted">Not started yet</div>
+      </div>
+      <div class="session-actions">
+        <button class="session-btn ghost" id="sessionPauseBtn" hidden>Pause</button>
+        <button class="session-btn" id="sessionBtn" data-i18n="startWorkout">Start Workout</button>
+      </div>
     </div>
-  </div>
-  <div class="sp-group">
-    <div class="sp-label" data-i18n="programLabel">Program</div>
-    <div class="plan-toggle">
-      <button data-style-btn="gym" data-i18n="styleGym">Gym</button>
-      <button data-style-btn="cal" data-i18n="styleCal">Calisthenics</button>
+
+    <div class="progress-row">
+      <span class="muscles" id="dayMuscles"></span>
+      <span class="progress-pill" id="progressPill">0/0</span>
     </div>
-  </div>
-  <div class="sp-group">
-    <div class="sp-label" data-i18n="langLabel">Language</div>
-    <button id="langBtn">العربية</button>
-  </div>
-</aside>
+    <div class="bar-track"><div class="bar-fill" id="barFill"></div></div>
 
-<div class="wrap">
-  <header class="hero">
-    <button id="daysBtn" aria-label="Days">
-      <svg viewBox="0 0 24 24"><path d="M4 5h16v2H4zm0 6h10v2H4zm0 6h16v2H4z"/></svg>
-    </button>
-    <button id="menuBtn" aria-label="Settings">
-      <svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 100 8 4 4 0 000-8zm8.4 4c0-.5 0-1-.1-1.4l2-1.6-2-3.4-2.4 1a6 6 0 00-2.4-1.4L15 1H9l-.5 2.8A6 6 0 006 5.2l-2.4-1-2 3.4 2 1.6c-.1.4-.1.9-.1 1.4s0 1 .1 1.4l-2 1.6 2 3.4 2.4-1a6 6 0 002.4 1.4L9 23h6l.5-2.8a6 6 0 002.4-1.4l2.4 1 2-3.4-2-1.6c.1-.4.1-.9.1-1.4z"/></svg>
-    </button>
-    <img class="hero-logo" src="icons/logo.svg" alt="" width="46" height="46">
-    <h1 id="appTitleEl">Muscle Building Plan</h1>
-    <div class="sub" id="todayLabel"></div>
-  </header>
+    <div class="warmup-card">
+      <div class="warmup-head">
+        <h3 data-i18n="warmupTitle">Warm-up &mdash; do this first</h3>
+        <button class="btn-sm video-toggle" id="warmupVidBtn">
+          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          <span data-i18n="video">Video</span>
+        </button>
+      </div>
+      <div class="video-wrap" id="warmupWrap">
+        <div class="video-frame" id="warmupFrame"></div>
+      </div>
+      <ol class="warmup-steps" id="warmupSteps">
+        <li data-i18n-html="warmup1"><b>Raise your temperature</b> &mdash; 5 min easy cardio (bike, incline walk or rower) until you break a light sweat.</li>
+        <li data-i18n-html="warmup2"><b>Loosen the day's joints</b> &mdash; 5-8 slow reps each. Upper-body days: band pull-aparts, shoulder dislocates, arm circles, cat-cow. Lower-body days: leg swings front &amp; side, hip circles, 10 bodyweight squats, walking lunges.</li>
+        <li data-i18n-html="warmup3"><b>Ramp up the first lift only</b> &mdash; empty bar &times;10, then ~50% &times;5, ~70% &times;3, ~85% &times;1. Rest 60-90 s and stop each set well short of effort.</li>
+        <li data-i18n-html="warmup4"><b>Start working set 1.</b> Isolation moves (raises, curls, extensions) need just one light feeder set.</li>
+      </ol>
+    </div>
 
-  <div class="install-tip" id="installTip" data-i18n-html="installTip">
-    <b>Add this app to your home screen:</b> open your browser menu and choose "Add to Home Screen" so it opens like a regular app.
+    <div id="exList"></div>
+
+    <div class="reset-link" id="resetLink" data-i18n="resetChecklist">Reset today's checklist</div>
+
+    <div class="notes" id="notesBox">
+      <h3 data-i18n="notesTitle">Important Notes</h3>
+      <ul id="notesList"></ul>
+    </div>
   </div>
 </div>
 
-<div class="wrap">
-
-  <div class="session-card" id="sessionCard">
-    <div class="session-info">
-      <div class="label" data-i18n="workoutTimer">Workout Timer</div>
-      <div class="time" id="sessionTime">00:00:00</div>
-      <div class="hint" id="sessionHint" data-i18n="notStarted">Not started yet</div>
-    </div>
-    <div class="session-actions">
-      <button class="session-btn ghost" id="sessionPauseBtn" hidden>Pause</button>
-      <button class="session-btn" id="sessionBtn" data-i18n="startWorkout">Start Workout</button>
-    </div>
+<!-- ===================== COACH SCREEN ===================== -->
+<div id="screen-coach" class="screen" hidden>
+  <div class="wrap">
+    <header class="hero">
+      <img class="hero-logo coach-logo" src="icons/coach.svg" alt="" width="46" height="46">
+      <h1 data-i18n="coachTitle">AI Coach</h1>
+      <div class="sub" data-i18n="coachSub">A diet &amp; training plan built from your numbers</div>
+    </header>
+    <div id="coachBody"></div>
   </div>
+</div>
 
-  <div class="progress-row">
-    <span class="muscles" id="dayMuscles"></span>
-    <span class="progress-pill" id="progressPill">0/0</span>
-  </div>
-  <div class="bar-track"><div class="bar-fill" id="barFill"></div></div>
+<!-- ===================== MORE SCREEN ===================== -->
+<div id="screen-more" class="screen" hidden>
+  <div class="wrap">
+    <header class="hero">
+      <img class="hero-logo" src="icons/logo.svg" alt="" width="46" height="46">
+      <h1 data-i18n="navMore">More</h1>
+    </header>
 
-  <div class="warmup-card">
-    <div class="warmup-head">
-      <h3 data-i18n="warmupTitle">Warm-up &mdash; do this first</h3>
-      <button class="btn-sm video-toggle" id="warmupVidBtn">
-        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-        <span data-i18n="video">Video</span>
-      </button>
+    <div class="more-group">
+      <div class="more-label" data-i18n="planLabel">Plan</div>
+      <div class="plan-toggle">
+        <button data-plan-btn="male">&#9794; <span data-i18n="male">Male</span></button>
+        <button data-plan-btn="female">&#9792; <span data-i18n="female">Female</span></button>
+      </div>
     </div>
-    <div class="video-wrap" id="warmupWrap">
-      <div class="video-frame" id="warmupFrame"></div>
+
+    <div class="more-group">
+      <div class="more-label" data-i18n="programLabel">Program</div>
+      <div class="plan-toggle" id="styleToggle">
+        <button data-style-btn="gym" data-i18n="styleGym">Gym</button>
+        <button data-style-btn="cal" data-i18n="styleCal">Calisthenics</button>
+      </div>
     </div>
-    <ol class="warmup-steps" id="warmupSteps">
-      <li data-i18n-html="warmup1"><b>Raise your temperature</b> &mdash; 5 min easy cardio (bike, incline walk or rower) until you break a light sweat.</li>
-      <li data-i18n-html="warmup2"><b>Loosen the day's joints</b> &mdash; 5-8 slow reps each. Upper-body days: band pull-aparts, shoulder dislocates, arm circles, cat-cow. Lower-body days: leg swings front &amp; side, hip circles, 10 bodyweight squats, walking lunges.</li>
-      <li data-i18n-html="warmup3"><b>Ramp up the first lift only</b> &mdash; empty bar &times;10, then ~50% &times;5, ~70% &times;3, ~85% &times;1. Rest 60-90 s and stop each set well short of effort.</li>
-      <li data-i18n-html="warmup4"><b>Start working set 1.</b> Isolation moves (raises, curls, extensions) need just one light feeder set.</li>
-    </ol>
-  </div>
 
-  <div id="exList"></div>
+    <div class="more-group">
+      <div class="more-label" data-i18n="langLabel">Language</div>
+      <button id="langBtn">العربية</button>
+    </div>
 
-  <div class="reset-link" id="resetLink" data-i18n="resetChecklist">Reset today's checklist</div>
+    <div class="more-group" id="moreAccount"></div>
 
-  <div class="backup-row">
-    <button id="backupBtn">&#8681; <span data-i18n="backup">Back up progress</span></button>
-    <button id="restoreBtn">&#8679; <span data-i18n="restore">Restore</span></button>
-  </div>
-  <span class="backup-hint" data-i18n="backupHint">Save the backup file to iCloud Drive / Files. Restore it if you clear your browser or switch phones.</span>
-  <input type="file" id="restoreInput" accept="application/json,.json" hidden>
+    <div class="more-group">
+      <div class="more-label" data-i18n="backupLabel">Progress backup</div>
+      <div class="backup-row">
+        <button id="backupBtn">&#8681; <span data-i18n="backup">Back up progress</span></button>
+        <button id="restoreBtn">&#8679; <span data-i18n="restore">Restore</span></button>
+      </div>
+      <span class="backup-hint" data-i18n="backupHint">Save the backup file to iCloud Drive / Files. Restore it if you clear your browser or switch phones.</span>
+      <input type="file" id="restoreInput" accept="application/json,.json" hidden>
+    </div>
 
-  <div class="notes" id="notesBox">
-    <h3 data-i18n="notesTitle">Important Notes</h3>
-    <ul id="notesList"></ul>
+    <div class="install-tip" id="installTip" data-i18n-html="installTip">
+      <b>Add this app to your home screen:</b> open your browser menu and choose "Add to Home Screen" so it opens like a regular app.
+    </div>
+
+    <div class="more-ver" id="moreVer"></div>
   </div>
 </div>
 
@@ -196,6 +227,7 @@
 <script src="config.js"></script>
 <script src="ui.js"></script>
 <script src="app.js"></script>
+<script src="coach.js" defer></script>
 <script src="sync.js" defer></script>
 </body>
 </html>
