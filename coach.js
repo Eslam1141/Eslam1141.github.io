@@ -14,8 +14,10 @@
 
   var ASSIST_BASE = (window.GYM_API_BASE || "/api/v1").replace(/\/+$/, "") + "/assistant";
   var CALL_TIMEOUT_MS = 45000;
-  var FORM_KEY = "gymcoach_form";
-  var LAST_KEY = "gymcoach_last";
+  var FORM_KEY = "gymcoach_form";   // live form values (local only)
+  var LAST_KEY = "gymcoach_last";   // last result, for quick reopen (local only)
+  var SAVED_KEY = "gym_coach_saved"; // gym_ prefix -> synced to the account
+  var SAVED_MAX = 3;
 
   // ---------------- i18n ----------------
   function lang() {
@@ -100,7 +102,18 @@
     refusedTitle: ["Let's keep this safe", "لنُبقِ الأمر آمناً"],
     histEmpty: ["No past assessments yet.", "لا توجد تقييمات سابقة بعد."],
     histOpen: ["Open", "افتح"],
-    back: ["Back", "رجوع"]
+    back: ["Back", "رجوع"],
+    pdf: ["Download PDF", "تنزيل PDF"],
+    pdfTitle: ["Gym Coach plan", "خطة المدرّب"],
+    saveAcct: ["Save to my plans", "حفظ في خططي"],
+    savedTick: ["Saved ✓", "تم الحفظ ✓"],
+    savedFull: ["Saved plans full ({n}/{n})", "الخطط المحفوظة ممتلئة ({n}/{n})"],
+    myPlans: ["My plans", "خططي"],
+    myPlansN: ["My plans ({n})", "خططي ({n})"],
+    savedEmpty: ["No saved plans yet. Generate one, then \"Save to my plans\".", "لا خطط محفوظة بعد. أنشئ خطة ثم \"حفظ في خططي\"."],
+    savedCap: ["You can keep up to {n} plans in your account.", "يمكنك الاحتفاظ بحتى {n} خطط في حسابك."],
+    del: ["Delete", "حذف"],
+    delConfirm: ["Delete this saved plan?", "حذف هذه الخطة المحفوظة؟"]
   };
   function s(k) {
     var e = STR[k];
@@ -138,6 +151,54 @@
 
   function loadJSON(k, fb) { try { return JSON.parse(localStorage.getItem(k)) || fb; } catch (e) { return fb; } }
   function saveJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  // write + tell the sync layer (so gym_ keys reach the account)
+  function saveSynced(k, v) {
+    saveJSON(k, v);
+    try { if (window.GymSync && GymSync.onLocalWrite) GymSync.onLocalWrite(k); } catch (e) {}
+  }
+
+  // ---- saved plans (≤ SAVED_MAX, synced to the account) ----
+  function loadSaved() {
+    var a = loadJSON(SAVED_KEY, []);
+    return Array.isArray(a) ? a.slice(0, SAVED_MAX) : [];
+  }
+  function isSaved(res) {
+    var id = res && res.id;
+    return !!id && loadSaved().some(function (p) { return p.result && p.result.id === id; });
+  }
+  function addSaved(res) {
+    var arr = loadSaved();
+    if (arr.length >= SAVED_MAX || isSaved(res)) return false;
+    var copy = JSON.parse(JSON.stringify(res));
+    delete copy._reqStrong;
+    arr.push({ savedAt: Date.now(), result: copy });
+    saveSynced(SAVED_KEY, arr.slice(0, SAVED_MAX));
+    return true;
+  }
+  function removeSaved(idx) {
+    var arr = loadSaved();
+    arr.splice(idx, 1);
+    saveSynced(SAVED_KEY, arr);
+  }
+
+  function fmtDate(ts) {
+    try { return new Date(ts).toLocaleDateString(lang() === "ar" ? "ar-EG" : "en-US", { year: "numeric", month: "short", day: "numeric" }); }
+    catch (e) { return ""; }
+  }
+
+  // ---- print / "download PDF" (browser's Save as PDF) ----
+  function downloadPdf() {
+    var prev = document.title, done = false;
+    document.title = s("pdfTitle") + " — " + fmtDate(Date.now());
+    var restore = function () {
+      if (done) return; done = true;
+      document.title = prev;
+      window.removeEventListener("afterprint", restore);
+    };
+    window.addEventListener("afterprint", restore);
+    setTimeout(function () { try { window.print(); } catch (e) {} }, 30);
+    setTimeout(restore, 60000); // fallback if afterprint never fires
+  }
 
   // ---------------- field spec (drives render + validation) ----------------
   var ENUMS = {
@@ -449,6 +510,14 @@
     form.appendChild(topErr);
     form.appendChild(submit);
 
+    var nSaved = loadSaved().length;
+    if (nSaved > 0) {
+      form.appendChild(h("button", {
+        type: "button", class: "coach-link coach-myplans-link",
+        on: { click: renderMyPlans }
+      }, s("myPlansN").replace(/\{n\}/g, nSaved)));
+    }
+
     form.addEventListener("submit", function (e) {
       e.preventDefault();
       if (!refreshValidity()) {
@@ -548,6 +617,7 @@
       statTile("carb", Math.round(c.carbG || 0), s("gram")));
 
     var sections = [
+      h("div", { class: "coach-print-head" }, s("pdfTitle") + " — " + fmtDate(r.createdAt || Date.now())),
       h("div", { class: "coach-res-head" },
         mascot(48),
         h("div", {},
@@ -565,12 +635,24 @@
         h.apply(null, ["ul", {}].concat(r.disclaimers.map(function (d) { return h("li", {}, d); })))));
     }
 
+    // save-to-account button state
+    var saved = isSaved(r);
+    var full = !saved && loadSaved().length >= SAVED_MAX;
+    var saveBtn = h("button", {
+      type: "button", class: "coach-secondary", disabled: (saved || full) ? "disabled" : false,
+      on: { click: function (e) {
+        if (addSaved(r)) { e.target.textContent = s("savedTick"); e.target.disabled = true; }
+      } }
+    }, saved ? s("savedTick") : full ? s("savedFull").replace(/\{n\}/g, SAVED_MAX) : s("saveAcct"));
+
     var actions = h("div", { class: "coach-actions" },
       h("button", { type: "button", class: "coach-secondary", on: { click: function () { renderForm(); } } }, s("btnNew")),
       r._reqStrong ? null : h("button", {
         type: "button", class: "coach-secondary",
         on: { click: function () { runAssessment(buildRequest(loadState()), true); } }
       }, s("btnDetail")),
+      saveBtn,
+      h("button", { type: "button", class: "coach-secondary", on: { click: downloadPdf } }, s("pdf")),
       (r.workoutPlan && r.workoutPlan.days && r.workoutPlan.days.length) ? h("button", {
         type: "button", class: "coach-primary",
         on: { click: function (e) {
@@ -579,11 +661,43 @@
             e.target.textContent = s("applied"); e.target.disabled = true;
           }
         } }
-      }, s("btnApply")) : null,
+      }, s("btnApply")) : null);
+
+    var links = h("div", { class: "coach-links" },
+      loadSaved().length ? h("button", { type: "button", class: "coach-link", on: { click: renderMyPlans } },
+        s("myPlansN").replace(/\{n\}/g, loadSaved().length)) : null,
       h("button", { type: "button", class: "coach-link", on: { click: renderHistory } }, s("btnHistory")));
 
     sections.push(actions);
+    sections.push(links);
     mount(h.apply(null, ["div", { class: "coach-result" }].concat(sections)));
+  }
+
+  function renderMyPlans() {
+    var arr = loadSaved();
+    var head = h("div", { class: "coach-myplans-head" },
+      h("button", { type: "button", class: "coach-secondary", on: { click: function () { refresh(); } } }, s("back")),
+      h("h2", {}, s("myPlans")));
+    var body;
+    if (!arr.length) {
+      body = h("p", { class: "coach-sub-line" }, s("savedEmpty"));
+    } else {
+      body = h("div", { class: "coach-hist" });
+      arr.forEach(function (p, i) {
+        var res = p.result || {};
+        var wantK = res.want === "diet" ? "wantDiet" : res.want === "workout" ? "wantWorkout" : "wantBoth";
+        body.appendChild(h("div", { class: "coach-hist-row" },
+          h("span", {}, fmtDate(p.savedAt) + "  ·  " + s(wantK) + "  ·  " + (res.model || "")),
+          h("span", { class: "coach-row-btns" },
+            h("button", { type: "button", class: "coach-link", on: { click: function () { renderResult(res); } } }, s("histOpen")),
+            h("button", { type: "button", class: "coach-link coach-del", on: { click: function () {
+              if (window.confirm(s("delConfirm"))) { removeSaved(i); renderMyPlans(); }
+            } } }, s("del")))));
+      });
+    }
+    mount(h("div", { class: "coach-myplans" }, head,
+      h("p", { class: "coach-sub-line" }, s("savedCap").replace(/\{n\}/g, SAVED_MAX)),
+      body));
   }
 
   function renderDiet(dp) {

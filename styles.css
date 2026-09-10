@@ -19,7 +19,9 @@
 }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
 html,body{margin:0; padding:0;}
-html{ background:var(--bg); height:100%; overflow-x:hidden; }
+/* overflow-x:clip hides sideways overflow WITHOUT making the element a scroll
+   container, so it never interferes with normal vertical / two-finger scroll. */
+html{ background:var(--bg); height:100%; overflow-x:clip; }
 body{
   background:transparent;
   color:var(--paper);
@@ -27,7 +29,7 @@ body{
   line-height:1.55;
   min-height:100vh;
   padding-bottom:24px;
-  overflow-x:hidden;
+  overflow-x:clip;
   overscroll-behavior-y:none;
 }
 .wrap{max-width:640px; margin:0 auto; padding:0 16px; position:relative; z-index:1;}
@@ -439,7 +441,7 @@ header.hero .sub{ color:var(--paper-dim); font-size:12.5px; }
     radial-gradient(50vmax 50vmax at 50% 120%, color-mix(in srgb, var(--accent-3) 26%, transparent), transparent 62%),
     var(--bg);
   display:flex; align-items:center; justify-content:center; padding:28px;
-  overflow-y:auto; overflow-x:hidden;
+  overflow-y:auto; overflow-x:clip;
 }
 #onboarding[hidden]{ display:none; }
 body.onboarding-open .wrap,
@@ -857,8 +859,53 @@ body:has(#planChooser:not([hidden])) #appNav{ display:none; }
   background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:10px 12px;
   font-size:12.5px; color:var(--paper-dim);
 }
+.coach-row-btns{ display:flex; gap:12px; flex:none; }
+.coach-del{ color:var(--paper-dim); }
+
+/* secondary links row under the result actions */
+.coach-links{ display:flex; flex-wrap:wrap; gap:16px; margin-top:4px; }
+.coach-myplans-link{ align-self:flex-start; margin-top:6px; }
+
+/* "My plans" screen */
+.coach-myplans{ margin-bottom:24px; }
+.coach-myplans-head{ display:flex; align-items:center; gap:12px; margin-bottom:6px; }
+.coach-myplans-head h2{ margin:0; font-size:18px; font-weight:900; }
+.coach-myplans .coach-sub-line{ margin:0 0 12px; }
+
+/* print header — screen-hidden, shown when printing to PDF */
+.coach-print-head{ display:none; }
 
 @media (prefers-reduced-motion: reduce){
   .coach-spin{ animation-duration:2s; }
   #appNav button:active, .day-chip:active, .coach-primary:active{ transform:none; }
+}
+
+/* ---- Print / "Download PDF" — only the Coach result, in ink-friendly B/W ---- */
+@media print{
+  #bgfx, #appNav, #timerBar, #miniTimer, #toTop, #onboarding, #planChooser,
+  #screen-plan, #screen-more, #videoModal,
+  .coach-actions, .coach-links, .coach-res-head .coach-mascot{ display:none !important; }
+  html, body{ background:#fff !important; color:#000 !important; }
+  body{ padding:0 !important; }
+  #screen-coach{ display:block !important; padding:0 !important; }
+  #screen-coach .wrap{ max-width:none !important; padding:0 12mm !important; }
+  #screen-coach > .wrap > header.hero{ display:none !important; }
+  .coach-print-head{
+    display:block !important; font-size:16px; font-weight:800; color:#000 !important;
+    margin:0 0 10px; padding-bottom:8px; border-bottom:2px solid #000;
+  }
+  .coach-result{ gap:12px !important; }
+  .coach-res-head h2, .coach-block > h3, .coach-disc h3{ color:#000 !important; }
+  .coach-block p{ color:#222 !important; }
+  .coach-block.card-fx, .coach-meal, .coach-wday, .coach-stat, .coach-disc, .coach-state, .coach-tag{
+    background:#fff !important; color:#000 !important; border:1px solid #999 !important;
+    box-shadow:none !important; break-inside:avoid;
+  }
+  .coach-block, .coach-meal, .coach-wday, .coach-disc{ break-inside:avoid; }
+  .coach-res-model, .coach-stat-l, .coach-stat-v span, .coach-ex-m,
+  .coach-meal-top span, .coach-sub-line, .coach-notelist li, .coach-disc li,
+  .coach-meal li, .coach-sub li{ color:#333 !important; }
+  .coach-stat-v, .coach-ex-n, .coach-meal-top b, .coach-wday b{ color:#000 !important; }
+  .coach-stats{ display:flex !important; flex-wrap:wrap; gap:6px !important; }
+  .coach-stat{ flex:1 1 90px; }
 }
