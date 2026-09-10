@@ -47,6 +47,21 @@
 
   function nowMs() { return Date.now(); }
 
+  // Wipe this browser's per-user data so a different account doesn't inherit it.
+  // Keeps device/UI-only prefs. Called on sign-out and on an account switch.
+  function clearUserData() {
+    var keep = { gym_onboarded: 1, gym_lang: 1, gym_tab: 1, gym_anon: 1 };
+    try {
+      var rm = [];
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (!k) continue;
+        if ((k.indexOf("gym_") === 0 && !keep[k]) || k.indexOf("gymcoach_") === 0) rm.push(k);
+      }
+      rm.forEach(function (k) { localStorage.removeItem(k); });
+    } catch (e) {}
+  }
+
   function isSignedIn() {
     return !!idToken && (tokenExpEpoch === 0 || tokenExpEpoch * 1000 > nowMs() + 30000);
   }
@@ -163,12 +178,26 @@
     tokenExpEpoch = p.exp;
     profile = { email: p.email, name: p.name };
 
+    var storedSub = null;
+    try { storedSub = localStorage.getItem("gym_user_sub"); } catch (e) {}
+
+    // Account switch on a shared browser: the previous user's data is still in
+    // localStorage and would otherwise be shown to — and pushed up for — the
+    // new account. Wipe it and reload; GIS auto-select signs the new account
+    // straight back in and its data is pulled fresh.
+    if (p.sub && storedSub && storedSub !== p.sub) {
+      clearUserData();
+      try { localStorage.setItem("gym_user_sub", p.sub); } catch (e) {}
+      try { localStorage.removeItem("gym_anon"); } catch (e) {}
+      location.reload();
+      return;
+    }
+
     // First sign-in on this browser: record the account and push whatever local
-    // progress exists up to it (syncNow already sends every gym_* key; the
-    // server merge is last-write-wins so this is a safe one-way migration).
+    // (anonymous) progress exists up to it — a safe one-way LWW migration.
     var firstSignIn = false;
     try {
-      if (p.sub && localStorage.getItem("gym_user_sub") !== p.sub) {
+      if (p.sub && storedSub !== p.sub) {
         localStorage.setItem("gym_user_sub", p.sub);
         firstSignIn = true;
       }
@@ -200,6 +229,7 @@
 
   function signOut() {
     handleAuthLost();
+    clearUserData();                            // don't leave this account's data for the next person
     try {
       localStorage.setItem("gym_anon", "1");   // back to the gated preview
       localStorage.removeItem("gym_user_sub");
@@ -290,7 +320,7 @@
     token: function () { return isSignedIn() ? idToken : null; },
     profile: function () { return profile ? { email: profile.email, name: profile.name } : null; },
     signOut: signOut,
-    _debug: { gymKeys: gymKeys, readMeta: readMeta, buildEntries: buildEntries }
+    _debug: { gymKeys: gymKeys, readMeta: readMeta, buildEntries: buildEntries, onCredential: onCredential, clearUserData: clearUserData }
   };
 
   if (document.readyState === "loading") {
