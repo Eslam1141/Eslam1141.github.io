@@ -1,4 +1,16 @@
 // ---------------- DATA ----------------
+// Shown to signed-out ("anonymous") users: one general full-body day.
+// Mirrors data.preview in gym-be/internal/plans/plans.seed.json.
+const DAYS_PREVIEW = [
+  { id:"preview", label:"Full-Body Starter", muscles:"Full body", exercises:[
+    {id:"pv_legpress", en:"Leg Press", sets:3, reps:"10-12", rest:120, vid:"nDh_BlnLCGc"},
+    {id:"pv_dbbench", en:"Dumbbell Bench Press", sets:3, reps:"8-12", rest:90, vid:"Gf65Yy0-wGI"},
+    {id:"pv_cablerow", en:"Seated Cable Row", sets:3, reps:"10-12", rest:90, vid:"8QuMq1GMMng"},
+    {id:"pv_ohp", en:"Seated Dumbbell Shoulder Press", sets:3, reps:"10-12", rest:75, vid:"k6tzKisR3NY"},
+    {id:"pv_legcurl", en:"Lying Leg Curl", sets:3, reps:"12-15", rest:60, vid:"bgfHeL6eR9Q"},
+    {id:"pv_plank", en:"Plank (core)", sets:3, reps:"30-45s", rest:45, vid:"fWW5d1ZFhk4"},
+  ]},
+];
 const DAYS_MALE = [
   { id:"push", label:"Push", muscles:"Chest, Shoulders, Triceps", exercises:[
     {id:"push_bench", en:"Barbell Bench Press", sets:4, reps:"6-8", rest:150, vid:"0cXAp6WhSj4"},
@@ -158,15 +170,26 @@ const AR_EX = {
   "Squat Jumps":"قفز سكوات","Burpees":"بيربي","Inverted Row (under a table)":"تجديف مقلوب (تحت طاولة)","Superman":"سوبرمان (أسفل الظهر)",
   "Flutter Kicks":"رفرفة الرجلين","Bear Crawl":"زحف الدب"
 };
-const AR_DAY = {"Push":"دفع","Pull":"سحب","Legs":"أرجل","Upper":"علوي","Lower":"سفلي","Lower A":"سفلي أ","Upper A":"علوي أ","Lower B":"سفلي ب","Upper B":"علوي ب"};
+const AR_DAY = {"Push":"دفع","Pull":"سحب","Legs":"أرجل","Upper":"علوي","Lower":"سفلي","Lower A":"سفلي أ","Upper A":"علوي أ","Lower B":"سفلي ب","Upper B":"علوي ب","Full-Body Starter":"تمرين شامل للمبتدئين"};
 const AR_MUS = {
   "Chest, Shoulders, Triceps":"صدر، أكتاف، ترايسبس","Back, Rear Delts, Biceps":"ظهر، أكتاف خلفية، بايسبس","Quads, Hamstrings, Calves":"أمامية الفخذ، خلفية الفخذ، سمانة",
   "Chest, Back, Delts, Arms":"صدر، ظهر، أكتاف، ذراعين","Quads, Glutes, Hamstrings, Abs":"أمامية الفخذ، ألوية، خلفية الفخذ، بطن","Glutes & Quads":"ألوية وأمامية الفخذ",
   "Push focus":"تركيز الدفع","Hamstrings & Glutes":"خلفية الفخذ والألوية","Pull focus & core":"تركيز السحب والبطن",
-  "Push & Core":"دفع وبطن","Legs & Cardio":"أرجل وكارديو","Pull & Total Body":"سحب وكامل الجسم"
+  "Push & Core":"دفع وبطن","Legs & Cardio":"أرجل وكارديو","Pull & Total Body":"سحب وكامل الجسم",
+  "Full body":"الجسم كامل"
 };
 const T = {
   appTitle:["Muscle Building Plan","خطة بناء العضلات"],
+  obTitle:["Your workout, everywhere","تمرينك في كل مكان"],
+  obSub:["Plans, a rest timer, form videos and progress that follows you across devices.","خطط، مؤقّت راحة، فيديوهات أداء، وتقدّم يتابعك عبر أجهزتك."],
+  obContinue:["Continue without an account","المتابعة بدون حساب"],
+  obWhy:["Why sign in?","لماذا تسجّل الدخول؟"],
+  obWhy1:["Keep progress across devices","احفظ تقدّمك عبر الأجهزة"],
+  obWhy2:["All training days & important notes","كل أيام التمرين والملاحظات المهمة"],
+  obWhy3:["A personalised AI coach","مدرّب ذكاء اصطناعي مخصّص"],
+  anonLockTitle:["Sign in to unlock everything","سجّل الدخول لفتح كل المزايا"],
+  anonLockBody:["The full multi-day plans, important notes, cross-device sync and the AI coach are free with a Google account.","الخطط الكاملة متعددة الأيام، الملاحظات المهمة، المزامنة بين الأجهزة، ومدرّب الذكاء الاصطناعي — كلها مجانية مع حساب جوجل."],
+  anonSignIn:["Sign in with Google","سجّل الدخول عبر جوجل"],
   chooseTitle:["Choose your plan","اختر خطتك"],
   chooseSub:["You can switch anytime from the top of the app.","يمكنك التبديل في أي وقت من أعلى التطبيق."],
   male:["Male","رجالي"], maleSub:["5-day gym plan","خطة 5 أيام في الجيم"],
@@ -299,7 +322,15 @@ let activePlan  = localStorage.getItem("gym_plan");                 // "male" | 
 let activeStyle = localStorage.getItem("gym_style") || "gym";       // "gym" | "cal"
 let activeLang  = localStorage.getItem("gym_lang")  || "en";        // "en" | "ar"
 
+// Anonymous = chose "continue without an account" and not currently signed in.
+function isAnonMode(){
+  try {
+    if(localStorage.getItem("gym_anon") !== "1") return false;
+    return !(window.GymSync && typeof window.GymSync.isSignedIn === "function" && window.GymSync.isSignedIn());
+  } catch(e){ return false; }
+}
 function pickDays(){
+  if(isAnonMode()) return DAYS_PREVIEW;
   const fem = activePlan === "female";
   if(activeStyle === "cal") return fem ? DAYS_FEMALE_CAL : DAYS_MALE_CAL;
   return fem ? DAYS_FEMALE : DAYS_MALE;
@@ -572,7 +603,59 @@ function renderAll(){
   updateProgress();
   updateSessionUI();
   renderNotes();
+  applyAnonUI();
 }
+
+// Lock everything except the single preview day for signed-out users.
+function applyAnonUI(){
+  const anon = isAnonMode();
+  document.body.classList.toggle("anon-mode", anon);
+
+  const daysBtn = document.getElementById("daysBtn");
+  if(daysBtn) daysBtn.style.display = anon ? "none" : "";
+
+  document.querySelectorAll("[data-plan-btn],[data-style-btn]").forEach(b=>{
+    b.classList.toggle("locked", anon);
+  });
+
+  const notes = document.getElementById("notesBox");
+  if(notes) notes.hidden = anon;
+
+  let lock = document.getElementById("anonLock");
+  if(anon){
+    if(!lock){
+      lock = document.createElement("div");
+      lock.id = "anonLock";
+      lock.className = "anon-lock";
+      const ex = document.getElementById("exList");
+      ex.parentNode.insertBefore(lock, ex.nextSibling);
+    }
+    lock.innerHTML =
+      '<div class="lock-ico" aria-hidden="true">&#128274;</div>' +
+      '<h3></h3><p></p>' +
+      '<button class="anon-lock-btn"></button>';
+    lock.querySelector("h3").textContent = t("anonLockTitle");
+    lock.querySelector("p").textContent = t("anonLockBody");
+    const btn = lock.querySelector(".anon-lock-btn");
+    btn.textContent = t("anonSignIn");
+    btn.onclick = ()=>{ if(window.GymUI) window.GymUI.promptSignIn(); };
+  } else if(lock){
+    lock.remove();
+  }
+}
+
+// Re-pick the day set and re-render after an auth/anon state change (ui.js).
+window.GymAppRebuild = function(){
+  DAYS = pickDays();
+  activeDay = localStorage.getItem(activeDayStoreKey()) || DAYS[0].id;
+  if(!DAYS.some(d=>d.id===activeDay)) activeDay = DAYS[0].id;
+  animateCards = true;
+  if(!isAnonMode() && !activePlan){
+    document.getElementById("planChooser").hidden = false;
+    document.body.style.overflow = "hidden";
+  }
+  renderAll();
+};
 
 document.getElementById("resetLink").onclick = ()=>{
   if(!confirm(t("resetConfirm"))) return;
@@ -959,6 +1042,11 @@ function renderDaysPanel(){
 }
 
 function renderTitle(){
+  if(isAnonMode()){
+    document.getElementById("appTitleEl").textContent = t("appTitle");
+    document.title = t("appTitle");
+    return;
+  }
   const planWord  = t(activePlan === "female" ? "female" : "male");
   const styleWord = t(activeStyle === "cal" ? "styleCal" : "styleGym");
   const full = t("appTitle") + " · " + planWord + " · " + styleWord;
@@ -976,10 +1064,10 @@ document.querySelectorAll("[data-choose]").forEach(b=>{
   };
 });
 document.querySelectorAll("[data-plan-btn]").forEach(b=>{
-  b.onclick = ()=>{ activePlan = b.dataset.planBtn; applyState(true); closePanel(); window.scrollTo(0, 0); };
+  b.onclick = ()=>{ if(isAnonMode()){ if(window.GymUI) window.GymUI.promptSignIn(); return; } activePlan = b.dataset.planBtn; applyState(true); closePanel(); window.scrollTo(0, 0); };
 });
 document.querySelectorAll("[data-style-btn]").forEach(b=>{
-  b.onclick = ()=>{ activeStyle = b.dataset.styleBtn; applyState(true); closePanel(); window.scrollTo(0, 0); };
+  b.onclick = ()=>{ if(isAnonMode()){ if(window.GymUI) window.GymUI.promptSignIn(); return; } activeStyle = b.dataset.styleBtn; applyState(true); closePanel(); window.scrollTo(0, 0); };
 });
 document.getElementById("langBtn").onclick = ()=> applyLang(activeLang === "ar" ? "en" : "ar", true);
 
@@ -987,10 +1075,14 @@ document.getElementById("langBtn").onclick = ()=> applyLang(activeLang === "ar" 
 document.documentElement.lang = activeLang === "ar" ? "ar" : "en";
 document.documentElement.dir  = activeLang === "ar" ? "rtl" : "ltr";
 applyStaticI18n();
-if(activePlan){
+var _obDone = (function(){ try { return localStorage.getItem("gym_onboarded") === "1"; } catch(e){ return true; } })();
+if(isAnonMode() || activePlan){
   applyState(false);
-} else {
+} else if(_obDone){
   document.getElementById("planChooser").hidden = false;
   document.body.style.overflow = "hidden"; // lock scroll behind the chooser
   applyState(false); // render behind the chooser (defaults to male / gym)
+} else {
+  // First run: ui.js shows #onboarding over the top; render the app behind it.
+  applyState(false);
 }
