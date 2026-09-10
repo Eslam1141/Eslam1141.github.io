@@ -152,8 +152,8 @@
   function parseJwt(jwt) {
     try {
       var payload = JSON.parse(atob(jwt.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
-      return { exp: payload.exp || 0, email: payload.email || "", name: payload.name || "" };
-    } catch (e) { return { exp: 0, email: "", name: "" }; }
+      return { exp: payload.exp || 0, email: payload.email || "", name: payload.name || "", sub: payload.sub || "" };
+    } catch (e) { return { exp: 0, email: "", name: "", sub: "" }; }
   }
 
   function onCredential(response) {
@@ -162,9 +162,22 @@
     var p = parseJwt(idToken);
     tokenExpEpoch = p.exp;
     profile = { email: p.email, name: p.name };
+
+    // First sign-in on this browser: record the account and push whatever local
+    // progress exists up to it (syncNow already sends every gym_* key; the
+    // server merge is last-write-wins so this is a safe one-way migration).
+    var firstSignIn = false;
+    try {
+      if (p.sub && localStorage.getItem("gym_user_sub") !== p.sub) {
+        localStorage.setItem("gym_user_sub", p.sub);
+        firstSignIn = true;
+      }
+    } catch (e) {}
+
+    if (window.GymUI && typeof GymUI.completeSignIn === "function") GymUI.completeSignIn();
     renderAuthUI();
     startTriggers();
-    syncNow("signin");
+    syncNow(firstSignIn ? "signin-migrate" : "signin");
     scheduleTokenRefresh();
   }
 
@@ -188,10 +201,15 @@
   function signOut() {
     handleAuthLost();
     try {
+      localStorage.setItem("gym_anon", "1");   // back to the gated preview
+      localStorage.removeItem("gym_user_sub");
+    } catch (e) {}
+    try {
       if (window.google && google.accounts && google.accounts.id) {
         google.accounts.id.disableAutoSelect();
       }
     } catch (e) {}
+    if (typeof window.GymAppRebuild === "function") window.GymAppRebuild();
   }
 
   function ensureAuthContainer() {
@@ -207,10 +225,26 @@
     return box;
   }
 
+  function renderGoogleButton(target, opts) {
+    if (!target || !(window.google && google.accounts && google.accounts.id)) return;
+    try {
+      target.innerHTML = "";
+      google.accounts.id.renderButton(target, opts);
+    } catch (e) {}
+  }
+
   function renderAuthUI() {
+    var signedIn = isSignedIn();
+
+    // The onboarding hero's Google button (primary sign-in surface).
+    var ob = document.getElementById("obGoogleBtn");
+    if (ob && !signedIn) {
+      renderGoogleButton(ob, { theme: "filled_blue", size: "large", type: "standard", shape: "pill", width: 260 });
+    }
+
     var box = ensureAuthContainer();
     if (!box) return;
-    if (isSignedIn()) {
+    if (signedIn) {
       box.innerHTML =
         '<div class="sp-label">Sync</div>' +
         '<div class="sync-signed">Signed in as <b></b></div>' +
@@ -222,10 +256,8 @@
         '<div class="sp-label">Sync</div>' +
         '<div id="gymSyncBtn"></div>' +
         '<p class="sync-hint">Sign in to back up progress across devices.</p>';
-      if (window.google && google.accounts && google.accounts.id) {
-        google.accounts.id.renderButton(box.querySelector("#gymSyncBtn"),
-          { theme: "outline", size: "medium", type: "standard" });
-      }
+      renderGoogleButton(box.querySelector("#gymSyncBtn"),
+        { theme: "outline", size: "medium", type: "standard" });
     }
   }
 

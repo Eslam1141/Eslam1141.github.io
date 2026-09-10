@@ -19,6 +19,23 @@
 </head>
 <body>
 
+<section id="onboarding" hidden>
+  <div class="ob-inner">
+    <div class="ob-fx" aria-hidden="true"></div>
+    <img class="ob-logo" src="icons/logo.svg" alt="" width="96" height="96">
+    <h1 class="ob-title" data-i18n="obTitle">Your workout, everywhere</h1>
+    <p class="ob-sub" data-i18n="obSub">Plans, a rest timer, form videos and progress that follows you across devices.</p>
+    <div id="obGoogleBtn" class="ob-gbtn"></div>
+    <button id="obContinueBtn" class="ob-secondary" data-i18n="obContinue">Continue without an account</button>
+    <button id="obWhyToggle" class="ob-why-toggle" aria-expanded="false" data-i18n="obWhy">Why sign in?</button>
+    <ul id="obWhy" class="ob-why">
+      <li data-i18n="obWhy1">Keep progress across devices</li>
+      <li data-i18n="obWhy2">All training days &amp; important notes</li>
+      <li data-i18n="obWhy3">A personalised AI coach</li>
+    </ul>
+  </div>
+</section>
+
 <div id="planChooser" hidden>
   <img class="pc-logo" src="icons/logo.svg" alt="" width="78" height="78">
   <h2 data-i18n="chooseTitle">Choose your plan</h2>
@@ -175,6 +192,7 @@
 </button>
 
 <script src="config.js"></script>
+<script src="ui.js"></script>
 <script src="app.js"></script>
 <script src="sync.js" defer></script>
 </body>
