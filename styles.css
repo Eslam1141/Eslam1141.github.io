@@ -449,3 +449,8 @@ header.hero .sub{ color:var(--paper-dim); font-size:12.5px; }
 @media (prefers-reduced-motion: reduce){
   *, *::before, *::after{ animation-duration:.001ms !important; transition-duration:.001ms !important; }
 }
+
+/* --- offline-first sync (sync.js) --- */
+#gymSyncBox .sync-hint{ font-size:12px; opacity:.7; margin:.4rem 0 0; }
+#gymSyncBox .sync-signed{ font-size:13px; margin:.3rem 0; }
+#gymSyncBox #gymSyncOut{ margin-top:.4rem; }

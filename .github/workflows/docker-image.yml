@@ -1,0 +1,63 @@
+name: gym-ui image
+on:
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - "app.js"
+      - "sync.js"
+      - "styles.css"
+      - "service-worker.js"
+      - "manifest.json"
+      - "config.js"
+      - "icons/**"
+      - "docker/**"
+      - "Dockerfile"
+      - ".github/workflows/docker-image.yml"
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions: { contents: read, packages: write }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: gym-ui:ci
+      - name: Smoke
+        run: |
+          docker run -d --rm -p 8080:8080 -e GOOGLE_CLIENT_ID=ci.apps.googleusercontent.com --name ui gym-ui:ci
+          for i in $(seq 1 20); do curl -fsS localhost:8080/healthz && break; sleep 1; done
+          curl -fsS localhost:8080/healthz | grep -q ok
+          curl -fsS localhost:8080/config.js | grep -q ci.apps.googleusercontent.com
+          test "$(curl -s -o /dev/null -w '%{http_code}' localhost:8080/index.html)" = "200"
+          test "$(curl -s -o /dev/null -w '%{http_code}' localhost:8080/missing)" = "404"
+          docker rm -f ui
+      - name: Smoke (read-only rootfs)
+        run: |
+          docker run -d --rm -p 8090:8080 --read-only \
+            --tmpfs /tmp --tmpfs /var/cache/nginx --tmpfs /var/run \
+            -e GOOGLE_CLIENT_ID=ro.apps.googleusercontent.com --name uiro gym-ui:ci
+          for i in $(seq 1 20); do curl -fsS localhost:8090/healthz && break; sleep 1; done
+          curl -fsS localhost:8090/config.js | grep -q ro.apps.googleusercontent.com
+          docker rm -f uiro
+      - uses: docker/login-action@v3
+        if: github.ref == 'refs/heads/main'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push
+        if: github.ref == 'refs/heads/main'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/eslam1141/gym-ui:${{ github.sha }}
+            ghcr.io/eslam1141/gym-ui:latest
