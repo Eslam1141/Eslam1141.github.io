@@ -2,18 +2,18 @@
  *
  * Renders into #coachBody. Anonymous/signed-out users see a teaser; signed-in
  * users get a profile form that POSTs to the gym-assistant service and a
- * rendered diet + workout plan. Loads after app.js (uses the global t()/
- * activeLang only as a fallback) and after ui.js. No external deps.
+ * rendered diet + workout plan. Loads after app.js (reads the global
+ * activeLang / gym_plan) and after ui.js. No external deps.
  *
  * Local keys (NOT synced — deliberately not gym_-prefixed):
- *   gymcoach_form  last-used form values
+ *   gymcoach_form  live form values (saved on every edit, restored on return)
  *   gymcoach_last  last successful result (pinned so the screen reopens to it)
  */
 (function () {
   "use strict";
 
   var ASSIST_BASE = (window.GYM_API_BASE || "/api/v1").replace(/\/+$/, "") + "/assistant";
-  var CALL_TIMEOUT_MS = 35000;
+  var CALL_TIMEOUT_MS = 45000;
   var FORM_KEY = "gymcoach_form";
   var LAST_KEY = "gymcoach_last";
 
@@ -37,9 +37,11 @@
     grpTraining: ["Training", "التمرين"],
     grpDiet: ["Diet", "التغذية"],
     grpInBody: ["InBody / DEXA (optional)", "InBody / DEXA (اختياري)"],
+    grpNotes: ["Anything else? (injuries, schedule…)", "أي شيء آخر؟ (إصابات، جدول…)"],
     age: ["Age", "العمر"], sex: ["Sex", "الجنس"],
     male: ["Male", "ذكر"], female: ["Female", "أنثى"],
-    heightCm: ["Height (cm)", "الطول (سم)"], weightKg: ["Weight (kg)", "الوزن (كجم)"],
+    sexFromPlan: ["From your plan — change it on the Plan screen", "من خطتك — غيّرها من شاشة الخطة"],
+    heightCm: ["Height", "الطول"], weightKg: ["Weight", "الوزن"],
     goal: ["Goal", "الهدف"],
     lose_fat: ["Lose fat", "خسارة دهون"], gain_muscle: ["Build muscle", "بناء عضل"],
     maintain: ["Maintain", "محافظة"], recomp: ["Recomposition", "إعادة تكوين"],
@@ -62,11 +64,17 @@
     skeletalMuscleMassKg: ["Skeletal muscle (kg)", "الكتلة العضلية (كجم)"],
     visceralFatLevel: ["Visceral fat level", "مستوى الدهون الحشوية"],
     bmrKcal: ["Measured BMR (kcal)", "معدل الأيض المُقاس (سعرة)"],
-    notes: ["Anything else? (injuries, schedule…)", "أي شيء آخر؟ (إصابات، جدول…)"],
+    notes: ["Notes", "ملاحظات"],
     generate: ["Generate my plan", "أنشئ خطتي"],
-    generating: ["Building your plan… this takes ~15s", "جارٍ بناء خطتك… تستغرق ~15 ثانية"],
-    fix: ["Please check the highlighted fields.", "يرجى مراجعة الحقول المميّزة."],
-    ageMin: ["The coach is for ages 16 and up.", "المدرّب متاح لمن أعمارهم 16 عاماً فأكثر."],
+    generating: ["Building your plan… this can take 15–30s", "جارٍ بناء خطتك… قد تستغرق 15–30 ثانية"],
+    // validation
+    vRequired: ["Required", "مطلوب"],
+    vRange: ["Enter {min}–{max}", "أدخل {min}–{max}"],
+    vRangeU: ["Enter {min}–{max} {u}", "أدخل {min}–{max} {u}"],
+    vAgeMin: ["Must be 16 or older", "يجب أن يكون العمر 16 عاماً فأكثر"],
+    vInt: ["Whole number only", "رقم صحيح فقط"],
+    vNotesMax: ["Max 300 characters", "الحد الأقصى 300 حرف"],
+    vFixTop: ["Fill the required fields to continue", "أكمل الحقول المطلوبة للمتابعة"],
     // result
     resSummary: ["Summary", "الملخّص"],
     resTargets: ["Your numbers", "أرقامك"],
@@ -74,9 +82,9 @@
     target: ["Target", "الهدف"], protein: ["Protein", "بروتين"], fat: ["Fat", "دهون"], carb: ["Carbs", "كارب"],
     kcal: ["kcal", "سعرة"], gram: ["g", "جم"], perDay: ["/day", "/يوم"],
     resDiet: ["Diet plan", "خطة التغذية"], resWorkout: ["Workout plan", "خطة التمرين"],
-    meals: ["Meals", "الوجبات"], swaps: ["Easy swaps", "بدائل سهلة"], hydration: ["Water", "الماء"],
+    swaps: ["Easy swaps", "بدائل سهلة"], hydration: ["Water", "الماء"],
     liters: ["L", "لتر"], split: ["Split", "التقسيم"], progression: ["Progression", "التدرّج"],
-    cardio: ["Cardio", "كارديو"], setsReps: ["sets × reps", "مجموعات × تكرار"], restS: ["rest", "راحة"],
+    cardio: ["Cardio", "كارديو"], restS: ["rest", "راحة"], daysWk: ["days/week", "أيام/أسبوع"],
     disclaimers: ["Good to know", "معلومة مهمة"],
     btnNew: ["New assessment", "تقييم جديد"],
     btnDetail: ["More detail", "تفاصيل أكثر"],
@@ -86,7 +94,8 @@
     quotaTitle: ["Daily limit reached", "بلغت الحد اليومي"],
     quotaBody: ["You've used today's assessments. Try again after {t}.", "لقد استخدمت تقييمات اليوم. حاول مجدداً بعد {t}."],
     errTitle: ["Couldn't reach the coach", "تعذّر الوصول إلى المدرّب"],
-    errBody: ["Something went wrong generating the plan.", "حدث خطأ أثناء إنشاء الخطة."],
+    errBody: ["The coach service isn't responding right now. Please try again in a moment.", "خدمة المدرّب لا تستجيب حالياً. يرجى المحاولة بعد قليل."],
+    err502: ["The AI service is temporarily unavailable. Please try again shortly.", "خدمة الذكاء الاصطناعي غير متاحة مؤقتاً. حاول بعد قليل."],
     retry: ["Try again", "أعد المحاولة"],
     refusedTitle: ["Let's keep this safe", "لنُبقِ الأمر آمناً"],
     histEmpty: ["No past assessments yet.", "لا توجد تقييمات سابقة بعد."],
@@ -124,30 +133,42 @@
     if (!body) return;
     body.innerHTML = "";
     body.appendChild(el);
+    try { window.scrollTo(0, 0); } catch (e) {}
   }
 
-  // ---------------- state ----------------
+  function loadJSON(k, fb) { try { return JSON.parse(localStorage.getItem(k)) || fb; } catch (e) { return fb; } }
+  function saveJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+
+  // ---------------- field spec (drives render + validation) ----------------
   var ENUMS = {
-    sex: ["male", "female"],
     goal: ["lose_fat", "gain_muscle", "maintain", "recomp"],
     activityLevel: ["sedentary", "light", "moderate", "active", "athlete"],
     equipment: ["full_gym", "home_minimal", "bodyweight"],
     dietPreference: ["balanced", "high_protein", "keto", "mediterranean", "vegetarian", "vegan", "halal", "low_carb"]
   };
-  var RANGE = {
-    age: [10, 100], heightCm: [120, 230], weightKg: [35, 250], trainingDaysPerWeek: [1, 6],
-    bodyFatPct: [3, 60], skeletalMuscleMassKg: [10, 80], visceralFatLevel: [1, 30], bmrKcal: [500, 5000]
+  // num fields: {min,max,int,unit}. required unless optional:true (InBody).
+  var NUM = {
+    age: { min: 16, max: 100, int: true, hardMin: 10 },
+    heightCm: { min: 120, max: 230, unit: "cm" },
+    weightKg: { min: 35, max: 250, unit: "kg", step: "0.1" },
+    trainingDaysPerWeek: { min: 1, max: 6, int: true, unit: s("daysWk") },
+    bodyFatPct: { min: 3, max: 60, unit: "%", step: "0.1", optional: true },
+    skeletalMuscleMassKg: { min: 10, max: 80, unit: "kg", step: "0.1", optional: true },
+    visceralFatLevel: { min: 1, max: 30, int: true, optional: true },
+    bmrKcal: { min: 500, max: 5000, int: true, optional: true }
   };
 
-  function loadJSON(k, fb) { try { return JSON.parse(localStorage.getItem(k)) || fb; } catch (e) { return fb; } }
-  function saveJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function planSex() {
+    try {
+      var p = localStorage.getItem("gym_plan");
+      return p === "male" || p === "female" ? p : "";
+    } catch (e) { return ""; }
+  }
 
-  function defaultForm() {
-    var plan = null;
-    try { plan = localStorage.getItem("gym_plan"); } catch (e) {}
+  function defaultState() {
     return {
       want: "both",
-      age: "", sex: plan === "female" ? "female" : "male",
+      age: "", sex: planSex() || "male",
       heightCm: "", weightKg: "",
       goal: "lose_fat", activityLevel: "moderate",
       trainingDaysPerWeek: "4", equipment: "full_gym",
@@ -155,6 +176,44 @@
       inbodyOpen: false, bodyFatPct: "", skeletalMuscleMassKg: "", visceralFatLevel: "", bmrKcal: "",
       notes: ""
     };
+  }
+  function loadState() {
+    var st = Object.assign(defaultState(), loadJSON(FORM_KEY, {}));
+    var ps = planSex();
+    if (ps) st.sex = ps;                       // plan is authoritative for sex
+    if (["both", "diet", "workout"].indexOf(st.want) === -1) st.want = "both";
+    ["allergies", "dislikes"].forEach(function (k) { if (!Array.isArray(st[k])) st[k] = []; });
+    return st;
+  }
+
+  // ---------------- validation ----------------
+  // Returns { errors: {field: msgKey|[msgKey,params]}, ok: bool }
+  function validate(st) {
+    var errors = {};
+    Object.keys(NUM).forEach(function (name) {
+      var spec = NUM[name];
+      var raw = (st[name] == null ? "" : String(st[name])).trim();
+      if (raw === "") { if (!spec.optional) errors[name] = ["vRequired"]; return; }
+      var v = Number(raw);
+      if (!isFinite(v)) { errors[name] = ["vRequired"]; return; }
+      if (spec.int && !Number.isInteger(v)) { errors[name] = ["vInt"]; return; }
+      if (name === "age" && v >= (spec.hardMin || 0) && v < spec.min) { errors[name] = ["vAgeMin"]; return; }
+      if (v < spec.min || v > spec.max) {
+        errors[name] = spec.unit ? ["vRangeU", { min: spec.min, max: spec.max, u: spec.unit }]
+          : ["vRange", { min: spec.min, max: spec.max }];
+      }
+    });
+    Object.keys(ENUMS).forEach(function (name) {
+      if (ENUMS[name].indexOf(st[name]) === -1) errors[name] = ["vRequired"];
+    });
+    if (!(st.sex === "male" || st.sex === "female")) errors.sex = ["vRequired"];
+    if ((st.notes || "").length > 300) errors.notes = ["vNotesMax"];
+    return { errors: errors, ok: Object.keys(errors).length === 0 };
+  }
+  function msg(entry) {
+    if (!entry) return "";
+    var t = s(entry[0]), p = entry[1] || {};
+    return t.replace(/\{(\w+)\}/g, function (_, k) { return p[k] != null ? p[k] : ""; });
   }
 
   // ---------------- network ----------------
@@ -164,6 +223,9 @@
     var timer = setTimeout(function () { c.abort(); }, CALL_TIMEOUT_MS);
     opts.signal = c.signal;
     return fetch(url, opts).finally(function () { clearTimeout(timer); });
+  }
+  function authToken() {
+    return window.GymSync && GymSync.token ? GymSync.token() : null;
   }
 
   // ---------------- teaser ----------------
@@ -204,12 +266,12 @@
   }
 
   // ---------------- form ----------------
-  function field(labelKey, control) {
-    return h("label", { class: "coach-field" }, h("span", {}, s(labelKey)), control);
-  }
-  function numInput(name, value, extra) {
-    var a = { type: "number", inputmode: "decimal", name: name, value: value == null ? "" : value };
-    if (extra) Object.keys(extra).forEach(function (k) { a[k] = extra[k]; });
+  function numInput(name, value) {
+    var spec = NUM[name];
+    var a = { type: "number", inputmode: spec.int ? "numeric" : "decimal", name: name,
+      value: value == null ? "" : value, min: spec.min, max: spec.max };
+    if (spec.step) a.step = spec.step;
+    else if (spec.int) a.step = "1";
     return h("input", a);
   }
   function selectInput(name, value) {
@@ -218,7 +280,17 @@
     });
     return h.apply(null, ["select", { name: name }].concat(opts));
   }
-  function chipsInput(name, values) {
+  function field(labelKey, name, control, opts) {
+    opts = opts || {};
+    var lbl = h("span", { class: "coach-field-l" }, s(labelKey));
+    if (opts.required) lbl.appendChild(h("span", { class: "req", "aria-hidden": "true" }, " *"));
+    var fe = h("small", { class: "coach-fe", role: "alert", "data-fe": name || "" });
+    var wrap = h("label", { class: "coach-field", "data-field": name || "" }, lbl, control, fe);
+    if (opts.hint) wrap.appendChild(h("small", { class: "coach-hint" }, opts.hint));
+    return wrap;
+  }
+
+  function chipsInput(name, values, onchange) {
     var arr = (values || []).slice();
     var wrap = h("div", { class: "coach-chips" });
     var input = h("input", { type: "text", placeholder: s("chipHint"), "data-chips": name });
@@ -226,10 +298,8 @@
       wrap.querySelectorAll(".coach-chip").forEach(function (c) { c.remove(); });
       arr.forEach(function (val, i) {
         var chip = h("span", { class: "coach-chip" }, val,
-          h("button", {
-            type: "button", "aria-label": "remove",
-            on: { click: function () { arr.splice(i, 1); redraw(); } }
-          }, "×"));
+          h("button", { type: "button", "aria-label": "remove",
+            on: { click: function () { arr.splice(i, 1); redraw(); if (onchange) onchange(arr.slice()); } } }, "×"));
         wrap.insertBefore(chip, input);
       });
       wrap._values = arr;
@@ -240,197 +310,188 @@
         var v = input.value.trim().replace(/,+$/, "");
         if (v && v.length <= 40 && arr.length < 10 && arr.indexOf(v) === -1) arr.push(v);
         input.value = "";
-        redraw();
+        redraw(); if (onchange) onchange(arr.slice());
       } else if (e.key === "Backspace" && !input.value && arr.length) {
-        arr.pop(); redraw();
+        arr.pop(); redraw(); if (onchange) onchange(arr.slice());
       }
+    });
+    input.addEventListener("blur", function () {
+      var v = input.value.trim().replace(/,+$/, "");
+      if (v && v.length <= 40 && arr.length < 10 && arr.indexOf(v) === -1) { arr.push(v); input.value = ""; redraw(); if (onchange) onchange(arr.slice()); }
     });
     wrap.appendChild(input);
     redraw();
     return wrap;
   }
 
-  function renderForm(prefill) {
-    var f = prefill || Object.assign(defaultForm(), loadJSON(FORM_KEY, {}));
-    if (!ENUMS.sex.includes(f.sex)) f.sex = "male";
-
+  function renderForm(preState) {
+    var st = preState || loadState();
     var form = h("form", { class: "coach-form", novalidate: "novalidate" });
 
+    function persist() { saveJSON(FORM_KEY, st); }
+    function refreshValidity() {
+      var v = validate(st);
+      form.querySelectorAll("[data-field]").forEach(function (fEl) {
+        var nm = fEl.getAttribute("data-field");
+        var feEl = fEl.querySelector(".coach-fe");
+        if (v.errors[nm]) { fEl.classList.add("bad"); if (feEl) feEl.textContent = msg(v.errors[nm]); }
+        else { fEl.classList.remove("bad"); if (feEl) feEl.textContent = ""; }
+      });
+      submit.disabled = !v.ok;
+      submit.classList.toggle("is-dim", !v.ok);
+      topErr.hidden = v.ok;
+      return v.ok;
+    }
+    // one delegated listener for every native control
+    form.addEventListener("input", function (e) {
+      var el = e.target;
+      if (!el.name || !(el.name in st)) return;
+      st[el.name] = el.value;
+      persist(); refreshValidity();
+    });
+    form.addEventListener("change", function (e) {
+      var el = e.target;
+      if (!el.name || !(el.name in st)) return;
+      st[el.name] = el.value;
+      persist(); refreshValidity();
+    });
+
     // want — segmented
-    var wantWrap = h("div", { class: "seg", role: "group" });
+    var wantWrap = h("div", { class: "seg", role: "group", "aria-label": s("want") });
     ["both", "diet", "workout"].forEach(function (w) {
-      var b = h("button", {
-        type: "button", "data-want": w,
-        "aria-pressed": w === f.want ? "true" : "false",
+      wantWrap.appendChild(h("button", {
+        type: "button", "data-want": w, "aria-pressed": w === st.want ? "true" : "false",
         on: { click: function () {
-          f.want = w;
+          st.want = w;
           wantWrap.querySelectorAll("button").forEach(function (x) {
             x.setAttribute("aria-pressed", x.getAttribute("data-want") === w ? "true" : "false");
           });
+          persist();
         } }
-      }, s(w === "both" ? "wantBoth" : w === "diet" ? "wantDiet" : "wantWorkout"));
-      wantWrap.appendChild(b);
+      }, s(w === "both" ? "wantBoth" : w === "diet" ? "wantDiet" : "wantWorkout")));
     });
-    form.appendChild(h("div", { class: "coach-field" }, h("span", {}, s("want")), wantWrap));
+    form.appendChild(h("div", { class: "coach-field" }, h("span", { class: "coach-field-l" }, s("want")), wantWrap));
+
+    // sex control — locked to the plan when there is one
+    var ps = planSex();
+    var sexControl;
+    if (ps) {
+      st.sex = ps;
+      sexControl = h("div", { class: "coach-locked" }, s(ps),
+        h("input", { type: "hidden", name: "sex", value: ps }));
+    } else {
+      sexControl = h.apply(null, ["select", { name: "sex" },
+        h("option", { value: "male", selected: st.sex === "male" ? "selected" : false }, s("male")),
+        h("option", { value: "female", selected: st.sex === "female" ? "selected" : false }, s("female"))]);
+    }
 
     // You
     form.appendChild(h("fieldset", { class: "coach-group" },
       h("legend", {}, s("grpYou")),
       h("div", { class: "coach-row" },
-        field("age", numInput("age", f.age, { min: 10, max: 100, step: 1 })),
-        field("sex", selectInput("sex", f.sex))),
+        field("age", "age", numInput("age", st.age), { required: true }),
+        field("sex", "sex", sexControl, { required: !ps, hint: ps ? s("sexFromPlan") : "" })),
       h("div", { class: "coach-row" },
-        field("heightCm", numInput("heightCm", f.heightCm, { min: 120, max: 230 })),
-        field("weightKg", numInput("weightKg", f.weightKg, { min: 35, max: 250, step: "0.1" })))));
+        field("heightCm", "heightCm", numInput("heightCm", st.heightCm), { required: true }),
+        field("weightKg", "weightKg", numInput("weightKg", st.weightKg), { required: true }))));
 
     // Goal
     form.appendChild(h("fieldset", { class: "coach-group" },
       h("legend", {}, s("grpGoal")),
-      field("goal", selectInput("goal", f.goal)),
-      field("activityLevel", selectInput("activityLevel", f.activityLevel))));
+      field("goal", "goal", selectInput("goal", st.goal), { required: true }),
+      field("activityLevel", "activityLevel", selectInput("activityLevel", st.activityLevel), { required: true })));
 
     // Training
     form.appendChild(h("fieldset", { class: "coach-group" },
       h("legend", {}, s("grpTraining")),
       h("div", { class: "coach-row" },
-        field("trainingDaysPerWeek", numInput("trainingDaysPerWeek", f.trainingDaysPerWeek, { min: 1, max: 6, step: 1 })),
-        field("equipment", selectInput("equipment", f.equipment)))));
+        field("trainingDaysPerWeek", "trainingDaysPerWeek", numInput("trainingDaysPerWeek", st.trainingDaysPerWeek), { required: true }),
+        field("equipment", "equipment", selectInput("equipment", st.equipment), { required: true }))));
 
     // Diet
-    var allergies = chipsInput("allergies", f.allergies);
-    var dislikes = chipsInput("dislikes", f.dislikes);
+    var allergies = chipsInput("allergies", st.allergies, function (a) { st.allergies = a; persist(); });
+    var dislikes = chipsInput("dislikes", st.dislikes, function (a) { st.dislikes = a; persist(); });
     form.appendChild(h("fieldset", { class: "coach-group" },
       h("legend", {}, s("grpDiet")),
-      field("dietPreference", selectInput("dietPreference", f.dietPreference)),
-      field("allergies", allergies),
-      field("dislikes", dislikes)));
+      field("dietPreference", "dietPreference", selectInput("dietPreference", st.dietPreference), { required: true }),
+      field("allergies", "allergies", allergies),
+      field("dislikes", "dislikes", dislikes)));
 
-    // InBody (collapsible)
+    // InBody (collapsible, optional)
     var ibBody = h("div", { class: "coach-ib-body" },
       h("div", { class: "coach-row" },
-        field("bodyFatPct", numInput("bodyFatPct", f.bodyFatPct, { min: 3, max: 60, step: "0.1" })),
-        field("skeletalMuscleMassKg", numInput("skeletalMuscleMassKg", f.skeletalMuscleMassKg, { step: "0.1" }))),
+        field("bodyFatPct", "bodyFatPct", numInput("bodyFatPct", st.bodyFatPct)),
+        field("skeletalMuscleMassKg", "skeletalMuscleMassKg", numInput("skeletalMuscleMassKg", st.skeletalMuscleMassKg))),
       h("div", { class: "coach-row" },
-        field("visceralFatLevel", numInput("visceralFatLevel", f.visceralFatLevel, { step: 1 })),
-        field("bmrKcal", numInput("bmrKcal", f.bmrKcal, { min: 500, max: 5000, step: 1 }))));
-    ibBody.hidden = !f.inbodyOpen;
+        field("visceralFatLevel", "visceralFatLevel", numInput("visceralFatLevel", st.visceralFatLevel)),
+        field("bmrKcal", "bmrKcal", numInput("bmrKcal", st.bmrKcal))));
+    ibBody.hidden = !st.inbodyOpen;
     var ibToggle = h("button", {
-      type: "button", class: "coach-ib-toggle", "aria-expanded": f.inbodyOpen ? "true" : "false",
+      type: "button", class: "coach-ib-toggle", "aria-expanded": st.inbodyOpen ? "true" : "false",
       on: { click: function () {
+        st.inbodyOpen = ibBody.hidden;
         ibBody.hidden = !ibBody.hidden;
-        ibToggle.setAttribute("aria-expanded", ibBody.hidden ? "false" : "true");
+        ibToggle.setAttribute("aria-expanded", st.inbodyOpen ? "true" : "false");
+        persist();
       } }
     }, s("grpInBody"));
     form.appendChild(h("fieldset", { class: "coach-group" }, ibToggle, ibBody));
 
     // notes
     var notes = h("textarea", { name: "notes", maxlength: "300", rows: "3" });
-    notes.value = f.notes || "";
-    form.appendChild(h("fieldset", { class: "coach-group" }, h("legend", {}, s("notes")), notes));
+    notes.value = st.notes || "";
+    form.appendChild(h("fieldset", { class: "coach-group" },
+      h("legend", {}, s("grpNotes")),
+      field("notes", "notes", notes)));
 
-    var err = h("p", { class: "coach-err", hidden: "hidden" });
+    var topErr = h("p", { class: "coach-err", hidden: "hidden" }, s("vFixTop"));
     var submit = h("button", { type: "submit", class: "coach-primary" }, s("generate"));
-    form.appendChild(err);
+    form.appendChild(topErr);
     form.appendChild(submit);
 
     form.addEventListener("submit", function (e) {
       e.preventDefault();
-      form.querySelectorAll(".bad").forEach(function (x) { x.classList.remove("bad"); });
-      err.hidden = true;
-
-      var data = readForm(form, { allergies: allergies, dislikes: dislikes });
-      var problems = validate(data, form);
-      if (problems.length) {
-        err.textContent = problems[0] === "ageMin" ? s("ageMin") : s("fix");
-        err.hidden = false;
+      if (!refreshValidity()) {
+        var firstBad = form.querySelector(".coach-field.bad");
+        if (firstBad && firstBad.scrollIntoView) firstBad.scrollIntoView({ block: "center", behavior: "smooth" });
         return;
       }
-      saveJSON(FORM_KEY, formToStore(data, !ibBody.hidden));
-      runAssessment(buildRequest(data), false);
+      persist();
+      runAssessment(buildRequest(st), false);
     });
 
     mount(h("div", {}, form));
+    refreshValidity();          // dim submit + show hints on first paint
   }
 
-  function readForm(form, chips) {
-    function g(n) { var el = form.querySelector('[name="' + n + '"]'); return el ? el.value.trim() : ""; }
-    var wantBtn = form.querySelector('[data-want][aria-pressed="true"]');
-    var d = {
-      want: wantBtn ? wantBtn.getAttribute("data-want") : "both",
-      age: g("age"), sex: g("sex"), heightCm: g("heightCm"), weightKg: g("weightKg"),
-      goal: g("goal"), activityLevel: g("activityLevel"),
-      trainingDaysPerWeek: g("trainingDaysPerWeek"), equipment: g("equipment"),
-      dietPreference: g("dietPreference"),
-      allergies: (chips.allergies._values || []).slice(),
-      dislikes: (chips.dislikes._values || []).slice(),
-      bodyFatPct: g("bodyFatPct"), skeletalMuscleMassKg: g("skeletalMuscleMassKg"),
-      visceralFatLevel: g("visceralFatLevel"), bmrKcal: g("bmrKcal"),
-      notes: g("notes")
-    };
-    return d;
-  }
-  function formToStore(d, inbodyOpen) {
-    var c = Object.assign({}, d); c.inbodyOpen = !!inbodyOpen; return c;
-  }
-
-  function markBad(form, name) {
-    var el = form.querySelector('[name="' + name + '"]');
-    if (el) (el.closest(".coach-field") || el).classList.add("bad");
-  }
-  function validate(d, form) {
-    var bad = [];
-    function reqRange(name) {
-      var v = parseFloat(d[name]);
-      var r = RANGE[name];
-      if (isNaN(v) || v < r[0] || v > r[1]) { markBad(form, name); bad.push(name); }
-      return v;
-    }
-    var age = reqRange("age");
-    reqRange("heightCm"); reqRange("weightKg"); reqRange("trainingDaysPerWeek");
-    if (!ENUMS.sex.includes(d.sex)) { markBad(form, "sex"); bad.push("sex"); }
-    if (!ENUMS.goal.includes(d.goal)) { markBad(form, "goal"); bad.push("goal"); }
-    if (!ENUMS.activityLevel.includes(d.activityLevel)) { markBad(form, "activityLevel"); bad.push("activityLevel"); }
-    if (!ENUMS.equipment.includes(d.equipment)) { markBad(form, "equipment"); bad.push("equipment"); }
-    if (!ENUMS.dietPreference.includes(d.dietPreference)) { markBad(form, "dietPreference"); bad.push("dietPreference"); }
-    ["bodyFatPct", "skeletalMuscleMassKg", "visceralFatLevel", "bmrKcal"].forEach(function (n) {
-      if (d[n] === "") return;
-      var v = parseFloat(d[n]); var r = RANGE[n];
-      if (isNaN(v) || v < r[0] || v > r[1]) { markBad(form, n); bad.push(n); }
-    });
-    if ((d.notes || "").length > 300) { markBad(form, "notes"); bad.push("notes"); }
-    if (!bad.length && !isNaN(age) && age < 16) return ["ageMin"];
-    return bad;
-  }
-
-  function buildRequest(d) {
-    var num = function (x) { return x === "" || x == null ? undefined : parseFloat(x); };
+  function buildRequest(st) {
+    var n = function (x) { return x === "" || x == null ? undefined : Number(x); };
     var profile = {
-      age: parseInt(d.age, 10),
-      sex: d.sex,
-      heightCm: num(d.heightCm),
-      weightKg: num(d.weightKg),
-      goal: d.goal,
-      activityLevel: d.activityLevel,
-      trainingDaysPerWeek: parseInt(d.trainingDaysPerWeek, 10),
-      equipment: d.equipment,
-      dietPreference: d.dietPreference
+      age: parseInt(st.age, 10),
+      sex: st.sex,
+      heightCm: n(st.heightCm),
+      weightKg: n(st.weightKg),
+      goal: st.goal,
+      activityLevel: st.activityLevel,
+      trainingDaysPerWeek: parseInt(st.trainingDaysPerWeek, 10),
+      equipment: st.equipment,
+      dietPreference: st.dietPreference
     };
-    if (d.allergies && d.allergies.length) profile.allergies = d.allergies;
-    if (d.dislikes && d.dislikes.length) profile.dislikes = d.dislikes;
-    if (d.notes) profile.notes = d.notes;
+    if (st.allergies && st.allergies.length) profile.allergies = st.allergies;
+    if (st.dislikes && st.dislikes.length) profile.dislikes = st.dislikes;
+    if (st.notes) profile.notes = st.notes;
     var ib = {};
-    if (d.bodyFatPct !== "") ib.bodyFatPct = num(d.bodyFatPct);
-    if (d.skeletalMuscleMassKg !== "") ib.skeletalMuscleMassKg = num(d.skeletalMuscleMassKg);
-    if (d.visceralFatLevel !== "") ib.visceralFatLevel = num(d.visceralFatLevel);
-    if (d.bmrKcal !== "") ib.bmrKcal = num(d.bmrKcal);
+    ["bodyFatPct", "skeletalMuscleMassKg", "visceralFatLevel", "bmrKcal"].forEach(function (k) {
+      if (st[k] !== "" && st[k] != null) ib[k] = n(st[k]);
+    });
     if (Object.keys(ib).length) profile.inbody = ib;
-    return { want: d.want, lang: lang(), profile: profile };
+    return { want: st.want, lang: lang(), profile: profile };
   }
 
   // ---------------- run + result ----------------
   function renderLoading() {
     var rows = [];
-    for (var i = 0; i < 5; i++) rows.push(h("div", { class: "skeleton", style: "height:56px;margin-bottom:10px" }));
+    for (var i = 0; i < 4; i++) rows.push(h("div", { class: "skeleton", style: "height:56px;margin-bottom:10px" }));
     mount(h("div", { class: "coach-loading" },
       h("div", { class: "coach-spin", "aria-hidden": "true" }),
       h("p", {}, s("generating")),
@@ -438,7 +499,7 @@
   }
 
   function runAssessment(reqBody, strong) {
-    var token = window.GymSync && GymSync.token ? GymSync.token() : null;
+    var token = authToken();
     if (!token) { if (window.GymUI) GymUI.promptSignIn(); return; }
     renderLoading();
     var url = ASSIST_BASE + "/assessment" + (strong ? "?model=strong" : "");
@@ -448,23 +509,25 @@
       body: JSON.stringify(reqBody)
     }).then(function (res) {
       if (res.status === 401) { if (window.GymUI) GymUI.promptSignIn(); return null; }
-      if (res.status === 429) {
-        var reset = res.headers.get("X-RateLimit-Reset");
-        renderQuota(reset); return null;
-      }
-      return res.json().then(function (body) { return { status: res.status, body: body }; });
+      if (res.status === 429) { renderQuota(res.headers.get("X-RateLimit-Reset")); return null; }
+      return res.json().then(function (body) { return { status: res.status, body: body }; })
+        .catch(function () { return { status: res.status, body: null }; });
     }).then(function (r) {
       if (!r) return;
-      if (r.status === 200) {
+      if (r.status === 200 && r.body) {
         r.body._reqStrong = strong;
         saveJSON(LAST_KEY, r.body);
         renderResult(r.body);
       } else if (r.status === 422) {
         renderRefusal((r.body && r.body.error && r.body.error.message) || "");
       } else {
-        renderError(reqBody, strong);
+        if (window.console) console.warn("[coach] assessment failed", r.status, r.body);
+        renderError(reqBody, strong, r.status);
       }
-    }).catch(function () { renderError(reqBody, strong); });
+    }).catch(function (err) {
+      if (window.console) console.warn("[coach] assessment error", err && err.message);
+      renderError(reqBody, strong, 0);
+    });
   }
 
   function statTile(labelKey, value, unit) {
@@ -476,7 +539,7 @@
   function renderResult(r) {
     var c = r.computed || {};
     var stats = h("div", { class: "coach-stats" },
-      statTile("bmi", round(c.bmi, 1) + (c.bmiClass ? "" : ""), c.bmiClass ? s(c.bmiClass) || c.bmiClass : ""),
+      statTile("bmi", round(c.bmi, 1), c.bmiClass ? (s(c.bmiClass) || c.bmiClass) : ""),
       statTile("bmr", Math.round(c.bmrKcal || 0), s("kcal")),
       statTile("tdee", Math.round(c.tdeeKcal || 0), s("kcal")),
       statTile("target", Math.round(c.targetKcal || 0), s("kcal") + s("perDay")),
@@ -492,13 +555,10 @@
           h("h2", {}, s("resTargets")))),
       stats
     ];
-
     if (r.summary) sections.push(h("div", { class: "coach-block card-fx" },
       h("h3", {}, s("resSummary")), h("p", {}, r.summary)));
-
     if (r.dietPlan) sections.push(renderDiet(r.dietPlan));
     if (r.workoutPlan) sections.push(renderWorkout(r.workoutPlan));
-
     if (r.disclaimers && r.disclaimers.length) {
       sections.push(h("div", { class: "coach-disc" },
         h("h3", {}, s("disclaimers")),
@@ -509,15 +569,14 @@
       h("button", { type: "button", class: "coach-secondary", on: { click: function () { renderForm(); } } }, s("btnNew")),
       r._reqStrong ? null : h("button", {
         type: "button", class: "coach-secondary",
-        on: { click: function () { runAssessment(buildRequest(Object.assign(defaultForm(), loadJSON(FORM_KEY, {}))), true); } }
+        on: { click: function () { runAssessment(buildRequest(loadState()), true); } }
       }, s("btnDetail")),
-      r.workoutPlan && r.workoutPlan.days && r.workoutPlan.days.length ? h("button", {
+      (r.workoutPlan && r.workoutPlan.days && r.workoutPlan.days.length) ? h("button", {
         type: "button", class: "coach-primary",
         on: { click: function (e) {
           if (window.GymApplyCoachPlan) {
             window.GymApplyCoachPlan(mapWorkout(r.workoutPlan));
-            e.target.textContent = s("applied");
-            e.target.disabled = true;
+            e.target.textContent = s("applied"); e.target.disabled = true;
           }
         } }
       }, s("btnApply")) : null,
@@ -549,7 +608,7 @@
     var kids = [h("h3", {}, s("resWorkout"))];
     var meta = [];
     if (wp.split) meta.push(s("split") + ": " + wp.split);
-    if (wp.daysPerWeek) meta.push(wp.daysPerWeek + " " + s("trainingDaysPerWeek").toLowerCase());
+    if (wp.daysPerWeek) meta.push(wp.daysPerWeek + " " + s("daysWk"));
     if (meta.length) kids.push(h("div", { class: "coach-tag" }, meta.join("  ·  ")));
     (wp.days || []).forEach(function (d) {
       var ex = (d.exercises || []).map(function (e) {
@@ -572,13 +631,7 @@
         label: d.day || ("Day " + (i + 1)),
         muscles: wp.split || "",
         exercises: (d.exercises || []).map(function (e, j) {
-          return {
-            id: "coach_" + i + "_" + j,
-            en: e.name,
-            sets: e.sets || 3,
-            reps: e.reps || "",
-            rest: e.restSec || 90
-          };
+          return { id: "coach_" + i + "_" + j, en: e.name, sets: e.sets || 3, reps: e.reps || "", rest: e.restSec || 90 };
         })
       };
     });
@@ -592,60 +645,51 @@
       h("p", {}, s("quotaBody").replace("{t}", when)),
       h("button", { type: "button", class: "coach-secondary", on: { click: function () { renderForm(); } } }, s("btnNew"))));
   }
-  function renderError(reqBody, strong) {
+  function renderError(reqBody, strong, status) {
     mount(h("div", { class: "coach-state card-fx" },
       h("h2", {}, s("errTitle")),
-      h("p", {}, s("errBody")),
+      h("p", {}, status === 502 ? s("err502") : s("errBody")),
       h("div", { class: "coach-actions" },
-        h("button", { type: "button", class: "coach-primary", on: { click: function () { runAssessment(reqBody, strong); } } }, s("retry")),
+        reqBody ? h("button", { type: "button", class: "coach-primary", on: { click: function () { runAssessment(reqBody, strong); } } }, s("retry")) : null,
         h("button", { type: "button", class: "coach-secondary", on: { click: function () { renderForm(); } } }, s("btnNew")))));
   }
-  function renderRefusal(msg) {
+  function renderRefusal(m) {
     mount(h("div", { class: "coach-state card-fx" },
       h("h2", {}, s("refusedTitle")),
-      h("p", {}, msg || s("errBody")),
+      h("p", {}, m || s("errBody")),
       h("button", { type: "button", class: "coach-secondary", on: { click: function () { renderForm(); } } }, s("back"))));
   }
 
   function renderHistory() {
-    var token = window.GymSync && GymSync.token ? GymSync.token() : null;
+    var token = authToken();
     if (!token) { if (window.GymUI) GymUI.promptSignIn(); return; }
     mount(h("div", { class: "coach-loading" }, h("div", { class: "coach-spin" })));
-    fetchTimeout(ASSIST_BASE + "/history?limit=20", {
-      headers: { "Authorization": "Bearer " + token }
-    }).then(function (r) { return r.json(); }).then(function (doc) {
-      var items = (doc && doc.items) || [];
-      var list = items.length ? items.map(function (it) {
-        var when = it.createdAt;
-        try { when = new Date(it.createdAt).toLocaleDateString(lang() === "ar" ? "ar-EG" : "en-US", { month: "short", day: "numeric" }); } catch (e) {}
-        return h("div", { class: "coach-hist-row" },
-          h("span", {}, when + "  ·  " + (it.want || "") + "  ·  " + (it.model || "")),
-          h("button", {
-            type: "button", class: "coach-link",
-            on: { click: function () { openHistory(it.id); } }
-          }, s("histOpen")));
-      }) : [h("p", { class: "coach-sub-line" }, s("histEmpty"))];
-      mount(h.apply(null, ["div", { class: "coach-hist" },
-        h("button", { type: "button", class: "coach-secondary", on: { click: function () { refresh(); } } }, s("back"))
-      ].concat(list)));
-    }).catch(function () { renderError(null, false); });
+    fetchTimeout(ASSIST_BASE + "/history?limit=20", { headers: { "Authorization": "Bearer " + token } })
+      .then(function (r) { return r.json(); }).then(function (doc) {
+        var items = (doc && doc.items) || [];
+        var list = items.length ? items.map(function (it) {
+          var when = it.createdAt;
+          try { when = new Date(it.createdAt).toLocaleDateString(lang() === "ar" ? "ar-EG" : "en-US", { month: "short", day: "numeric" }); } catch (e) {}
+          return h("div", { class: "coach-hist-row" },
+            h("span", {}, when + "  ·  " + (it.want || "") + "  ·  " + (it.model || "")),
+            h("button", { type: "button", class: "coach-link", on: { click: function () { openHistory(it.id); } } }, s("histOpen")));
+        }) : [h("p", { class: "coach-sub-line" }, s("histEmpty"))];
+        mount(h.apply(null, ["div", { class: "coach-hist" },
+          h("button", { type: "button", class: "coach-secondary", on: { click: function () { refresh(); } } }, s("back"))
+        ].concat(list)));
+      }).catch(function () { renderError(null, false, 0); });
   }
   function openHistory(id) {
-    var token = window.GymSync && GymSync.token ? GymSync.token() : null;
+    var token = authToken();
     if (!token) return;
     mount(h("div", { class: "coach-loading" }, h("div", { class: "coach-spin" })));
-    fetchTimeout(ASSIST_BASE + "/assessment/" + encodeURIComponent(id), {
-      headers: { "Authorization": "Bearer " + token }
-    }).then(function (r) { return r.json(); }).then(function (body) {
-      if (body && body.computed) renderResult(body);
-      else renderError(null, false);
-    }).catch(function () { renderError(null, false); });
+    fetchTimeout(ASSIST_BASE + "/assessment/" + encodeURIComponent(id), { headers: { "Authorization": "Bearer " + token } })
+      .then(function (r) { return r.json(); }).then(function (body) {
+        if (body && body.computed) renderResult(body); else renderError(null, false, 0);
+      }).catch(function () { renderError(null, false, 0); });
   }
 
-  function round(v, n) {
-    var p = Math.pow(10, n || 0);
-    return Math.round((parseFloat(v) || 0) * p) / p;
-  }
+  function round(v, n) { var p = Math.pow(10, n || 0); return Math.round((parseFloat(v) || 0) * p) / p; }
 
   // ---------------- entry ----------------
   function refresh() {
