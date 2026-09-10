@@ -5,6 +5,8 @@ on:
     paths:
       - "index.html"
       - "app.js"
+      - "ui.js"
+      - "coach.js"
       - "sync.js"
       - "styles.css"
       - "service-worker.js"

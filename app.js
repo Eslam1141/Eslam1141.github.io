@@ -234,7 +234,14 @@ const T = {
   planLabel:["Plan","الخطة"],
   programLabel:["Program","البرنامج"],
   langLabel:["Language","اللغة"],
-  daysLabel:["Days","الأيام"]
+  daysLabel:["Days","الأيام"],
+  navPlan:["Plan","الخطة"],
+  navCoach:["Coach","المدرّب"],
+  navMore:["More","المزيد"],
+  coachTitle:["AI Coach","المدرّب الذكي"],
+  coachSub:["A diet & training plan built from your numbers","خطة تغذية وتمرين مبنية على أرقامك"],
+  backupLabel:["Progress backup","نسخة احتياطية للتقدّم"],
+  styleCoach:["Coach plan","خطة المدرّب"]
 };
 const NOTES = {
   male_gym:{ en:[
@@ -331,6 +338,10 @@ function isAnonMode(){
 }
 function pickDays(){
   if(isAnonMode()) return DAYS_PREVIEW;
+  if(activeStyle === "coach"){
+    const c = loadJSON("gym_plans_custom", null);
+    if(c && c.length) return c;
+  }
   const fem = activePlan === "female";
   if(activeStyle === "cal") return fem ? DAYS_FEMALE_CAL : DAYS_MALE_CAL;
   return fem ? DAYS_FEMALE : DAYS_MALE;
@@ -446,6 +457,7 @@ function renderExercises(){
     const last = lastLog(ex.id);
     const lastText = last ? t("lastLog").replace("{w}", last.w).replace("{r}", last.r) : t("noLog");
     const nm = exName(ex);
+    const hasVid = !!ex.vid; // coach-generated plans have no demo clip
 
     card.innerHTML = `
       <div class="ex-top">
@@ -475,16 +487,16 @@ function renderExercises(){
           <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 11H8v-2h3V7h2z"/></svg>
           ${t("restBtn")}
         </button>
-        <button class="btn-sm video-toggle ${isOpen?'on':''}" data-video="${ex.id}">
+        ${hasVid ? `<button class="btn-sm video-toggle ${isOpen?'on':''}" data-video="${ex.id}">
           <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
           ${isOpen ? t('hideVideo') : t('video')}
-        </button>
+        </button>` : ``}
       </div>
-      <div class="video-wrap ${isOpen?'open':''}" id="vwrap-${ex.id}">
+      ${hasVid ? `<div class="video-wrap ${isOpen?'open':''}" id="vwrap-${ex.id}">
         <div class="video-frame" id="vframe-${ex.id}">
           ${isOpen ? videoFrameInner(ex) : ''}
         </div>
-      </div>
+      </div>` : ``}
       <div class="lastlog">${lastText}</div>
     `;
     exList.appendChild(card);
@@ -598,7 +610,7 @@ function updateProgress(){
 function renderAll(){
   renderTitle();
   renderDate();
-  renderDaysPanel();
+  renderDayTabs();
   renderExercises();
   updateProgress();
   updateSessionUI();
@@ -611,8 +623,8 @@ function applyAnonUI(){
   const anon = isAnonMode();
   document.body.classList.toggle("anon-mode", anon);
 
-  const daysBtn = document.getElementById("daysBtn");
-  if(daysBtn) daysBtn.style.display = anon ? "none" : "";
+  const dayTabs = document.getElementById("dayTabs");
+  if(dayTabs) dayTabs.style.display = anon ? "none" : "";
 
   document.querySelectorAll("[data-plan-btn],[data-style-btn]").forEach(b=>{
     b.classList.toggle("locked", anon);
@@ -980,10 +992,13 @@ function applyLang(lang, persist){
   applyStaticI18n();
   animateCards = true;
   renderAll();
+  if(window.GymCoach && typeof window.GymCoach.refresh === "function") window.GymCoach.refresh();
 }
 
 // ---------------- PLAN + STYLE ----------------
 function applyState(persist){
+  if(activeStyle === "coach" && !loadJSON("gym_plans_custom", null)) activeStyle = "gym";
+  ensureCoachStyleBtn();
   DAYS = pickDays();
   animateCards = true;
   document.documentElement.dataset.plan = activePlan || "male";
@@ -999,47 +1014,68 @@ function applyState(persist){
   renderAll();
 }
 
-// ---------------- SLIDE-IN PANELS (settings + days) ----------------
-const sidePanel = document.getElementById("sidePanel");
-const daysPanel = document.getElementById("daysPanel");
-const panelScrim = document.getElementById("panelScrim");
-let openPanelEl = null;
-function openPanel(el){
-  openPanelEl = el;
-  panelScrim.hidden = false;
-  requestAnimationFrame(()=>{ panelScrim.classList.add("show"); el.classList.add("open"); });
-  el.setAttribute("aria-hidden", "false");
-}
-function closePanel(){
-  panelScrim.classList.remove("show");
-  [sidePanel, daysPanel].forEach(p=>{ p.classList.remove("open"); p.setAttribute("aria-hidden", "true"); });
-  openPanelEl = null;
-  setTimeout(()=>{ panelScrim.hidden = true; }, 300);
-}
-document.getElementById("menuBtn").onclick = ()=> openPanel(sidePanel);
-document.getElementById("daysBtn").onclick = ()=> openPanel(daysPanel);
-document.querySelectorAll(".panelClose").forEach(b=> b.onclick = closePanel);
-panelScrim.onclick = closePanel;
-
-function renderDaysPanel(){
-  const list = document.getElementById("daysList");
+// ---------------- DAY TABS (always-visible chip strip on the Plan screen) ----------------
+function renderDayTabs(){
+  const list = document.getElementById("dayTabs");
+  if(!list) return;
   list.innerHTML = "";
   DAYS.forEach(d=>{
     const b = document.createElement("button");
+    b.type = "button";
+    b.className = "day-chip";
     b.textContent = dayLabel(d);
-    if(d.id === activeDay) b.classList.add("active");
+    if(d.id === activeDay){ b.classList.add("active"); b.setAttribute("aria-current","true"); }
     b.onclick = ()=>{
+      if(d.id === activeDay) return;
       activeDay = d.id;
       setPref(activeDayStoreKey(), activeDay);
       openVideoId = null;
       animateCards = true;
-      closePanel();
-      window.scrollTo(0, 0);
       renderAll();
+      const active = list.querySelector(".day-chip.active");
+      if(active && active.scrollIntoView) active.scrollIntoView({ block:"nearest", inline:"center" });
+      window.scrollTo(0, 0);
     };
     list.appendChild(b);
   });
+  const active = list.querySelector(".day-chip.active");
+  if(active && active.scrollIntoView) active.scrollIntoView({ block:"nearest", inline:"center" });
 }
+
+// Adds a "Coach plan" option to the Program toggle once the user has applied an
+// AI-generated workout (gym_plans_custom). Wired here because the static
+// [data-style-btn] handler below only runs over the buttons present at load.
+function ensureCoachStyleBtn(){
+  const wrap = document.getElementById("styleToggle");
+  if(!wrap) return;
+  const has = !!loadJSON("gym_plans_custom", null);
+  let btn = wrap.querySelector('[data-style-btn="coach"]');
+  if(has && !btn){
+    btn = document.createElement("button");
+    btn.setAttribute("data-style-btn", "coach");
+    btn.textContent = t("styleCoach");
+    btn.onclick = ()=> setStyle("coach");
+    wrap.appendChild(btn);
+  } else if(btn){
+    btn.textContent = t("styleCoach");
+  }
+}
+
+function setStyle(style){
+  if(isAnonMode()){ if(window.GymUI) window.GymUI.promptSignIn(); return; }
+  activeStyle = style;
+  applyState(true);
+  if(window.GymUI) window.GymUI.navigate("plan");
+  else window.scrollTo(0, 0);
+}
+
+// Called by coach.js: store an AI workout as a selectable plan and switch to it.
+window.GymApplyCoachPlan = function(days){
+  if(!Array.isArray(days) || !days.length) return;
+  saveJSON("gym_plans_custom", days);
+  ensureCoachStyleBtn();
+  setStyle("coach");
+};
 
 function renderTitle(){
   if(isAnonMode()){
@@ -1064,10 +1100,15 @@ document.querySelectorAll("[data-choose]").forEach(b=>{
   };
 });
 document.querySelectorAll("[data-plan-btn]").forEach(b=>{
-  b.onclick = ()=>{ if(isAnonMode()){ if(window.GymUI) window.GymUI.promptSignIn(); return; } activePlan = b.dataset.planBtn; applyState(true); closePanel(); window.scrollTo(0, 0); };
+  b.onclick = ()=>{
+    if(isAnonMode()){ if(window.GymUI) window.GymUI.promptSignIn(); return; }
+    activePlan = b.dataset.planBtn;
+    applyState(true);
+    if(window.GymUI) window.GymUI.navigate("plan"); else window.scrollTo(0, 0);
+  };
 });
 document.querySelectorAll("[data-style-btn]").forEach(b=>{
-  b.onclick = ()=>{ if(isAnonMode()){ if(window.GymUI) window.GymUI.promptSignIn(); return; } activeStyle = b.dataset.styleBtn; applyState(true); closePanel(); window.scrollTo(0, 0); };
+  b.onclick = ()=> setStyle(b.dataset.styleBtn);
 });
 document.getElementById("langBtn").onclick = ()=> applyLang(activeLang === "ar" ? "en" : "ar", true);
 

@@ -213,14 +213,13 @@
   }
 
   function ensureAuthContainer() {
-    var panel = document.getElementById("sidePanel");
-    if (!panel) return null;
+    var host = document.getElementById("moreAccount");
+    if (!host) return null;
     var box = document.getElementById("gymSyncBox");
     if (!box) {
       box = document.createElement("div");
-      box.className = "sp-group";
       box.id = "gymSyncBox";
-      panel.appendChild(box);
+      host.appendChild(box);
     }
     return box;
   }
@@ -286,6 +285,10 @@
     onLocalWrite: onLocalWrite,
     syncNow: function (r) { return syncNow(r || "manual"); },
     isSignedIn: isSignedIn,
+    // Current Google ID token for auth..."Bearer" calls to gym-be / gym-assistant.
+    // null when signed out or the token is within 30s of expiry.
+    token: function () { return isSignedIn() ? idToken : null; },
+    profile: function () { return profile ? { email: profile.email, name: profile.name } : null; },
     signOut: signOut,
     _debug: { gymKeys: gymKeys, readMeta: readMeta, buildEntries: buildEntries }
   };
