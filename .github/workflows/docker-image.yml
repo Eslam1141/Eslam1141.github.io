@@ -61,3 +61,22 @@ jobs:
           tags: |
             ghcr.io/eslam1141/gym-ui:${{ github.sha }}
             ghcr.io/eslam1141/gym-ui:latest
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions: {}
+    environment: production
+    steps:
+      - uses: azure/setup-kubectl@v4
+      - name: kubeconfig
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+        run: |
+          mkdir -p ~/.kube
+          printf '%s' "$KUBE_CONFIG" | base64 -d > ~/.kube/config
+      - name: roll gym-ui to the new image
+        run: |
+          kubectl -n gym set image deploy/gym-gym-ui "gym-ui=ghcr.io/eslam1141/gym-ui:${GITHUB_SHA}"
+          kubectl -n gym rollout status deploy/gym-gym-ui --timeout=120s
