@@ -223,10 +223,34 @@
   <svg viewBox="0 0 24 24"><path d="M12 8l-6 6 1.4 1.4L12 10.83l4.6 4.58L18 14z"/></svg>
 </button>
 
+<button id="coachFab" aria-label="Ask the nutrition coach" aria-haspopup="dialog" aria-expanded="false" hidden></button>
+<div id="coachFabTip" hidden></div>
+
+<div id="coachChat" hidden role="dialog" aria-modal="true" aria-label="Nutrition chat">
+  <div id="coachChatBackdrop"></div>
+  <div class="coach-chat-panel">
+    <div class="coach-chat-head">
+      <div class="coach-chat-head-icon" id="coachChatIcon"></div>
+      <div class="coach-chat-title" id="coachChatTitle"></div>
+      <button type="button" id="coachChatClose" aria-label="Close">
+        <svg viewBox="0 0 24 24"><path d="M18.3 5.71 12 12l6.3 6.29-1.41 1.41L10.59 13.41 4.3 19.7 2.89 18.29 9.17 12 2.89 5.71 4.3 4.3l6.29 6.29L16.89 4.3z"/></svg>
+      </button>
+    </div>
+    <div id="coachChatMsgs" class="coach-chat-msgs"></div>
+    <form id="coachChatForm" class="coach-chat-form">
+      <input id="coachChatInput" type="text" maxlength="600" autocomplete="off" />
+      <button type="submit" id="coachChatSend" aria-label="Send">
+        <svg viewBox="0 0 24 24"><path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      </button>
+    </form>
+  </div>
+</div>
+
 <script src="config.js"></script>
 <script src="ui.js"></script>
 <script src="app.js"></script>
 <script src="coach.js" defer></script>
+<script src="chat.js" defer></script>
 <script src="sync.js" defer></script>
 </body>
 </html>

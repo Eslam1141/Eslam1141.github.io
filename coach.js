@@ -611,7 +611,7 @@
     refreshValidity();          // dim submit + show hints on first paint
   }
 
-  function buildRequest(st) {
+  function buildProfile(st) {
     var n = function (x) { return x === "" || x == null ? undefined : Number(x); };
     var profile = {
       age: parseInt(st.age, 10),
@@ -632,7 +632,16 @@
       if (st[k] !== "" && st[k] != null) ib[k] = n(st[k]);
     });
     if (Object.keys(ib).length) profile.inbody = ib;
-    return { want: st.want, lang: lang(), profile: profile };
+    return profile;
+  }
+  function buildRequest(st) {
+    return { want: st.want, lang: lang(), profile: buildProfile(st) };
+  }
+  // For the floating chat: the user's saved coach profile, only when it's
+  // actually complete/valid — otherwise the chat just answers generally.
+  function currentProfile() {
+    var st = loadState();
+    return validate(st).ok ? buildProfile(st) : null;
   }
 
   // ---------------- run + result ----------------
@@ -914,7 +923,7 @@
     else renderForm();
   }
 
-  window.GymCoach = { refresh: refresh };
+  window.GymCoach = { refresh: refresh, currentProfile: currentProfile };
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", function () {
