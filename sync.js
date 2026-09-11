@@ -10,6 +10,14 @@
   var API_BASE = (window.GYM_API_BASE || "/api/v1").replace(/\/+$/, "");
   var CLIENT_ID = window.GOOGLE_CLIENT_ID || "";
   var META_KEY = "gym_meta_updatedAt";
+  // Device-local cache of the last Google ID token (NOT gym_-prefixed => never
+  // synced). Without this, every reload started signed-out and waited on a
+  // fresh Google round-trip (GIS auto-select / One Tap) to sign back in —
+  // slow, and unreliable on mobile browsers that restrict third-party/FedCM
+  // prompts, so it looked like "asks me to sign in again on every refresh."
+  // Restoring it instantly on load fixes that; GIS still silently renews it
+  // in the background before it expires.
+  var SESSION_KEY = "gymauth_session";
   // Device-local keys that must NEVER round-trip through the server. gym_user_sub
   // especially: if a stale value comes back down it flips the "account switched"
   // check on the next load and can wedge the app in a reload loop.
@@ -30,6 +38,25 @@
 
   function log() {
     if (window.console && console.debug) console.debug.apply(console, arguments);
+  }
+
+  function loadCachedSession() {
+    try {
+      var s = JSON.parse(localStorage.getItem(SESSION_KEY));
+      // 30s safety margin, same as isSignedIn()'s own check
+      if (s && s.token && s.exp && s.exp * 1000 > nowMs() + 30000) return s;
+    } catch (e) {}
+    return null;
+  }
+  function saveCachedSession() {
+    try {
+      if (idToken && tokenExpEpoch) {
+        localStorage.setItem(SESSION_KEY, JSON.stringify({ token: idToken, exp: tokenExpEpoch, profile: profile }));
+      }
+    } catch (e) {}
+  }
+  function clearCachedSession() {
+    try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
   }
 
   function readMeta() {
@@ -55,6 +82,7 @@
   // Wipe this browser's per-user data so a different account doesn't inherit it.
   // Keeps device/UI-only prefs. Called on sign-out and on an account switch.
   function clearUserData() {
+    clearCachedSession(); // don't let a stale cached token restore the old account
     var keep = { gym_onboarded: 1, gym_lang: 1, gym_tab: 1, gym_anon: 1 };
     try {
       var rm = [];
@@ -219,6 +247,7 @@
       }
     } catch (e) {}
 
+    saveCachedSession();
     if (window.GymUI && typeof GymUI.completeSignIn === "function") GymUI.completeSignIn();
     renderAuthUI();
     startTriggers();
@@ -308,6 +337,21 @@
 
   function initAuth() {
     if (!CLIENT_ID) { log("[sync] no GOOGLE_CLIENT_ID, sync disabled"); return; }
+
+    // Restore a still-valid session immediately, before the Google script even
+    // loads — the app should look signed-in on the very first paint of a
+    // reload, not flash "signed out" while GIS does a network round-trip.
+    var cached = loadCachedSession();
+    if (cached) {
+      idToken = cached.token;
+      tokenExpEpoch = cached.exp;
+      profile = cached.profile || null;
+      if (window.GymUI && typeof GymUI.completeSignIn === "function") GymUI.completeSignIn();
+      renderAuthUI();
+      startTriggers();
+      scheduleTokenRefresh();
+    }
+
     var s = document.createElement("script");
     s.src = "https://accounts.google.com/gsi/client";
     s.async = true; s.defer = true;
@@ -320,7 +364,11 @@
           use_fedcm_for_prompt: true
         });
         renderAuthUI();
-        google.accounts.id.prompt();
+        // Only auto-prompt (One Tap) when we don't already have a live
+        // session. Firing it unconditionally alongside the onboarding
+        // screen's own explicit "Sign in with Google" button is what made a
+        // first-time visit show two separate sign-in prompts.
+        if (!isSignedIn()) google.accounts.id.prompt();
       } catch (e) { log("[sync] GIS init failed", e && e.message); }
     };
     s.onerror = function () { log("[sync] GIS script failed to load"); };
@@ -336,7 +384,10 @@
     token: function () { return isSignedIn() ? idToken : null; },
     profile: function () { return profile ? { email: profile.email, name: profile.name } : null; },
     signOut: signOut,
-    _debug: { gymKeys: gymKeys, readMeta: readMeta, buildEntries: buildEntries, onCredential: onCredential, clearUserData: clearUserData }
+    _debug: {
+      gymKeys: gymKeys, readMeta: readMeta, buildEntries: buildEntries, onCredential: onCredential,
+      clearUserData: clearUserData, loadCachedSession: loadCachedSession, clearCachedSession: clearCachedSession
+    }
   };
 
   if (document.readyState === "loading") {

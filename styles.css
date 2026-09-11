@@ -828,8 +828,27 @@ body:has(#planChooser:not([hidden])) #appNav{ display:none; }
 
 /* goal checklist */
 .coach-goal-checks{ display:flex; flex-wrap:wrap; gap:14px 18px; padding:2px 0; }
-.coach-check{ display:flex; align-items:center; gap:7px; font-size:13px; color:var(--paper); cursor:pointer; }
-.coach-check input{ width:17px; height:17px; accent-color:var(--accent); cursor:pointer; }
+.coach-check{ display:flex; align-items:center; gap:8px; font-size:13px; color:var(--paper); cursor:pointer; }
+/* Custom-painted box, not accent-color: the shared `.coach-field input`
+   rule strips native checkbox rendering (appearance:none) for every input
+   inside a .coach-field, including these — and accent-color alone draws
+   nothing once appearance is none, and isn't supported on older mobile
+   browsers anyway. Paint our own box + checkmark so it's visible everywhere. */
+.coach-check input[type="checkbox"]{
+  appearance:none; -webkit-appearance:none; -moz-appearance:none;
+  width:19px; height:19px; min-width:19px; margin:0; flex:none;
+  border:2px solid var(--line); border-radius:5px;
+  background:var(--bg-alt); cursor:pointer; position:relative;
+}
+.coach-check input[type="checkbox"]:checked{
+  background:var(--accent); border-color:var(--accent);
+}
+.coach-check input[type="checkbox"]:checked::after{
+  content:""; position:absolute; left:5px; top:1px;
+  width:5px; height:10px; border:solid #fff; border-width:0 2px 2px 0;
+  transform:rotate(40deg);
+}
+.coach-check input[type="checkbox"]:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
 
 .coach-block{ display:flex; flex-direction:column; gap:10px; }
 .coach-block > h3{ margin:0; font-size:15px; color:var(--accent); }
