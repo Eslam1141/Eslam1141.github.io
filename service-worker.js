@@ -1,4 +1,4 @@
-const CACHE_NAME = "gym-plan-v18";
+const CACHE_NAME = "gym-plan-v19";
 const ASSETS = [
   "./index.html",
   "./styles.css",
@@ -43,18 +43,20 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // Network-first: a fresh deploy must show up on the very next load, not one
+  // refresh later. The old cache-first-with-background-update strategy served
+  // last visit's stale app.js/coach.js immediately every time, which is why a
+  // shipped fix could look like it "didn't happen" until a second reload.
+  // Cache is now purely the offline fallback.
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const fetchPromise = fetch(event.request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const clone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          }
-          return networkResponse;
-        })
-        .catch(() => cached);
-      return cached || fetchPromise;
-    })
+    fetch(event.request)
+      .then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const clone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
+        return networkResponse;
+      })
+      .catch(() => caches.match(event.request))
   );
 });
