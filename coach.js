@@ -47,6 +47,7 @@
     goal: ["Goal", "الهدف"],
     lose_fat: ["Lose fat", "خسارة دهون"], gain_muscle: ["Build muscle", "بناء عضل"],
     maintain: ["Maintain", "محافظة"], recomp: ["Recomposition", "إعادة تكوين"],
+    goalHint: ["Check both to recomposition (lose fat while building muscle)", "اختر الاثنين لإعادة التكوين (خسارة دهون مع بناء عضل)"],
     activityLevel: ["Daily activity", "النشاط اليومي"],
     sedentary: ["Sedentary", "خامل"], light: ["Lightly active", "نشاط خفيف"],
     moderate: ["Moderately active", "نشاط متوسط"], active: ["Very active", "نشيط جداً"],
@@ -82,6 +83,20 @@
     resTargets: ["Your numbers", "أرقامك"],
     bmi: ["BMI", "مؤشر الكتلة"], bmr: ["BMR", "الأيض الأساسي"], tdee: ["TDEE", "الحرق اليومي"],
     target: ["Target", "الهدف"], protein: ["Protein", "بروتين"], fat: ["Fat", "دهون"], carb: ["Carbs", "كارب"],
+    bmiExplain: ["Body Mass Index — weight relative to height, used as a rough size category (not a body-fat measurement).",
+      "مؤشر كتلة الجسم — الوزن مقارنة بالطول، يُستخدم كتصنيف تقريبي للحجم (وليس قياسًا مباشرًا لنسبة الدهون)."],
+    bmrExplain: ["Basal Metabolic Rate — calories your body burns at complete rest just to keep you alive.",
+      "معدل الأيض الأساسي — السعرات التي يحرقها جسمك وأنت في راحة تامة فقط للحفاظ على وظائف الحياة."],
+    tdeeExplain: ["Total Daily Energy Expenditure — your BMR plus activity, i.e. all the calories you burn in a normal day.",
+      "إجمالي الحرق اليومي — معدل الأيض الأساسي مضافًا إليه النشاط، أي كل السعرات التي تحرقها في يوم عادي."],
+    targetExplain: ["Your daily calorie goal — TDEE adjusted up or down for your selected goal (fat loss, muscle gain, etc.).",
+      "هدفك اليومي من السعرات — الحرق اليومي بعد تعديله صعودًا أو هبوطًا حسب هدفك المختار (خسارة دهون، بناء عضل، إلخ)."],
+    proteinExplain: ["Daily protein target in grams — builds and preserves muscle; prioritized highest when losing fat.",
+      "هدف البروتين اليومي بالجرام — يبني العضلات ويحافظ عليها، ويُعطى الأولوية القصوى عند خسارة الدهون."],
+    fatExplain: ["Daily fat target in grams — supports hormones; kept steady regardless of your goal.",
+      "هدف الدهون اليومي بالجرام — يدعم الهرمونات، ويبقى ثابتًا تقريبًا مهما كان هدفك."],
+    carbExplain: ["Daily carb target in grams — whatever calories remain after protein and fat, mainly fuels training.",
+      "هدف الكارب اليومي بالجرام — ما تبقى من السعرات بعد البروتين والدهون، ويُستخدم أساسًا كوقود للتمرين."],
     kcal: ["kcal", "سعرة"], gram: ["g", "جم"], perDay: ["/day", "/يوم"],
     resDiet: ["Diet plan", "خطة التغذية"], resWorkout: ["Workout plan", "خطة التمرين"],
     swaps: ["Easy swaps", "بدائل سهلة"], hydration: ["Water", "الماء"],
@@ -236,12 +251,22 @@
       want: "both",
       age: "", sex: planSex() || "male",
       heightCm: "", weightKg: "",
-      goal: "lose_fat", activityLevel: "moderate",
+      goal: "lose_fat", goalChecks: { lose_fat: true, gain_muscle: false, maintain: false },
+      activityLevel: "moderate",
       trainingDaysPerWeek: "4", equipment: "full_gym",
       dietPreference: "balanced", allergies: [], dislikes: [],
       inbodyOpen: false, bodyFatPct: "", skeletalMuscleMassKg: "", visceralFatLevel: "", bmrKcal: "",
       notes: ""
     };
+  }
+  // goalChecks {lose_fat, gain_muscle, maintain} -> the single enum value the
+  // API expects. Both fat-loss + muscle boxes checked together = recomp.
+  function deriveGoal(checks) {
+    if (checks.maintain) return "maintain";
+    if (checks.lose_fat && checks.gain_muscle) return "recomp";
+    if (checks.lose_fat) return "lose_fat";
+    if (checks.gain_muscle) return "gain_muscle";
+    return "";
   }
   function loadState() {
     var st = Object.assign(defaultState(), loadJSON(FORM_KEY, {}));
@@ -249,6 +274,15 @@
     if (ps) st.sex = ps;                       // plan is authoritative for sex
     if (["both", "diet", "workout"].indexOf(st.want) === -1) st.want = "both";
     ["allergies", "dislikes"].forEach(function (k) { if (!Array.isArray(st[k])) st[k] = []; });
+    // reconcile goalChecks <-> goal (covers saved state from before the
+    // checklist existed, or any drift between the two representations)
+    if (!st.goalChecks || typeof st.goalChecks !== "object") {
+      st.goalChecks = { lose_fat: st.goal === "lose_fat" || st.goal === "recomp",
+        gain_muscle: st.goal === "gain_muscle" || st.goal === "recomp",
+        maintain: st.goal === "maintain" };
+    }
+    ["lose_fat", "gain_muscle", "maintain"].forEach(function (k) { st.goalChecks[k] = !!st.goalChecks[k]; });
+    st.goal = deriveGoal(st.goalChecks);
     return st;
   }
 
@@ -355,6 +389,41 @@
     if (opts.hint) wrap.appendChild(h("small", { class: "coach-hint" }, opts.hint));
     return wrap;
   }
+  // same as field(), but wraps with <div> instead of <label> — for controls
+  // (checkbox groups) that already contain their own nested <label>s.
+  function fieldGroup(labelKey, name, control, opts) {
+    opts = opts || {};
+    var lbl = h("span", { class: "coach-field-l" }, s(labelKey));
+    if (opts.required) lbl.appendChild(h("span", { class: "req", "aria-hidden": "true" }, " *"));
+    var fe = h("small", { class: "coach-fe", role: "alert", "data-fe": name || "" });
+    var wrap = h("div", { class: "coach-field", "data-field": name || "" }, lbl, control, fe);
+    if (opts.hint) wrap.appendChild(h("small", { class: "coach-hint" }, opts.hint));
+    return wrap;
+  }
+  // three checkboxes -> one goal enum. Checking Maintain clears the other
+  // two (and vice versa); Lose fat + Build muscle together = recomposition.
+  function goalChecklist(st, persist, refreshValidity) {
+    var wrap = h("div", { class: "coach-goal-checks", role: "group", "aria-label": s("goal") });
+    var order = ["lose_fat", "gain_muscle", "maintain"];
+    var boxes = {};
+    order.forEach(function (key) {
+      var cb = h("input", { type: "checkbox", checked: st.goalChecks[key] ? "checked" : false });
+      boxes[key] = cb;
+      cb.addEventListener("change", function () {
+        if (key === "maintain" && cb.checked) {
+          boxes.lose_fat.checked = false; boxes.gain_muscle.checked = false;
+          st.goalChecks.lose_fat = false; st.goalChecks.gain_muscle = false;
+        } else if (key !== "maintain" && cb.checked) {
+          boxes.maintain.checked = false; st.goalChecks.maintain = false;
+        }
+        st.goalChecks[key] = cb.checked;
+        st.goal = deriveGoal(st.goalChecks);
+        persist(); refreshValidity();
+      });
+      wrap.appendChild(h("label", { class: "coach-check" }, cb, h("span", {}, s(key))));
+    });
+    return wrap;
+  }
 
   function chipsInput(name, values, onchange) {
     var arr = (values || []).slice();
@@ -432,6 +501,7 @@
           wantWrap.querySelectorAll("button").forEach(function (x) {
             x.setAttribute("aria-pressed", x.getAttribute("data-want") === w ? "true" : "false");
           });
+          if (ibGroup) ibGroup.hidden = (w === "workout"); // InBody informs diet macros, not the workout
           persist();
         } }
       }, s(w === "both" ? "wantBoth" : w === "diet" ? "wantDiet" : "wantWorkout")));
@@ -464,7 +534,7 @@
     // Goal
     form.appendChild(h("fieldset", { class: "coach-group" },
       h("legend", {}, s("grpGoal")),
-      field("goal", "goal", selectInput("goal", st.goal), { required: true }),
+      fieldGroup("goal", "goal", goalChecklist(st, persist, refreshValidity), { required: true, hint: s("goalHint") }),
       field("activityLevel", "activityLevel", selectInput("activityLevel", st.activityLevel), { required: true })));
 
     // Training
@@ -501,7 +571,10 @@
         persist();
       } }
     }, s("grpInBody"));
-    form.appendChild(h("fieldset", { class: "coach-group" }, ibToggle, ibBody));
+    // InBody informs diet/macro calc, not exercise selection — hide it in workout-only mode
+    var ibGroup = h("fieldset", { class: "coach-group" }, ibToggle, ibBody);
+    ibGroup.hidden = st.want === "workout";
+    form.appendChild(ibGroup);
 
     // notes
     var notes = h("textarea", { name: "notes", maxlength: "300", rows: "3" });
@@ -604,22 +677,40 @@
     });
   }
 
-  function statTile(labelKey, value, unit) {
+  // close any open tap-triggered tooltip when the user taps/clicks elsewhere
+  document.addEventListener("click", function () {
+    document.querySelectorAll(".coach-tip-btn.open").forEach(function (b) { b.classList.remove("open"); });
+  });
+
+  function statTile(labelKey, value, unit, explainKey) {
+    var lbl = h("div", { class: "coach-stat-l" }, s(labelKey));
+    if (explainKey) {
+      var info = h("button", {
+        type: "button", class: "coach-tip-btn", "aria-label": s(labelKey),
+        on: { click: function (e) {
+          e.stopPropagation();
+          var open = !info.classList.contains("open");
+          document.querySelectorAll(".coach-tip-btn.open").forEach(function (b) { b.classList.remove("open"); });
+          if (open) info.classList.add("open");
+        } }
+      }, "i", h("span", { class: "coach-tip", role: "tooltip" }, s(explainKey)));
+      lbl.appendChild(info);
+    }
     return h("div", { class: "coach-stat" },
       h("div", { class: "coach-stat-v" }, String(value), unit ? h("span", {}, " " + unit) : null),
-      h("div", { class: "coach-stat-l" }, s(labelKey)));
+      lbl);
   }
 
   function renderResult(r) {
     var c = r.computed || {};
     var stats = h("div", { class: "coach-stats" },
-      statTile("bmi", round(c.bmi, 1), c.bmiClass ? (s(c.bmiClass) || c.bmiClass) : ""),
-      statTile("bmr", Math.round(c.bmrKcal || 0), s("kcal")),
-      statTile("tdee", Math.round(c.tdeeKcal || 0), s("kcal")),
-      statTile("target", Math.round(c.targetKcal || 0), s("kcal") + s("perDay")),
-      statTile("protein", Math.round(c.proteinG || 0), s("gram")),
-      statTile("fat", Math.round(c.fatG || 0), s("gram")),
-      statTile("carb", Math.round(c.carbG || 0), s("gram")));
+      statTile("bmi", round(c.bmi, 1), c.bmiClass ? (s(c.bmiClass) || c.bmiClass) : "", "bmiExplain"),
+      statTile("bmr", Math.round(c.bmrKcal || 0), s("kcal"), "bmrExplain"),
+      statTile("tdee", Math.round(c.tdeeKcal || 0), s("kcal"), "tdeeExplain"),
+      statTile("target", Math.round(c.targetKcal || 0), s("kcal") + s("perDay"), "targetExplain"),
+      statTile("protein", Math.round(c.proteinG || 0), s("gram"), "proteinExplain"),
+      statTile("fat", Math.round(c.fatG || 0), s("gram"), "fatExplain"),
+      statTile("carb", Math.round(c.carbG || 0), s("gram"), "carbExplain"));
 
     var sections = [
       h("div", { class: "coach-print-head" }, s("pdfTitle") + " — " + fmtDate(r.createdAt || Date.now())),

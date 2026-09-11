@@ -807,7 +807,29 @@ body:has(#planChooser:not([hidden])) #appNav{ display:none; }
 }
 .coach-stat-v{ font-size:17px; font-weight:900; color:var(--paper); font-variant-numeric:tabular-nums; }
 .coach-stat-v span{ font-size:10px; font-weight:700; color:var(--paper-dim); }
-.coach-stat-l{ font-size:10.5px; color:var(--paper-dim); margin-top:2px; }
+.coach-stat-l{ font-size:10.5px; color:var(--paper-dim); margin-top:2px; display:flex; align-items:center; justify-content:center; gap:4px; }
+
+/* tap-or-hover explainer on each stat tile */
+.coach-tip-btn{
+  position:relative; width:14px; height:14px; line-height:14px; padding:0;
+  border-radius:50%; border:1px solid var(--line); background:var(--panel2);
+  color:var(--paper-dim); font-size:9px; font-weight:800; font-style:italic;
+  cursor:pointer; flex:none;
+}
+.coach-tip-btn .coach-tip{
+  display:none; position:absolute; z-index:5; bottom:calc(100% + 6px); left:50%;
+  transform:translateX(-50%); width:180px; max-width:60vw;
+  background:var(--panel2); border:1px solid var(--line); border-radius:10px;
+  padding:8px 10px; font-size:11px; font-weight:500; line-height:1.5;
+  color:var(--paper); text-align:start; white-space:normal; box-shadow:0 8px 24px rgba(0,0,0,.35);
+}
+.coach-tip-btn:hover .coach-tip, .coach-tip-btn.open .coach-tip{ display:block; }
+@media (hover:none){ .coach-tip-btn:hover .coach-tip{ display:none; } } /* touch: tap only, no sticky hover */
+
+/* goal checklist */
+.coach-goal-checks{ display:flex; flex-wrap:wrap; gap:14px 18px; padding:2px 0; }
+.coach-check{ display:flex; align-items:center; gap:7px; font-size:13px; color:var(--paper); cursor:pointer; }
+.coach-check input{ width:17px; height:17px; accent-color:var(--accent); cursor:pointer; }
 
 .coach-block{ display:flex; flex-direction:column; gap:10px; }
 .coach-block > h3{ margin:0; font-size:15px; color:var(--accent); }
@@ -885,7 +907,7 @@ body:has(#planChooser:not([hidden])) #appNav{ display:none; }
 @media print{
   #bgfx, #appNav, #timerBar, #miniTimer, #toTop, #onboarding, #planChooser,
   #screen-plan, #screen-more, #videoModal,
-  .coach-actions, .coach-links, .coach-res-head .coach-mascot{ display:none !important; }
+  .coach-actions, .coach-links, .coach-res-head .coach-mascot, .coach-tip-btn{ display:none !important; }
   html, body{ background:#fff !important; color:#000 !important; }
   body{ padding:0 !important; }
   #screen-coach{ display:block !important; padding:0 !important; }
