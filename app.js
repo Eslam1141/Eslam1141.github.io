@@ -11,48 +11,46 @@ const DAYS_PREVIEW = [
     {id:"pv_plank", en:"Plank (core)", sets:3, reps:"30-45s", rest:45, vid:"fWW5d1ZFhk4"},
   ]},
 ];
+// 4-day split: Chest+Biceps / Back+Triceps / rest / repeat with different
+// moves. Each day: 2 moves for the paired push/pull muscle, 2 for the other,
+// 2 leg moves and 1 core move — the "B" days reuse the same pairing with a
+// different exercise selection so the week doesn't repeat a single move.
 const DAYS_MALE = [
-  { id:"push", label:"Push", muscles:"Chest, Shoulders, Triceps", exercises:[
-    {id:"push_bench", en:"Barbell Bench Press", sets:4, reps:"6-8", rest:150, vid:"0cXAp6WhSj4"},
-    {id:"push_incline_db", en:"Incline Dumbbell Press", sets:3, reps:"8-10", rest:120, vid:"8fXfwG4ftaQ"},
-    {id:"push_fly", en:"Cable Chest Fly", sets:3, reps:"12-15", rest:60, vid:"I-Ue34qLxc4"},
-    {id:"push_cable_lateral", en:"Cable Lateral Raise", sets:3, reps:"15-20", rest:60, vid:"HCfU6LGpgMk"},
-    {id:"push_oh_ext", en:"Overhead Cable Triceps Extension", sets:3, reps:"10-15", rest:60, vid:"tPIWaCKWFF8"},
-    {id:"push_pushdown", en:"Cable Rope Pushdown", sets:3, reps:"12-15", rest:45, vid:"7OF77JMEXhM"},
+  { id:"cb_a", label:"Chest & Biceps A", muscles:"Chest, Biceps, Legs, Core", exercises:[
+    {id:"cba_bench", en:"Barbell Bench Press", sets:4, reps:"6-8", rest:150, vid:"0cXAp6WhSj4"},
+    {id:"cba_incline", en:"Incline Dumbbell Press", sets:3, reps:"8-10", rest:120, vid:"8fXfwG4ftaQ"},
+    {id:"cba_curl", en:"Barbell Curl", sets:3, reps:"10-12", rest:60, vid:"9_ijHhcwlkM"},
+    {id:"cba_inclcurl", en:"Incline Dumbbell Curl", sets:3, reps:"10-12", rest:45, vid:"XhIsIcjIbCw"},
+    {id:"cba_squat", en:"Barbell Back Squat", sets:4, reps:"6-8", rest:150, vid:"tNUq6b5t11Q"},
+    {id:"cba_legpress", en:"Leg Press", sets:3, reps:"10-12", rest:120, vid:"nDh_BlnLCGc"},
+    {id:"cba_core", en:"Hanging Leg Raise (core)", sets:3, reps:"10-15", rest:45, vid:"0wSUjj5j1xo"},
   ]},
-  { id:"pull", label:"Pull", muscles:"Back, Rear Delts, Biceps", exercises:[
-    {id:"pull_lat", en:"Lat Pulldown / Pull-up", sets:4, reps:"8-10", rest:120, vid:"bNmvKpJSWKM"},
-    {id:"pull_csrow", en:"Chest-Supported Row", sets:4, reps:"8-10", rest:90, vid:"uhwcRYpkjvc"},
-    {id:"pull_cablerow", en:"Seated Cable Row", sets:3, reps:"10-12", rest:75, vid:"8QuMq1GMMng"},
-    {id:"pull_reardelt", en:"Reverse Pec Deck (Rear Delt Fly)", sets:3, reps:"15-20", rest:45, vid:"v0CxZlWX9zQ"},
-    {id:"pull_curl", en:"Barbell Curl", sets:3, reps:"10-12", rest:60, vid:"9_ijHhcwlkM"},
-    {id:"pull_incline_curl", en:"Incline Dumbbell Curl", sets:3, reps:"10-12", rest:45, vid:"XhIsIcjIbCw"},
-    {id:"pull_leg_raise", en:"Hanging Leg Raise (core)", sets:3, reps:"10-15", rest:45, vid:"0wSUjj5j1xo"},
+  { id:"bt_a", label:"Back & Triceps A", muscles:"Back, Triceps, Legs, Core", exercises:[
+    {id:"bta_lat", en:"Lat Pulldown / Pull-up", sets:4, reps:"8-10", rest:120, vid:"bNmvKpJSWKM"},
+    {id:"bta_csrow", en:"Chest-Supported Row", sets:4, reps:"8-10", rest:90, vid:"uhwcRYpkjvc"},
+    {id:"bta_ohext", en:"Overhead Cable Triceps Extension", sets:3, reps:"10-15", rest:60, vid:"tPIWaCKWFF8"},
+    {id:"bta_pushdown", en:"Cable Rope Pushdown", sets:3, reps:"12-15", rest:45, vid:"7OF77JMEXhM"},
+    {id:"bta_rdl", en:"Barbell Romanian Deadlift", sets:3, reps:"8-10", rest:90, vid:"zdip4iexlxg"},
+    {id:"bta_legcurl", en:"Lying Leg Curl", sets:3, reps:"12-15", rest:60, vid:"bgfHeL6eR9Q"},
+    {id:"bta_core", en:"Pallof Press (core)", sets:3, reps:"12/side", rest:45, vid:"P1H4IzD9rbQ"},
   ]},
-  { id:"legs", label:"Legs", muscles:"Quads, Hamstrings, Calves", exercises:[
-    {id:"legs_squat", en:"Barbell Back Squat", sets:4, reps:"6-8", rest:150, vid:"tNUq6b5t11Q"},
-    {id:"legs_press", en:"Leg Press", sets:3, reps:"10-12", rest:120, vid:"nDh_BlnLCGc"},
-    {id:"legs_rdl", en:"Barbell Romanian Deadlift", sets:3, reps:"8-10", rest:90, vid:"zdip4iexlxg"},
-    {id:"legs_curl", en:"Lying Leg Curl", sets:3, reps:"12-15", rest:60, vid:"bgfHeL6eR9Q"},
-    {id:"legs_ext", en:"Leg Extension", sets:3, reps:"15-20", rest:60, vid:"iQ92TuvBqRo"},
-    {id:"legs_calf", en:"Standing Calf Raise", sets:4, reps:"12-15", rest:45, vid:"B30JglFGx8Y"},
+  { id:"cb_b", label:"Chest & Biceps B", muscles:"Chest, Biceps, Legs, Core", exercises:[
+    {id:"cbb_fly", en:"Cable Chest Fly", sets:3, reps:"12-15", rest:60, vid:"I-Ue34qLxc4"},
+    {id:"cbb_dbbench", en:"Dumbbell Bench Press", sets:3, reps:"8-10", rest:90, vid:"Gf65Yy0-wGI"},
+    {id:"cbb_hammer", en:"Hammer Curl", sets:3, reps:"12-15", rest:30, vid:"K9LiwcGuqA0"},
+    {id:"cbb_super", en:"Biceps + Triceps Superset", sets:3, reps:"12-15", rest:60, vid:"8UIbEovL-xU"},
+    {id:"cbb_hack", en:"Hack Squat", sets:4, reps:"8-10", rest:120, vid:"g9i05umL5vc"},
+    {id:"cbb_legext", en:"Leg Extension", sets:3, reps:"15-20", rest:60, vid:"iQ92TuvBqRo"},
+    {id:"cbb_core", en:"Weighted Cable Crunch (core)", sets:3, reps:"12-15", rest:45, vid:"Bvhz7Rfnrr4"},
   ]},
-  { id:"upper", label:"Upper", muscles:"Chest, Back, Delts, Arms", exercises:[
-    {id:"upper_db_bench", en:"Dumbbell Bench Press", sets:3, reps:"8-10", rest:90, vid:"Gf65Yy0-wGI"},
-    {id:"upper_tbar", en:"T-Bar Row", sets:3, reps:"8-10", rest:90, vid:"1iQSSqin3ro"},
-    {id:"upper_shoulder", en:"Seated Dumbbell Shoulder Press", sets:3, reps:"8-12", rest:75, vid:"k6tzKisR3NY"},
-    {id:"upper_pulldown", en:"Wide-grip Lat Pulldown", sets:3, reps:"10-12", rest:75, vid:"02Qci1-0Aao"},
-    {id:"upper_lateral", en:"Dumbbell Lateral Raise", sets:3, reps:"15-20", rest:45, vid:"Kl3LEzQ5Zqs"},
-    {id:"upper_arms", en:"Biceps + Triceps Superset", sets:3, reps:"12-15", rest:60, vid:"8UIbEovL-xU"},
-    {id:"upper_pallof", en:"Pallof Press (core)", sets:3, reps:"12/side", rest:45, vid:"P1H4IzD9rbQ"},
-  ]},
-  { id:"lower", label:"Lower", muscles:"Quads, Glutes, Hamstrings, Abs", exercises:[
-    {id:"lower_front", en:"Hack Squat", sets:4, reps:"8-10", rest:120, vid:"g9i05umL5vc"},
-    {id:"lower_bss", en:"Bulgarian Split Squat", sets:3, reps:"10-12/leg", rest:75, vid:"uODWo4YqbT8"},
-    {id:"lower_hipthrust", en:"Barbell Hip Thrust", sets:3, reps:"8-12", rest:90, vid:"GAZC6bt30Yg"},
-    {id:"lower_curl", en:"Seated Leg Curl", sets:3, reps:"12-15", rest:60, vid:"xdbEG3xGLI8"},
-    {id:"lower_calf", en:"Seated Calf Raise", sets:3, reps:"15-20", rest:45, vid:"NrHJPauB01I"},
-    {id:"lower_crunch", en:"Weighted Cable Crunch (core)", sets:3, reps:"12-15", rest:45, vid:"Bvhz7Rfnrr4"},
+  { id:"bt_b", label:"Back & Triceps B", muscles:"Back, Triceps, Legs, Core", exercises:[
+    {id:"btb_cablerow", en:"Seated Cable Row", sets:3, reps:"10-12", rest:75, vid:"8QuMq1GMMng"},
+    {id:"btb_tbar", en:"T-Bar Row", sets:3, reps:"8-10", rest:90, vid:"1iQSSqin3ro"},
+    {id:"btb_dips", en:"Bench Dips", sets:3, reps:"12-18", rest:45, vid:"ekgvqS_4Ee4"},
+    {id:"btb_super", en:"Biceps Curl + Triceps Extension (superset)", sets:3, reps:"12-15", rest:60, vid:"8UIbEovL-xU"},
+    {id:"btb_bss", en:"Bulgarian Split Squat", sets:3, reps:"10-12/leg", rest:75, vid:"uODWo4YqbT8"},
+    {id:"btb_seatcurl", en:"Seated Leg Curl", sets:3, reps:"12-15", rest:60, vid:"xdbEG3xGLI8"},
+    {id:"btb_core", en:"Plank (core)", sets:3, reps:"30-45s", rest:30, vid:"fWW5d1ZFhk4"},
   ]},
 ];
 
@@ -170,17 +168,54 @@ const AR_EX = {
   "Squat Jumps":"قفز سكوات","Burpees":"بيربي","Inverted Row (under a table)":"تجديف مقلوب (تحت طاولة)","Superman":"سوبرمان (أسفل الظهر)",
   "Flutter Kicks":"رفرفة الرجلين","Bear Crawl":"زحف الدب"
 };
-const AR_DAY = {"Push":"دفع","Pull":"سحب","Legs":"أرجل","Upper":"علوي","Lower":"سفلي","Lower A":"سفلي أ","Upper A":"علوي أ","Lower B":"سفلي ب","Upper B":"علوي ب","Full-Body Starter":"تمرين شامل للمبتدئين"};
+const AR_DAY = {"Push":"دفع","Pull":"سحب","Legs":"أرجل","Upper":"علوي","Lower":"سفلي","Lower A":"سفلي أ","Upper A":"علوي أ","Lower B":"سفلي ب","Upper B":"علوي ب","Full-Body Starter":"تمرين شامل للمبتدئين",
+  "Chest & Biceps A":"صدر وبايسبس أ","Back & Triceps A":"ظهر وترايسبس أ","Chest & Biceps B":"صدر وبايسبس ب","Back & Triceps B":"ظهر وترايسبس ب"};
 const AR_MUS = {
   "Chest, Shoulders, Triceps":"صدر، أكتاف، ترايسبس","Back, Rear Delts, Biceps":"ظهر، أكتاف خلفية، بايسبس","Quads, Hamstrings, Calves":"أمامية الفخذ، خلفية الفخذ، سمانة",
   "Chest, Back, Delts, Arms":"صدر، ظهر، أكتاف، ذراعين","Quads, Glutes, Hamstrings, Abs":"أمامية الفخذ، ألوية، خلفية الفخذ، بطن","Glutes & Quads":"ألوية وأمامية الفخذ",
   "Push focus":"تركيز الدفع","Hamstrings & Glutes":"خلفية الفخذ والألوية","Pull focus & core":"تركيز السحب والبطن",
   "Push & Core":"دفع وبطن","Legs & Cardio":"أرجل وكارديو","Pull & Total Body":"سحب وكامل الجسم",
-  "Full body":"الجسم كامل"
+  "Full body":"الجسم كامل",
+  "Chest, Biceps, Legs, Core":"صدر، بايسبس، أرجل، بطن","Back, Triceps, Legs, Core":"ظهر، ترايسبس، أرجل، بطن"
 };
 
 // ---- exercise-name -> demo video lookup (reused for coach-generated plans) ----
 function _normEx(s){ return String(s||"").toLowerCase().replace(/\(.*?\)/g," ").replace(/[^a-z0-9]+/g," ").trim(); }
+// The AI coach names moves in its own words ("Bench Press", "Deadlift", "Push
+// Ups"...) that rarely match our catalog's exact labels. Map the common
+// generic/alternate names a model tends to use onto one of our real,
+// already-verified demo clips so more of a generated plan gets a video.
+const EX_ALIASES = {
+  "bench press":"Barbell Bench Press", "chest press":"Barbell Bench Press", "flat bench press":"Barbell Bench Press",
+  "incline bench press":"Incline Dumbbell Press", "incline press":"Incline Dumbbell Press",
+  "push up":"Push-ups", "push ups":"Push-ups", "pushup":"Push-ups", "pushups":"Push-ups", "standard push up":"Push-ups",
+  "squat":"Barbell Back Squat", "squats":"Bodyweight Squats", "bodyweight squat":"Bodyweight Squats", "air squat":"Bodyweight Squats",
+  "back squat":"Barbell Back Squat", "goblet squats":"Goblet Squat",
+  "deadlift":"Barbell Romanian Deadlift", "deadlifts":"Barbell Romanian Deadlift", "romanian deadlift":"Barbell Romanian Deadlift", "rdl":"Barbell Romanian Deadlift", "stiff leg deadlift":"Barbell Romanian Deadlift",
+  "pull up":"Lat Pulldown / Pull-up", "pull ups":"Lat Pulldown / Pull-up", "pullup":"Lat Pulldown / Pull-up", "pullups":"Lat Pulldown / Pull-up", "chin up":"Lat Pulldown / Pull-up", "chin ups":"Lat Pulldown / Pull-up",
+  "lat pulldown":"Lat Pulldown / Pull-up", "assisted pull up":"Lat Pulldown / Pull-up",
+  "row":"Seated Cable Row", "cable row":"Seated Cable Row", "seated row":"Seated Cable Row",
+  "bent over row":"Chest-Supported Row", "barbell row":"Chest-Supported Row", "bent over barbell row":"Chest-Supported Row",
+  "dumbbell row":"One-Arm Dumbbell Row", "single arm dumbbell row":"One-Arm Dumbbell Row",
+  "bicep curl":"Barbell Curl", "biceps curl":"Barbell Curl", "bicep curls":"Barbell Curl", "barbell bicep curl":"Barbell Curl",
+  "dumbbell curl":"Incline Dumbbell Curl", "dumbbell bicep curl":"Incline Dumbbell Curl", "hammer curls":"Hammer Curl",
+  "tricep extension":"Overhead Cable Triceps Extension", "triceps extension":"Overhead Cable Triceps Extension", "overhead tricep extension":"Overhead Cable Triceps Extension",
+  "tricep pushdown":"Cable Rope Pushdown", "triceps pushdown":"Cable Rope Pushdown", "rope pushdown":"Cable Rope Pushdown",
+  "dips":"Bench Dips", "tricep dips":"Bench Dips", "dip":"Bench Dips",
+  "shoulder press":"Seated Dumbbell Shoulder Press", "overhead press":"Seated Dumbbell Shoulder Press", "military press":"Seated Dumbbell Shoulder Press", "dumbbell shoulder press":"Seated Dumbbell Shoulder Press",
+  "lateral raise":"Dumbbell Lateral Raise", "lateral raises":"Dumbbell Lateral Raise", "side raise":"Dumbbell Lateral Raise", "side raises":"Dumbbell Lateral Raise",
+  "face pull":"Band Face Pull", "face pulls":"Band Face Pull",
+  "leg curl":"Lying Leg Curl", "hamstring curl":"Lying Leg Curl", "leg extension":"Leg Extension", "leg extensions":"Leg Extension",
+  "lunge":"Reverse Lunges", "lunges":"Reverse Lunges", "walking lunge":"Reverse Lunges", "walking lunges":"Reverse Lunges",
+  "split squat":"Bulgarian Split Squat", "bulgarian split squats":"Bulgarian Split Squat", "rear foot elevated split squat":"Bulgarian Split Squat",
+  "calf raise":"Standing Calf Raise", "calf raises":"Standing Calf Raise",
+  "hip thrust":"Barbell Hip Thrust", "hip thrusts":"Barbell Hip Thrust", "glute bridge":"Glute Bridge", "glute bridges":"Glute Bridge",
+  "plank":"Plank (core)", "planks":"Plank (core)", "side plank":"Plank (core)", "forearm plank":"Plank (core)",
+  "crunch":"Weighted Cable Crunch (core)", "crunches":"Weighted Cable Crunch (core)", "sit up":"Weighted Cable Crunch (core)", "sit ups":"Weighted Cable Crunch (core)",
+  "leg raise":"Hanging Leg Raise (core)", "leg raises":"Hanging Leg Raise (core)", "hanging leg raises":"Hanging Leg Raise (core)", "lying leg raise":"Hanging Leg Raise (core)",
+  "mountain climber":"Mountain Climbers", "burpee":"Burpees",
+  "chest fly":"Cable Chest Fly", "chest flys":"Cable Chest Fly", "chest flyes":"Cable Chest Fly", "dumbbell fly":"Cable Chest Fly", "pec deck":"Cable Chest Fly"
+};
 const EX_VID = (function(){
   const m = {};
   [DAYS_PREVIEW, DAYS_MALE, DAYS_FEMALE, DAYS_MALE_CAL, DAYS_FEMALE_CAL].forEach(set=>{
@@ -189,6 +224,10 @@ const EX_VID = (function(){
       m[_normEx(ex.en)] = ex.vid;
       const ar = AR_EX[ex.en]; if(ar) m[_normEx(ar)] = ex.vid;
     }));
+  });
+  Object.keys(EX_ALIASES).forEach(alias=>{
+    const vid = m[_normEx(EX_ALIASES[alias])];
+    if(vid) m[_normEx(alias)] = vid;
   });
   return m;
 })();
@@ -215,7 +254,7 @@ const T = {
   anonSignIn:["Sign in with Google","سجّل الدخول عبر جوجل"],
   chooseTitle:["Choose your plan","اختر خطتك"],
   chooseSub:["You can switch anytime from the top of the app.","يمكنك التبديل في أي وقت من أعلى التطبيق."],
-  male:["Male","رجالي"], maleSub:["5-day gym plan","خطة 5 أيام في الجيم"],
+  male:["Male","رجالي"], maleSub:["4-day gym plan","خطة 4 أيام في الجيم"],
   female:["Female","نسائي"], femaleSub:["4-day home plan","خطة 4 أيام في المنزل"],
   styleGym:["Gym","جيم"], styleCal:["Calisthenics","كاليسثينكس"],
   langBtn:["العربية","English"],
