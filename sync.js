@@ -9,6 +9,15 @@
 
   var API_BASE = (window.GYM_API_BASE || "/api/v1").replace(/\/+$/, "");
   var CLIENT_ID = window.GOOGLE_CLIENT_ID || "";
+  // _debug.onCredential lets a caller hand sync.js an arbitrary, unverified
+  // credential string and have it trusted as a real signed-in identity (real
+  // sign-in only ever gets here via a signature Google's own SDK already
+  // checked) — invaluable for testing, but not something to leave reachable
+  // by any script on the real site real users visit. Gate it (and the
+  // account-data wipe it can trigger) off the production origin.
+  var IS_PROD = (function () {
+    try { return location.hostname === "gym-app.cloider.app"; } catch (e) { return false; }
+  })();
   var META_KEY = "gym_meta_updatedAt";
   // Device-local cache of the last Google ID token (NOT gym_-prefixed => never
   // synced). Without this, every reload started signed-out and waited on a
@@ -40,9 +49,13 @@
     if (window.console && console.debug) console.debug.apply(console, arguments);
   }
 
+  // sessionStorage, not localStorage: this holds a live bearer credential.
+  // sessionStorage still survives a reload (fixes "signs out on refresh")
+  // but is cleared when the tab/browser closes, instead of sitting on disk
+  // indefinitely on a shared/public device.
   function loadCachedSession() {
     try {
-      var s = JSON.parse(localStorage.getItem(SESSION_KEY));
+      var s = JSON.parse(sessionStorage.getItem(SESSION_KEY));
       // 30s safety margin, same as isSignedIn()'s own check
       if (s && s.token && s.exp && s.exp * 1000 > nowMs() + 30000) return s;
     } catch (e) {}
@@ -51,12 +64,12 @@
   function saveCachedSession() {
     try {
       if (idToken && tokenExpEpoch) {
-        localStorage.setItem(SESSION_KEY, JSON.stringify({ token: idToken, exp: tokenExpEpoch, profile: profile }));
+        sessionStorage.setItem(SESSION_KEY, JSON.stringify({ token: idToken, exp: tokenExpEpoch, profile: profile }));
       }
     } catch (e) {}
   }
   function clearCachedSession() {
-    try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
+    try { sessionStorage.removeItem(SESSION_KEY); } catch (e) {}
   }
 
   function readMeta() {
@@ -385,8 +398,12 @@
     profile: function () { return profile ? { email: profile.email, name: profile.name } : null; },
     signOut: signOut,
     _debug: {
-      gymKeys: gymKeys, readMeta: readMeta, buildEntries: buildEntries, onCredential: onCredential,
-      clearUserData: clearUserData, loadCachedSession: loadCachedSession, clearCachedSession: clearCachedSession
+      gymKeys: gymKeys, readMeta: readMeta, buildEntries: buildEntries,
+      loadCachedSession: loadCachedSession, clearCachedSession: clearCachedSession,
+      // identity-forging / data-wiping hooks: test builds only, never on the
+      // real production origin (see IS_PROD above).
+      onCredential: IS_PROD ? undefined : onCredential,
+      clearUserData: IS_PROD ? undefined : clearUserData
     }
   };
 
