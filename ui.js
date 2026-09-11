@@ -62,7 +62,7 @@
 
     if (!opts.keepScroll) { try { window.scrollTo(0, 0); } catch (e) {} }
     if (tab === "coach" && window.GymCoach && typeof GymCoach.refresh === "function") {
-      GymCoach.refresh();
+      try { GymCoach.refresh(); } catch (e) { if (window.console) console.warn("coach refresh failed", e); }
     }
   }
 
@@ -89,9 +89,13 @@
     document.body.style.overflow = "";
   }
 
-  function rebuild() { if (typeof window.GymAppRebuild === "function") window.GymAppRebuild(); }
+  function rebuild() {
+    try { if (typeof window.GymAppRebuild === "function") window.GymAppRebuild(); }
+    catch (e) { if (window.console) console.warn("app rebuild failed", e); }
+  }
   function refreshCoach() {
-    if (window.GymCoach && typeof GymCoach.refresh === "function") GymCoach.refresh();
+    try { if (window.GymCoach && typeof GymCoach.refresh === "function") GymCoach.refresh(); }
+    catch (e) { if (window.console) console.warn("coach refresh failed", e); }
   }
 
   function startAnon() {

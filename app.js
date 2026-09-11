@@ -178,6 +178,29 @@ const AR_MUS = {
   "Push & Core":"دفع وبطن","Legs & Cardio":"أرجل وكارديو","Pull & Total Body":"سحب وكامل الجسم",
   "Full body":"الجسم كامل"
 };
+
+// ---- exercise-name -> demo video lookup (reused for coach-generated plans) ----
+function _normEx(s){ return String(s||"").toLowerCase().replace(/\(.*?\)/g," ").replace(/[^a-z0-9]+/g," ").trim(); }
+const EX_VID = (function(){
+  const m = {};
+  [DAYS_PREVIEW, DAYS_MALE, DAYS_FEMALE, DAYS_MALE_CAL, DAYS_FEMALE_CAL].forEach(set=>{
+    set.forEach(d=> d.exercises.forEach(ex=>{
+      if(!ex.vid) return;
+      m[_normEx(ex.en)] = ex.vid;
+      const ar = AR_EX[ex.en]; if(ar) m[_normEx(ar)] = ex.vid;
+    }));
+  });
+  return m;
+})();
+// Best-effort match: exact normalised name, else a contains match either way.
+window.GymExerciseVideo = function(name){
+  const n = _normEx(name);
+  if(n.length < 4) return "";
+  if(EX_VID[n]) return EX_VID[n];
+  const keys = Object.keys(EX_VID);
+  let hit = keys.find(k => k.length >= 6 && (n.indexOf(k) !== -1 || k.indexOf(n) !== -1));
+  return hit ? EX_VID[hit] : "";
+};
 const T = {
   appTitle:["Muscle Building Plan","خطة بناء العضلات"],
   obTitle:["Your workout, everywhere","تمرينك في كل مكان"],
@@ -992,7 +1015,9 @@ function applyLang(lang, persist){
   applyStaticI18n();
   animateCards = true;
   renderAll();
-  if(window.GymCoach && typeof window.GymCoach.refresh === "function") window.GymCoach.refresh();
+  try {
+    if(window.GymCoach && typeof window.GymCoach.refresh === "function") window.GymCoach.refresh();
+  } catch(e){ if(window.console) console.warn("coach re-render failed", e); }
 }
 
 // ---------------- PLAN + STYLE ----------------

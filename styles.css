@@ -708,7 +708,8 @@ body:has(#planChooser:not([hidden])) #appNav{ display:none; }
 .coach-bullets li::before{
   content:"\2713"; position:absolute; inset-inline-start:0; color:var(--green); font-weight:900;
 }
-.coach-logo{ border-radius:0 !important; box-shadow:none !important; }
+/* the Coach hero has no icon (the themed mascot lives in the teaser / result) */
+#screen-coach > .wrap > header.hero{ padding-top:8px; }
 
 /* ---- Coach: form ---- */
 .coach-form{ display:flex; flex-direction:column; gap:14px; margin-bottom:24px; }

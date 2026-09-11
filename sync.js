@@ -10,6 +10,11 @@
   var API_BASE = (window.GYM_API_BASE || "/api/v1").replace(/\/+$/, "");
   var CLIENT_ID = window.GOOGLE_CLIENT_ID || "";
   var META_KEY = "gym_meta_updatedAt";
+  // Device-local keys that must NEVER round-trip through the server. gym_user_sub
+  // especially: if a stale value comes back down it flips the "account switched"
+  // check on the next load and can wedge the app in a reload loop.
+  var LOCAL_ONLY = { gym_meta_updatedAt: 1, gym_user_sub: 1, gym_tab: 1, gym_anon: 1 };
+  function syncable(k) { return k && k.indexOf("gym_") === 0 && !LOCAL_ONLY[k]; }
   var FETCH_TIMEOUT_MS = 8000;
   var DEBOUNCE_MS = 3000;
   var INTERVAL_MS = 120000;
@@ -35,12 +40,12 @@
     try { localStorage.setItem(META_KEY, JSON.stringify(m)); } catch (e) {}
   }
 
-  // Every gym_* key currently in localStorage, excluding the meta key itself.
+  // Every syncable gym_* key currently in localStorage (device-local keys excluded).
   function gymKeys() {
     var out = [];
     for (var i = 0; i < localStorage.length; i++) {
       var k = localStorage.key(i);
-      if (k && k.indexOf("gym_") === 0 && k !== META_KEY) out.push(k);
+      if (syncable(k)) out.push(k);
     }
     return out;
   }
@@ -97,7 +102,7 @@
     var m = readMeta();
     var changed = false;
     Object.keys(entries).forEach(function (k) {
-      if (k.indexOf("gym_") !== 0 || k === META_KEY) return;
+      if (!syncable(k)) return;
       var remote = entries[k];
       var remoteMs = Date.parse(remote.updatedAt) || 0;
       var localMs = m[k] || 0;
@@ -183,14 +188,25 @@
 
     // Account switch on a shared browser: the previous user's data is still in
     // localStorage and would otherwise be shown to — and pushed up for — the
-    // new account. Wipe it and reload; GIS auto-select signs the new account
-    // straight back in and its data is pulled fresh.
+    // new account. Wipe it and reload once; GIS auto-select signs the new
+    // account straight back in and its data is pulled fresh. A sessionStorage
+    // flag prevents a second wipe+reload if GIS bounces between accounts.
     if (p.sub && storedSub && storedSub !== p.sub) {
-      clearUserData();
-      try { localStorage.setItem("gym_user_sub", p.sub); } catch (e) {}
-      try { localStorage.removeItem("gym_anon"); } catch (e) {}
-      location.reload();
-      return;
+      var justSwitched = false;
+      try { justSwitched = sessionStorage.getItem("gym_switch") === "1"; } catch (e) {}
+      if (justSwitched) {
+        try { localStorage.setItem("gym_user_sub", p.sub); } catch (e) {}
+        try { sessionStorage.removeItem("gym_switch"); } catch (e) {}
+      } else {
+        clearUserData();
+        try { localStorage.setItem("gym_user_sub", p.sub); } catch (e) {}
+        try { localStorage.removeItem("gym_anon"); } catch (e) {}
+        try { sessionStorage.setItem("gym_switch", "1"); } catch (e) {}
+        location.reload();
+        return;
+      }
+    } else {
+      try { sessionStorage.removeItem("gym_switch"); } catch (e) {}
     }
 
     // First sign-in on this browser: record the account and push whatever local
