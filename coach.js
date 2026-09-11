@@ -133,11 +133,16 @@
         } else if (attrs[k] != null && attrs[k] !== false) node.setAttribute(k, attrs[k]);
       });
     }
+    var put = function (x) {
+      if (x == null || x === false) return;
+      if (typeof x === "string") node.appendChild(document.createTextNode(x));
+      else if (x && x.nodeType) node.appendChild(x);
+      else node.appendChild(document.createTextNode(String(x))); // tolerate odd model output
+    };
     for (var i = 2; i < arguments.length; i++) {
       var c = arguments[i];
-      if (c == null || c === false) continue;
-      if (Array.isArray(c)) c.forEach(function (x) { if (x != null) node.appendChild(typeof x === "string" ? document.createTextNode(x) : x); });
-      else node.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+      if (Array.isArray(c)) c.forEach(put);
+      else put(c);
     }
     return node;
   }
@@ -745,7 +750,10 @@
         label: d.day || ("Day " + (i + 1)),
         muscles: wp.split || "",
         exercises: (d.exercises || []).map(function (e, j) {
-          return { id: "coach_" + i + "_" + j, en: e.name, sets: e.sets || 3, reps: e.reps || "", rest: e.restSec || 90 };
+          var o = { id: "coach_" + i + "_" + j, en: e.name, sets: e.sets || 3, reps: e.reps || "", rest: e.restSec || 90 };
+          var vid = window.GymExerciseVideo ? window.GymExerciseVideo(e.name) : "";
+          if (vid) o.vid = vid;   // reuse the app's demo clip when the move matches
+          return o;
         })
       };
     });
