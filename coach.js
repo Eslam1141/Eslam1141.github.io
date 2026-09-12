@@ -110,6 +110,7 @@
     applied: ["Added to your plans →", "أُضيفت إلى خططك ←"],
     quotaTitle: ["Daily limit reached", "بلغت الحد اليومي"],
     quotaBody: ["You've used today's assessments. Try again after {t}.", "لقد استخدمت تقييمات اليوم. حاول مجدداً بعد {t}."],
+    quotaBodyGeneric: ["You've used today's assessments. Try again tomorrow.", "لقد استخدمت تقييمات اليوم. حاول مجدداً غداً."],
     errTitle: ["Couldn't reach the coach", "تعذّر الوصول إلى المدرّب"],
     errBody: ["The coach service isn't responding right now. Please try again in a moment.", "خدمة المدرّب لا تستجيب حالياً. يرجى المحاولة بعد قليل."],
     err502: ["The AI service is temporarily unavailable. Please try again shortly.", "خدمة الذكاء الاصطناعي غير متاحة مؤقتاً. حاول بعد قليل."],
@@ -860,11 +861,18 @@
   }
 
   function renderQuota(resetIso) {
-    var when = resetIso;
-    try { when = new Date(resetIso).toLocaleString(lang() === "ar" ? "ar-EG" : "en-US"); } catch (e) {}
+    // new Date(null) / new Date("") silently gives the Unix epoch, not a
+    // throw — an absent/unreadable header must not render "Jan 1 1970".
+    var body = s("quotaBodyGeneric");
+    if (resetIso) {
+      var d = new Date(resetIso);
+      if (!isNaN(d.getTime())) {
+        body = s("quotaBody").replace("{t}", d.toLocaleString(lang() === "ar" ? "ar-EG" : "en-US"));
+      }
+    }
     mount(h("div", { class: "coach-state card-fx" },
       h("h2", {}, s("quotaTitle")),
-      h("p", {}, s("quotaBody").replace("{t}", when)),
+      h("p", {}, body),
       h("button", { type: "button", class: "coach-secondary", on: { click: function () { renderForm(); } } }, s("btnNew"))));
   }
   function renderError(reqBody, strong, status) {
