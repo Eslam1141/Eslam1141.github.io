@@ -33,6 +33,7 @@
     signInBody: ["Sign in to chat with your AI coach.", "سجّل الدخول للدردشة مع مدرّبك الذكي."],
     thinking: ["Thinking…", "يفكّر…"],
     quota: ["You've reached today's chat limit. Try again after {t}.", "بلغت حد الدردشة اليومي. حاول بعد {t}."],
+    quotaGeneric: ["You've reached today's chat limit. Try again tomorrow.", "بلغت حد الدردشة اليومي. حاول مجدداً غداً."],
     err: ["Couldn't reach the coach. Try again.", "تعذّر الوصول إلى المدرّب. حاول مرة أخرى."],
     retry: ["Retry", "أعد المحاولة"],
     refused: ["Let's keep this to nutrition & training — for anything medical, please see a professional.",
@@ -265,10 +266,15 @@
       if (typing) typing.remove();
       if (res.status === 401) { setSending(false); if (window.GymUI) GymUI.promptSignIn(); return null; }
       if (res.status === 429) {
+        // new Date(null) silently gives the Unix epoch, not a throw — an
+        // absent/unreadable header must not render "Jan 1 1970".
         var reset = res.headers.get("X-RateLimit-Reset");
-        var when = reset;
-        try { when = new Date(reset).toLocaleString(lang() === "ar" ? "ar-EG" : "en-US"); } catch (e) {}
-        msgsEl.appendChild(systemBubble(fmt(s("quota"), { t: when })));
+        var text = s("quotaGeneric");
+        if (reset) {
+          var d = new Date(reset);
+          if (!isNaN(d.getTime())) text = fmt(s("quota"), { t: d.toLocaleString(lang() === "ar" ? "ar-EG" : "en-US") });
+        }
+        msgsEl.appendChild(systemBubble(text));
         scrollToBottom(); setSending(false);
         return null;
       }
