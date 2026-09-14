@@ -1030,13 +1030,24 @@ body:has(#planChooser:not([hidden])) #appNav{ display:none; }
 .coach-state h2{ margin:0 0 8px; font-size:17px; font-weight:900; }
 .coach-state p{ margin:0 auto 14px; font-size:13px; color:var(--paper-dim); max-width:40ch; }
 .coach-hist{ display:flex; flex-direction:column; gap:8px; margin-bottom:24px; }
-.coach-hist-row{
-  display:flex; align-items:center; justify-content:space-between; gap:10px;
-  background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:10px 12px;
-  font-size:12.5px; color:var(--paper-dim);
+
+/* My Plans / History cards — was a single underlined text link per row */
+.coach-plan-list{ display:flex; flex-direction:column; gap:10px; margin-bottom:24px; }
+.coach-plan-card{
+  display:flex; flex-direction:column; gap:10px;
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px;
 }
-.coach-row-btns{ display:flex; gap:12px; flex:none; }
-.coach-del{ color:var(--paper-dim); }
+.coach-plan-card-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+.coach-plan-card-info{ display:flex; flex-direction:column; gap:6px; min-width:0; }
+.coach-plan-card-date{ font-size:13.5px; font-weight:800; color:var(--paper); }
+.coach-plan-card-preview{ font-size:12px; color:var(--paper-dim); }
+.coach-plan-card-del{
+  flex:none; width:26px; height:26px; border-radius:50%; line-height:1;
+  background:var(--panel2); border:1px solid var(--line); color:var(--paper-dim);
+  font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+}
+.coach-plan-card-del:hover{ color:#ff6b6b; border-color:#ff6b6b; }
+.coach-plan-card .coach-secondary{ width:auto; align-self:flex-start; padding:8px 16px; font-size:12.5px; }
 
 /* secondary links row under the result actions */
 .coach-links{ display:flex; flex-wrap:wrap; gap:16px; margin-top:4px; }

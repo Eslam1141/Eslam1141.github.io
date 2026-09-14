@@ -842,6 +842,37 @@
     mount(h.apply(null, ["div", { class: "coach-result" }].concat(sections)));
   }
 
+  function wantKey(want) { return want === "diet" ? "wantDiet" : want === "workout" ? "wantWorkout" : "wantBoth"; }
+
+  // A couple of quick-glance numbers so a card is useful before opening it —
+  // whatever's available (My Plans has the full saved result; server history
+  // list rows don't carry this, so those cards just show fewer facts).
+  function planPreview(res) {
+    var bits = [];
+    if (res.computed && res.computed.targetKcal) bits.push(Math.round(res.computed.targetKcal) + " " + s("kcal") + s("perDay"));
+    if (res.workoutPlan && res.workoutPlan.split) bits.push(res.workoutPlan.split);
+    else if (res.dietPlan && res.dietPlan.styleLabel) bits.push(res.dietPlan.styleLabel);
+    return bits;
+  }
+
+  // Shared card for both My Plans and History — was a single underlined
+  // "Open" link in a thin text row; now an actual card with a date, a
+  // want/model tag, an optional stat preview, and a real button.
+  function planCard(opts) {
+    var info = h("div", { class: "coach-plan-card-info" },
+      h("div", { class: "coach-plan-card-date" }, opts.date),
+      h("div", { class: "coach-tag" }, s(wantKey(opts.want)) + (opts.model ? "  ·  " + opts.model : "")));
+    var top = h("div", { class: "coach-plan-card-top" }, info,
+      opts.onDelete ? h("button", {
+        type: "button", class: "coach-plan-card-del", "aria-label": s("del"),
+        on: { click: opts.onDelete }
+      }, "×") : null);
+    var preview = opts.preview && opts.preview.length
+      ? h("div", { class: "coach-plan-card-preview" }, opts.preview.join("  ·  ")) : null;
+    return h("div", { class: "coach-plan-card card-fx" }, top, preview,
+      h("button", { type: "button", class: "coach-secondary", on: { click: opts.onOpen } }, s("histOpen")));
+  }
+
   function renderMyPlans() {
     var arr = loadSaved();
     var head = h("div", { class: "coach-myplans-head" },
@@ -849,19 +880,18 @@
       h("h2", {}, s("myPlans")));
     var body;
     if (!arr.length) {
-      body = h("p", { class: "coach-sub-line" }, s("savedEmpty"));
+      body = h("div", { class: "coach-state card-fx" }, h("p", {}, s("savedEmpty")));
     } else {
-      body = h("div", { class: "coach-hist" });
+      body = h("div", { class: "coach-plan-list" });
       arr.forEach(function (p, i) {
         var res = p.result || {};
-        var wantK = res.want === "diet" ? "wantDiet" : res.want === "workout" ? "wantWorkout" : "wantBoth";
-        body.appendChild(h("div", { class: "coach-hist-row" },
-          h("span", {}, fmtDate(p.savedAt) + "  ·  " + s(wantK) + "  ·  " + (res.model || "")),
-          h("span", { class: "coach-row-btns" },
-            h("button", { type: "button", class: "coach-link", on: { click: function () { renderResult(res); } } }, s("histOpen")),
-            h("button", { type: "button", class: "coach-link coach-del", on: { click: function () {
-              if (window.confirm(s("delConfirm"))) { removeSaved(i); renderMyPlans(); }
-            } } }, s("del")))));
+        body.appendChild(planCard({
+          date: fmtDate(p.savedAt), want: res.want, model: res.model, preview: planPreview(res),
+          onOpen: function () { renderResult(res); },
+          onDelete: function () {
+            if (window.confirm(s("delConfirm"))) { removeSaved(i); renderMyPlans(); }
+          }
+        }));
       });
     }
     mount(h("div", { class: "coach-myplans" }, head,
@@ -974,16 +1004,16 @@
     fetchTimeout(ASSIST_BASE + "/history?limit=20", { headers: { "Authorization": "Bearer " + token } })
       .then(function (r) { return r.json(); }).then(function (doc) {
         var items = (doc && doc.items) || [];
-        var list = items.length ? items.map(function (it) {
-          var when = it.createdAt;
-          try { when = new Date(it.createdAt).toLocaleDateString(lang() === "ar" ? "ar-EG" : "en-US", { month: "short", day: "numeric" }); } catch (e) {}
-          return h("div", { class: "coach-hist-row" },
-            h("span", {}, when + "  ·  " + (it.want || "") + "  ·  " + (it.model || "")),
-            h("button", { type: "button", class: "coach-link", on: { click: function () { openHistory(it.id); } } }, s("histOpen")));
-        }) : [h("p", { class: "coach-sub-line" }, s("histEmpty"))];
-        mount(h.apply(null, ["div", { class: "coach-hist" },
-          h("button", { type: "button", class: "coach-secondary", on: { click: function () { refresh(); } } }, s("back"))
-        ].concat(list)));
+        var body = items.length
+          ? h.apply(null, ["div", { class: "coach-plan-list" }].concat(items.map(function (it) {
+              var when = it.createdAt;
+              try { when = new Date(it.createdAt).toLocaleDateString(lang() === "ar" ? "ar-EG" : "en-US", { month: "short", day: "numeric" }); } catch (e) {}
+              return planCard({ date: when, want: it.want, model: it.model, onOpen: function () { openHistory(it.id); } });
+            })))
+          : h("div", { class: "coach-state card-fx" }, h("p", {}, s("histEmpty")));
+        mount(h("div", { class: "coach-hist" },
+          h("button", { type: "button", class: "coach-secondary", on: { click: function () { refresh(); } } }, s("back")),
+          body));
       }).catch(function () { renderError(null, false, 0); });
   }
   function openHistory(id) {
