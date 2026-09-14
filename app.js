@@ -11,46 +11,54 @@ const DAYS_PREVIEW = [
     {id:"pv_plank", en:"Plank (core)", sets:3, reps:"30-45s", rest:45, vid:"fWW5d1ZFhk4"},
   ]},
 ];
-// 4-day split: Chest+Biceps / Back+Triceps / rest / repeat with different
-// moves. Each day: 2 moves for the paired push/pull muscle, 2 for the other,
+// 4-day split: Chest+Triceps / Back+Biceps / rest / repeat with different
+// moves. Each day: 3 moves for the paired push/pull muscle, 2 for the other,
 // 2 leg moves and 1 core move — the "B" days reuse the same pairing with a
 // different exercise selection so the week doesn't repeat a single move.
+// One exception: the catalog only has 5 unique chest-exercise videos (needs
+// 6 for a fully-distinct A/B split), so Cable Chest Fly is the one move
+// repeated between Chest & Triceps A and B — everything else across all 4
+// days is unique.
 const DAYS_MALE = [
-  { id:"cb_a", label:"Chest & Biceps A", muscles:"Chest, Biceps, Legs, Core", exercises:[
-    {id:"cba_bench", en:"Barbell Bench Press", sets:4, reps:"6-8", rest:150, vid:"0cXAp6WhSj4"},
-    {id:"cba_incline", en:"Incline Dumbbell Press", sets:3, reps:"8-10", rest:120, vid:"8fXfwG4ftaQ"},
-    {id:"cba_curl", en:"Barbell Curl", sets:3, reps:"10-12", rest:60, vid:"9_ijHhcwlkM"},
-    {id:"cba_inclcurl", en:"Incline Dumbbell Curl", sets:3, reps:"10-12", rest:45, vid:"XhIsIcjIbCw"},
-    {id:"cba_squat", en:"Barbell Back Squat", sets:4, reps:"6-8", rest:150, vid:"tNUq6b5t11Q"},
-    {id:"cba_legpress", en:"Leg Press", sets:3, reps:"10-12", rest:120, vid:"nDh_BlnLCGc"},
-    {id:"cba_core", en:"Hanging Leg Raise (core)", sets:3, reps:"10-15", rest:45, vid:"0wSUjj5j1xo"},
+  { id:"ct_a", label:"Chest & Triceps A", muscles:"Chest, Triceps, Legs, Core", exercises:[
+    {id:"cta_bench", en:"Barbell Bench Press", sets:4, reps:"6-8", rest:150, vid:"0cXAp6WhSj4"},
+    {id:"cta_incline", en:"Incline Dumbbell Press", sets:3, reps:"8-10", rest:120, vid:"8fXfwG4ftaQ"},
+    {id:"cta_fly", en:"Cable Chest Fly", sets:3, reps:"12-15", rest:60, vid:"I-Ue34qLxc4"},
+    {id:"cta_ohext", en:"Overhead Cable Triceps Extension", sets:3, reps:"10-15", rest:60, vid:"tPIWaCKWFF8"},
+    {id:"cta_pushdown", en:"Cable Rope Pushdown", sets:3, reps:"12-15", rest:45, vid:"7OF77JMEXhM"},
+    {id:"cta_squat", en:"Barbell Back Squat", sets:4, reps:"6-8", rest:150, vid:"tNUq6b5t11Q"},
+    {id:"cta_legpress", en:"Leg Press", sets:3, reps:"10-12", rest:120, vid:"nDh_BlnLCGc"},
+    {id:"cta_core", en:"Hanging Leg Raise (core)", sets:3, reps:"10-15", rest:45, vid:"0wSUjj5j1xo"},
   ]},
-  { id:"bt_a", label:"Back & Triceps A", muscles:"Back, Triceps, Legs, Core", exercises:[
-    {id:"bta_lat", en:"Lat Pulldown / Pull-up", sets:4, reps:"8-10", rest:120, vid:"bNmvKpJSWKM"},
-    {id:"bta_csrow", en:"Chest-Supported Row", sets:4, reps:"8-10", rest:90, vid:"uhwcRYpkjvc"},
-    {id:"bta_ohext", en:"Overhead Cable Triceps Extension", sets:3, reps:"10-15", rest:60, vid:"tPIWaCKWFF8"},
-    {id:"bta_pushdown", en:"Cable Rope Pushdown", sets:3, reps:"12-15", rest:45, vid:"7OF77JMEXhM"},
-    {id:"bta_rdl", en:"Barbell Romanian Deadlift", sets:3, reps:"8-10", rest:90, vid:"zdip4iexlxg"},
-    {id:"bta_legcurl", en:"Lying Leg Curl", sets:3, reps:"12-15", rest:60, vid:"bgfHeL6eR9Q"},
-    {id:"bta_core", en:"Pallof Press (core)", sets:3, reps:"12/side", rest:45, vid:"P1H4IzD9rbQ"},
+  { id:"bb_a", label:"Back & Biceps A", muscles:"Back, Biceps, Legs, Core", exercises:[
+    {id:"bba_lat", en:"Lat Pulldown / Pull-up", sets:4, reps:"8-10", rest:120, vid:"bNmvKpJSWKM"},
+    {id:"bba_csrow", en:"Chest-Supported Row", sets:4, reps:"8-10", rest:90, vid:"uhwcRYpkjvc"},
+    {id:"bba_cablerow", en:"Seated Cable Row", sets:3, reps:"10-12", rest:75, vid:"8QuMq1GMMng"},
+    {id:"bba_curl", en:"Barbell Curl", sets:3, reps:"10-12", rest:60, vid:"9_ijHhcwlkM"},
+    {id:"bba_inclcurl", en:"Incline Dumbbell Curl", sets:3, reps:"10-12", rest:45, vid:"XhIsIcjIbCw"},
+    {id:"bba_rdl", en:"Barbell Romanian Deadlift", sets:3, reps:"8-10", rest:90, vid:"zdip4iexlxg"},
+    {id:"bba_legcurl", en:"Lying Leg Curl", sets:3, reps:"12-15", rest:60, vid:"bgfHeL6eR9Q"},
+    {id:"bba_core", en:"Pallof Press (core)", sets:3, reps:"12/side", rest:45, vid:"P1H4IzD9rbQ"},
   ]},
-  { id:"cb_b", label:"Chest & Biceps B", muscles:"Chest, Biceps, Legs, Core", exercises:[
-    {id:"cbb_fly", en:"Cable Chest Fly", sets:3, reps:"12-15", rest:60, vid:"I-Ue34qLxc4"},
-    {id:"cbb_dbbench", en:"Dumbbell Bench Press", sets:3, reps:"8-10", rest:90, vid:"Gf65Yy0-wGI"},
-    {id:"cbb_hammer", en:"Hammer Curl", sets:3, reps:"12-15", rest:30, vid:"K9LiwcGuqA0"},
-    {id:"cbb_super", en:"Biceps + Triceps Superset", sets:3, reps:"12-15", rest:60, vid:"8UIbEovL-xU"},
-    {id:"cbb_hack", en:"Hack Squat", sets:4, reps:"8-10", rest:120, vid:"g9i05umL5vc"},
-    {id:"cbb_legext", en:"Leg Extension", sets:3, reps:"15-20", rest:60, vid:"iQ92TuvBqRo"},
-    {id:"cbb_core", en:"Weighted Cable Crunch (core)", sets:3, reps:"12-15", rest:45, vid:"Bvhz7Rfnrr4"},
+  { id:"ct_b", label:"Chest & Triceps B", muscles:"Chest, Triceps, Legs, Core", exercises:[
+    {id:"ctb_dbbench", en:"Dumbbell Bench Press", sets:3, reps:"8-10", rest:90, vid:"Gf65Yy0-wGI"},
+    {id:"ctb_pushup", en:"Push-ups", sets:4, reps:"12-20", rest:60, vid:"wD1M-f69Yy8"},
+    {id:"ctb_fly", en:"Cable Chest Fly", sets:3, reps:"12-15", rest:60, vid:"I-Ue34qLxc4"},
+    {id:"ctb_dips", en:"Bench Dips", sets:3, reps:"12-18", rest:45, vid:"ekgvqS_4Ee4"},
+    {id:"ctb_super", en:"Biceps + Triceps Superset", sets:3, reps:"12-15", rest:60, vid:"8UIbEovL-xU"},
+    {id:"ctb_hack", en:"Hack Squat", sets:4, reps:"8-10", rest:120, vid:"g9i05umL5vc"},
+    {id:"ctb_legext", en:"Leg Extension", sets:3, reps:"15-20", rest:60, vid:"iQ92TuvBqRo"},
+    {id:"ctb_core", en:"Weighted Cable Crunch (core)", sets:3, reps:"12-15", rest:45, vid:"Bvhz7Rfnrr4"},
   ]},
-  { id:"bt_b", label:"Back & Triceps B", muscles:"Back, Triceps, Legs, Core", exercises:[
-    {id:"btb_cablerow", en:"Seated Cable Row", sets:3, reps:"10-12", rest:75, vid:"8QuMq1GMMng"},
-    {id:"btb_tbar", en:"T-Bar Row", sets:3, reps:"8-10", rest:90, vid:"1iQSSqin3ro"},
-    {id:"btb_dips", en:"Bench Dips", sets:3, reps:"12-18", rest:45, vid:"ekgvqS_4Ee4"},
-    {id:"btb_super", en:"Biceps Curl + Triceps Extension (superset)", sets:3, reps:"12-15", rest:60, vid:"8UIbEovL-xU"},
-    {id:"btb_bss", en:"Bulgarian Split Squat", sets:3, reps:"10-12/leg", rest:75, vid:"uODWo4YqbT8"},
-    {id:"btb_seatcurl", en:"Seated Leg Curl", sets:3, reps:"12-15", rest:60, vid:"xdbEG3xGLI8"},
-    {id:"btb_core", en:"Plank (core)", sets:3, reps:"30-45s", rest:30, vid:"fWW5d1ZFhk4"},
+  { id:"bb_b", label:"Back & Biceps B", muscles:"Back, Biceps, Legs, Core", exercises:[
+    {id:"bbb_tbar", en:"T-Bar Row", sets:3, reps:"8-10", rest:90, vid:"1iQSSqin3ro"},
+    {id:"bbb_onearm", en:"One-Arm Dumbbell Row", sets:3, reps:"12-15/arm", rest:45, vid:"H8jf3DwlIlo"},
+    {id:"bbb_csdbrow", en:"Chest-Supported Dumbbell Row", sets:3, reps:"12-15", rest:45, vid:"09wri23R4SU"},
+    {id:"bbb_hammer", en:"Hammer Curl", sets:3, reps:"12-15", rest:30, vid:"K9LiwcGuqA0"},
+    {id:"bbb_super", en:"Biceps Curl + Triceps Extension (superset)", sets:3, reps:"12-15", rest:60, vid:"8UIbEovL-xU"},
+    {id:"bbb_bss", en:"Bulgarian Split Squat", sets:3, reps:"10-12/leg", rest:75, vid:"uODWo4YqbT8"},
+    {id:"bbb_seatcurl", en:"Seated Leg Curl", sets:3, reps:"12-15", rest:60, vid:"xdbEG3xGLI8"},
+    {id:"bbb_core", en:"Plank (core)", sets:3, reps:"30-45s", rest:30, vid:"fWW5d1ZFhk4"},
   ]},
 ];
 
@@ -169,14 +177,14 @@ const AR_EX = {
   "Flutter Kicks":"رفرفة الرجلين","Bear Crawl":"زحف الدب"
 };
 const AR_DAY = {"Push":"دفع","Pull":"سحب","Legs":"أرجل","Upper":"علوي","Lower":"سفلي","Lower A":"سفلي أ","Upper A":"علوي أ","Lower B":"سفلي ب","Upper B":"علوي ب","Full-Body Starter":"تمرين شامل للمبتدئين",
-  "Chest & Biceps A":"صدر وبايسبس أ","Back & Triceps A":"ظهر وترايسبس أ","Chest & Biceps B":"صدر وبايسبس ب","Back & Triceps B":"ظهر وترايسبس ب"};
+  "Chest & Triceps A":"صدر وترايسبس أ","Back & Biceps A":"ظهر وبايسبس أ","Chest & Triceps B":"صدر وترايسبس ب","Back & Biceps B":"ظهر وبايسبس ب"};
 const AR_MUS = {
   "Chest, Shoulders, Triceps":"صدر، أكتاف، ترايسبس","Back, Rear Delts, Biceps":"ظهر، أكتاف خلفية، بايسبس","Quads, Hamstrings, Calves":"أمامية الفخذ، خلفية الفخذ، سمانة",
   "Chest, Back, Delts, Arms":"صدر، ظهر، أكتاف، ذراعين","Quads, Glutes, Hamstrings, Abs":"أمامية الفخذ، ألوية، خلفية الفخذ، بطن","Glutes & Quads":"ألوية وأمامية الفخذ",
   "Push focus":"تركيز الدفع","Hamstrings & Glutes":"خلفية الفخذ والألوية","Pull focus & core":"تركيز السحب والبطن",
   "Push & Core":"دفع وبطن","Legs & Cardio":"أرجل وكارديو","Pull & Total Body":"سحب وكامل الجسم",
   "Full body":"الجسم كامل",
-  "Chest, Biceps, Legs, Core":"صدر، بايسبس، أرجل، بطن","Back, Triceps, Legs, Core":"ظهر، ترايسبس، أرجل، بطن"
+  "Chest, Triceps, Legs, Core":"صدر، ترايسبس، أرجل، بطن","Back, Biceps, Legs, Core":"ظهر، بايسبس، أرجل، بطن"
 };
 
 // ---- exercise-name -> demo video lookup (reused for coach-generated plans) ----
