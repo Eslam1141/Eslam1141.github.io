@@ -124,6 +124,9 @@
     pdfTitle: ["Gym Coach plan", "خطة المدرّب"],
     saveAcct: ["Save to my plans", "حفظ في خططي"],
     savedTick: ["Saved ✓", "تم الحفظ ✓"],
+    useAsWorkoutQ: ["Saved. Use this as your workout now?", "تم الحفظ. هل تريد استخدامها كتمرينك الآن؟"],
+    useNow: ["Use it now", "استخدمها الآن"],
+    notNow: ["Not now", "ليس الآن"],
     savedFull: ["Saved plans full ({n}/{n})", "الخطط المحفوظة ممتلئة ({n}/{n})"],
     myPlans: ["My plans", "خططي"],
     myPlansN: ["My plans ({n})", "خططي ({n})"],
@@ -646,6 +649,36 @@
     return validate(st).ok ? buildProfile(st) : null;
   }
 
+  // Compact plain-text summary of the most recent result, for the floating
+  // chat's context — so a follow-up question doesn't require re-explaining
+  // the plan the coach itself just generated. Deliberately short (exercise
+  // names + sets/reps, not full meal item lists) to keep the chat request
+  // small. Returns "" when there's nothing to summarize.
+  function planSummary() {
+    var r = loadJSON(LAST_KEY, null);
+    if (!r || !r.computed) return "";
+    var c = r.computed;
+    var lines = [];
+    lines.push("Goal-driven target: ~" + Math.round(c.targetKcal || 0) + " kcal/day (protein " +
+      Math.round(c.proteinG || 0) + "g, fat " + Math.round(c.fatG || 0) + "g, carbs " + Math.round(c.carbG || 0) + "g).");
+    if (r.dietPlan) {
+      var dp = r.dietPlan;
+      var mealNames = (dp.meals || []).map(function (m) { return m.name; }).join(", ");
+      lines.push("Diet (" + (dp.styleLabel || "") + "): " + mealNames + ".");
+    }
+    if (r.workoutPlan) {
+      var wp = r.workoutPlan;
+      lines.push("Workout split: " + (wp.split || "") + ", " + (wp.daysPerWeek || (wp.days || []).length) + " days/week.");
+      (wp.days || []).forEach(function (d) {
+        var exNames = (d.exercises || []).map(function (e) {
+          return e.name + " " + (e.sets || "") + "x" + (e.reps || "");
+        }).join(", ");
+        lines.push((d.day || "Day") + ": " + exNames);
+      });
+    }
+    return lines.join("\n");
+  }
+
   // ---------------- run + result ----------------
   function renderLoading() {
     var rows = [];
@@ -712,6 +745,29 @@
       lbl);
   }
 
+  // Small standalone confirm modal, appended straight to <body> (not
+  // #coachBody — that whole subtree gets replaced by mount(), which would
+  // yank the modal out from under itself mid-interaction).
+  function confirmUseAsWorkout(workoutPlan) {
+    var overlay = h("div", { class: "coach-confirm-overlay" });
+    function onKey(e) { if (e.key === "Escape") close(); }
+    function close() { overlay.remove(); document.removeEventListener("keydown", onKey); }
+    var no = h("button", { type: "button", class: "coach-secondary", on: { click: close } }, s("notNow"));
+    var yes = h("button", {
+      type: "button", class: "coach-primary", on: { click: function () {
+        if (window.GymApplyCoachPlan) window.GymApplyCoachPlan(mapWorkout(workoutPlan));
+        close();
+        if (window.GymUI) GymUI.navigate("plan");
+      } }
+    }, s("useNow"));
+    overlay.appendChild(h("div", { class: "coach-confirm-card" },
+      h("p", {}, s("useAsWorkoutQ")),
+      h("div", { class: "coach-confirm-actions" }, no, yes)));
+    overlay.addEventListener("click", function (e) { if (e.target === overlay) close(); });
+    document.addEventListener("keydown", onKey);
+    document.body.appendChild(overlay);
+  }
+
   function renderResult(r) {
     var c = r.computed || {};
     var stats = h("div", { class: "coach-stats" },
@@ -748,7 +804,10 @@
     var saveBtn = h("button", {
       type: "button", class: "coach-secondary", disabled: (saved || full) ? "disabled" : false,
       on: { click: function (e) {
-        if (addSaved(r)) { e.target.textContent = s("savedTick"); e.target.disabled = true; }
+        if (addSaved(r)) {
+          e.target.textContent = s("savedTick"); e.target.disabled = true;
+          if (r.workoutPlan && r.workoutPlan.days && r.workoutPlan.days.length) confirmUseAsWorkout(r.workoutPlan);
+        }
       } }
     }, saved ? s("savedTick") : full ? s("savedFull").replace(/\{n\}/g, SAVED_MAX) : s("saveAcct"));
 
@@ -949,7 +1008,7 @@
     else renderForm();
   }
 
-  window.GymCoach = { refresh: refresh, currentProfile: currentProfile, newAssessment: renderForm };
+  window.GymCoach = { refresh: refresh, currentProfile: currentProfile, newAssessment: renderForm, planSummary: planSummary };
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", function () {

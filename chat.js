@@ -265,6 +265,8 @@
     var body = { lang: lang(), messages: recent };
     var profile = window.GymCoach && GymCoach.currentProfile ? GymCoach.currentProfile() : null;
     if (profile) body.profile = profile;
+    var planSummary = window.GymCoach && GymCoach.planSummary ? GymCoach.planSummary() : "";
+    if (planSummary) body.planSummary = planSummary;
 
     fetchTimeout(ASSIST_BASE + "/chat", {
       method: "POST",
