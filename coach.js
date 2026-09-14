@@ -107,6 +107,7 @@
     btnDetail: ["More detail", "تفاصيل أكثر"],
     btnApply: ["Use workout as my plan", "استخدم التمرين كخطتي"],
     btnHistory: ["History", "السجل"],
+    askCoach: ["Have a quick question? Chat with your coach", "لديك سؤال سريع؟ دردش مع مدرّبك"],
     applied: ["Added to your plans →", "أُضيفت إلى خططك ←"],
     quotaTitle: ["Daily limit reached", "بلغت الحد اليومي"],
     quotaBody: ["You've used today's assessments. Try again after {t}.", "لقد استخدمت تقييمات اليوم. حاول مجدداً بعد {t}."],
@@ -772,7 +773,10 @@
     var links = h("div", { class: "coach-links" },
       loadSaved().length ? h("button", { type: "button", class: "coach-link", on: { click: renderMyPlans } },
         s("myPlansN").replace(/\{n\}/g, loadSaved().length)) : null,
-      h("button", { type: "button", class: "coach-link", on: { click: renderHistory } }, s("btnHistory")));
+      h("button", { type: "button", class: "coach-link", on: { click: renderHistory } }, s("btnHistory")),
+      (window.GymChat && GymChat.open) ? h("button", {
+        type: "button", class: "coach-link", on: { click: function () { GymChat.open(); } }
+      }, s("askCoach")) : null);
 
     sections.push(actions);
     sections.push(links);
@@ -806,6 +810,20 @@
       body));
   }
 
+  // A diet item is either the old plain string (cached results from before
+  // this field existed — never migrated, so must always be handled) or the
+  // new { text, gramsApprox } shape. Always show a gram reference when one's
+  // available, so nobody unfamiliar with the stated unit (oz, cups, ...) is
+  // left guessing.
+  function mealItemText(it) {
+    if (it == null) return "";
+    if (typeof it === "string") return it;
+    var text = it.text != null ? it.text : String(it);
+    var g = Number(it.gramsApprox);
+    if (g > 0) text += " (~" + g + s("gram") + ")";
+    return text;
+  }
+
   function renderDiet(dp) {
     var kids = [h("h3", {}, s("resDiet"))];
     if (dp.styleLabel) kids.push(h("div", { class: "coach-tag" }, dp.styleLabel));
@@ -814,7 +832,7 @@
         h("div", { class: "coach-meal-top" },
           h("b", {}, m.name),
           h("span", {}, Math.round(m.kcal || 0) + " " + s("kcal") + (m.proteinG ? "  ·  " + m.proteinG + s("gram") + " " + s("protein") : ""))),
-        h.apply(null, ["ul", {}].concat((m.items || []).map(function (it) { return h("li", {}, it); })))));
+        h.apply(null, ["ul", {}].concat((m.items || []).map(function (it) { return h("li", {}, mealItemText(it)); })))));
     });
     if (dp.hydrationL) kids.push(h("p", { class: "coach-sub-line" }, s("hydration") + ": " + dp.hydrationL + " " + s("liters")));
     if (dp.swaps && dp.swaps.length) kids.push(h("div", { class: "coach-sub" },
@@ -931,7 +949,7 @@
     else renderForm();
   }
 
-  window.GymCoach = { refresh: refresh, currentProfile: currentProfile };
+  window.GymCoach = { refresh: refresh, currentProfile: currentProfile, newAssessment: renderForm };
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", function () {

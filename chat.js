@@ -30,6 +30,7 @@
     fabLabel: ["Ask the nutrition coach", "اسأل مدرّب التغذية"],
     title: ["Nutrition & fitness chat", "دردشة التغذية واللياقة"],
     placeholder: ["Ask a quick question…", "اسأل سؤالاً سريعاً…"],
+    genPlan: ["Want a full plan? Generate one", "تريد خطة كاملة؟ أنشئ واحدة"],
     signInBody: ["Sign in to chat with your AI coach.", "سجّل الدخول للدردشة مع مدرّبك الذكي."],
     thinking: ["Thinking…", "يفكّر…"],
     quota: ["You've reached today's chat limit. Try again after {t}.", "بلغت حد الدردشة اليومي. حاول بعد {t}."],
@@ -201,10 +202,18 @@
       h("span", {}), h("span", {}), h("span", {}));
   }
 
+  function goToCoachForm() {
+    closeChat();
+    if (window.GymUI && GymUI.navigate) GymUI.navigate("coach");
+    if (window.GymCoach && typeof GymCoach.newAssessment === "function") GymCoach.newAssessment();
+  }
+
   function renderHistory() {
     msgsEl.innerHTML = "";
     if (!history.length) {
-      msgsEl.appendChild(h("div", { class: "coach-chat-empty" }, s("placeholder")));
+      msgsEl.appendChild(h("div", { class: "coach-chat-empty" },
+        h("p", {}, s("placeholder")),
+        h("button", { type: "button", class: "coach-link", on: { click: goToCoachForm } }, s("genPlan"))));
     }
     history.forEach(function (m) { msgsEl.appendChild(bubble(m.role, m.content)); });
     scrollToBottom();
@@ -344,4 +353,8 @@
   } else {
     boot();
   }
+
+  // Lets other modules (the Coach tab's result screen) open the chat drawer
+  // without needing to know anything about its internals.
+  window.GymChat = { open: function () { openChat(); } };
 })();

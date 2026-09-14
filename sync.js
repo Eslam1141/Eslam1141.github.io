@@ -33,7 +33,7 @@
   var LOCAL_ONLY = { gym_meta_updatedAt: 1, gym_user_sub: 1, gym_tab: 1, gym_anon: 1 };
   function syncable(k) { return k && k.indexOf("gym_") === 0 && !LOCAL_ONLY[k]; }
   var FETCH_TIMEOUT_MS = 8000;
-  var DEBOUNCE_MS = 3000;
+  var DEBOUNCE_MS = 1500;
   var INTERVAL_MS = 120000;
 
   var idToken = null;        // current Google ID token
@@ -196,13 +196,35 @@
       .finally(function () { syncing = false; });
   }
 
+  // Best-effort flush right as the page goes away — closes the small window
+  // where a write's debounce timer hadn't fired yet when the tab closed/was
+  // backgrounded. fetch's keepalive keeps the request alive past unload the
+  // same way sendBeacon does, but (unlike sendBeacon) still lets us set the
+  // Authorization header this endpoint requires. Fire-and-forget: nothing
+  // meaningful to do with the response during teardown, same as every other
+  // sync path in this file.
+  function flushOnHide() {
+    if (!isSignedIn()) return;
+    if (debounceTimer) { clearTimeout(debounceTimer); debounceTimer = null; }
+    try {
+      fetch(API_BASE + "/progress", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + idToken },
+        body: JSON.stringify({ entries: buildEntries() }),
+        keepalive: true
+      });
+    } catch (e) {}
+  }
+
   function startTriggers() {
     if (triggersStarted) return;
     triggersStarted = true;
     window.addEventListener("online", function () { syncNow("online"); });
     document.addEventListener("visibilitychange", function () {
       if (document.visibilityState === "visible") syncNow("visible");
+      else if (document.visibilityState === "hidden") flushOnHide();
     });
+    document.addEventListener("pagehide", flushOnHide);
     if (intervalId) clearInterval(intervalId);
     intervalId = setInterval(function () {
       if (document.visibilityState === "visible") syncNow("interval");
@@ -400,6 +422,7 @@
     _debug: {
       gymKeys: gymKeys, readMeta: readMeta, buildEntries: buildEntries,
       loadCachedSession: loadCachedSession, clearCachedSession: clearCachedSession,
+      flushOnHide: flushOnHide,
       // identity-forging / data-wiping hooks: test builds only, never on the
       // real production origin (see IS_PROD above).
       onCredential: IS_PROD ? undefined : onCredential,
