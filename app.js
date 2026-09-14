@@ -495,10 +495,29 @@ const IC_PAUSE = '<svg viewBox="0 0 24 24"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/>
 function saveBtnInner(){ return IC_SAVE + " " + t("save"); }
 function videoBtnInner(open){ return IC_PLAY + " " + (open ? t("hideVideo") : t("video")); }
 function videoFrameInner(ex){
-  return `<iframe src="${ytEmbedSrc(ex.vid,false)}" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+  return `<iframe src="${ytEmbedSrc(ex.vid,false)}" allow="accelerometer; encrypted-media; fullscreen; gyroscope; picture-in-picture" allowfullscreen></iframe>
           <button class="expand-btn" data-expand="${ex.id}" aria-label="Fullscreen">
             <svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7zm-2-4h2V7h3V5H5zm12 7h-3v2h5v-5h-2zM14 5v2h3v3h2V5z"/></svg>
           </button>`;
+}
+// Wires one expand (fullscreen) button. Must be called every time an
+// .expand-btn is actually added to the DOM — it's created lazily inside
+// videoFrameInner() (only once a video is toggled open), not up front with
+// the rest of the exercise card, so the one-time querySelectorAll() wiring
+// pass in renderExercises() misses it on a fresh open.
+function wireExpandBtn(btn, ex){
+  if(!btn || !ex) return;
+  btn.onclick = (e)=>{
+    e.stopPropagation();
+    const frame = document.getElementById("vframe-" + ex.id);
+    if(frame && frame.requestFullscreen){
+      frame.requestFullscreen().catch(()=> openVideoModal(ex));
+    } else if(frame && frame.webkitRequestFullscreen){
+      frame.webkitRequestFullscreen();
+    } else {
+      openVideoModal(ex);
+    }
+  };
 }
 // tear an inline player down without rebuilding the list
 function closeInlineVideo(id){
@@ -635,6 +654,7 @@ function renderExercises(){
         wrap.classList.add("open");
         btn.classList.add("on");
         btn.innerHTML = videoBtnInner(true);
+        wireExpandBtn(frame.querySelector("[data-expand]"), ex);
       } else {
         closeInlineVideo(id);
         openVideoId = null;
@@ -643,20 +663,13 @@ function renderExercises(){
   });
 
   // --- expand: real fullscreen on the existing player; overlay fallback ---
+  // (only reaches an [data-expand] button here when the card was rendered
+  // with its video already open, e.g. after a day-tab switch — a *fresh*
+  // open is wired directly in the data-video handler above instead, since
+  // this pass runs once, before that button exists in the DOM.)
   exList.querySelectorAll("[data-expand]").forEach(btn=>{
-    btn.onclick = (e)=>{
-      e.stopPropagation();
-      const id = btn.dataset.expand;
-      const frame = document.getElementById("vframe-" + id);
-      const ex = day.exercises.find(x=>x.id===id);
-      if(frame && frame.requestFullscreen){
-        frame.requestFullscreen().catch(()=> openVideoModal(ex));
-      } else if(frame && frame.webkitRequestFullscreen){
-        frame.webkitRequestFullscreen();
-      } else {
-        openVideoModal(ex);
-      }
-    };
+    const ex = day.exercises.find(x=>x.id===btn.dataset.expand);
+    wireExpandBtn(btn, ex);
   });
 }
 
@@ -756,7 +769,7 @@ function openVideoModal(ex){
   // never leave a second player running underneath
   if(openVideoId){ closeInlineVideo(openVideoId); openVideoId = null; }
   modalTitle.textContent = exName(ex);
-  modalFrame.innerHTML = `<iframe src="${ytEmbedSrc(ex.vid,true)}" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+  modalFrame.innerHTML = `<iframe src="${ytEmbedSrc(ex.vid,true)}" allow="accelerometer; autoplay; encrypted-media; fullscreen; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
   videoModal.classList.add("show");
 }
 function closeVideoModal(){
@@ -1030,7 +1043,7 @@ if(warmupBtn){
     wrap.classList.toggle("open", open);
     warmupBtn.classList.toggle("on", open);
     frame.innerHTML = open
-      ? `<iframe src="${ytEmbedSrc('gDSRFzs6k_s', false)}" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`
+      ? `<iframe src="${ytEmbedSrc('gDSRFzs6k_s', false)}" allow="accelerometer; encrypted-media; fullscreen; gyroscope; picture-in-picture" allowfullscreen></iframe>`
       : "";
     warmupBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg> ${open ? t('hideVideo') : t('video')}`;
   };
