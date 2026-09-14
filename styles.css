@@ -1000,6 +1000,22 @@ body:has(#planChooser:not([hidden])) #appNav{ display:none; }
 .coach-actions{ display:flex; flex-wrap:wrap; gap:10px; }
 .coach-actions .coach-primary, .coach-actions .coach-secondary{ width:auto; flex:1 1 auto; }
 
+/* "use this as your workout now?" popup after saving a plan */
+.coach-confirm-overlay{
+  position:fixed; inset:0; z-index:180;
+  background:rgba(8,7,6,.6);
+  display:flex; align-items:center; justify-content:center; padding:20px;
+}
+.coach-confirm-card{
+  width:100%; max-width:360px;
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius-lg);
+  padding:22px 20px; text-align:center;
+  box-shadow:0 20px 60px rgba(0,0,0,.5);
+}
+.coach-confirm-card p{ margin:0 0 18px; font-size:14px; font-weight:700; color:var(--paper); }
+.coach-confirm-actions{ display:flex; gap:10px; }
+.coach-confirm-actions .coach-primary, .coach-confirm-actions .coach-secondary{ width:auto; flex:1 1 auto; }
+
 .coach-state{
   text-align:center; padding:26px 20px; margin:10px 0 24px;
   background:var(--panel); border:1px solid var(--line); border-radius:var(--radius-lg);
