@@ -262,9 +262,11 @@ const T = {
   anonSignIn:["Sign in with Google","سجّل الدخول عبر جوجل"],
   chooseTitle:["Choose your plan","اختر خطتك"],
   chooseSub:["You can switch anytime from the top of the app.","يمكنك التبديل في أي وقت من أعلى التطبيق."],
+  chooseStyleTitle:["Choose your workout type","اختر نوع تمرينك"],
+  back:["Back","رجوع"],
   male:["Male","رجالي"], maleSub:["4-day gym plan","خطة 4 أيام في الجيم"],
   female:["Female","نسائي"], femaleSub:["4-day home plan","خطة 4 أيام في المنزل"],
-  styleGym:["Gym","جيم"], styleCal:["Calisthenics","كاليسثينكس"],
+  styleGym:["Gym","جيم"], styleCal:["In-House / Bodyweight","منزلي / وزن الجسم"],
   langBtn:["العربية","English"],
   installTip:['<b>Add this app to your home screen:</b> open your browser menu and choose "Add to Home Screen" so it opens like a regular app.','<b>أضِف التطبيق إلى الشاشة الرئيسية:</b> افتح قائمة المتصفح واختر "إضافة إلى الشاشة الرئيسية" ليعمل كتطبيق عادي.'],
   workoutTimer:["Workout Timer","مؤقّت التمرين"],
@@ -1175,9 +1177,24 @@ function renderTitle(){
   document.title = t("appTitle") + " · " + planWord + " · " + styleWord;
 }
 
+// Plan chooser is two steps: Male/Female, then Gym/In-House — picking a
+// plan used to jump straight to the workout, skipping the workout-type
+// choice entirely (it silently kept whatever style was already set).
 document.querySelectorAll("[data-choose]").forEach(b=>{
   b.onclick = ()=>{
     activePlan = b.dataset.choose;
+    applyState(true);                // updates the plan behind the chooser live
+    document.getElementById("pcStep1").hidden = true;
+    document.getElementById("pcStep2").hidden = false;
+  };
+});
+document.getElementById("pcBack").onclick = ()=>{
+  document.getElementById("pcStep2").hidden = true;
+  document.getElementById("pcStep1").hidden = false;
+};
+document.querySelectorAll("[data-choose-style]").forEach(b=>{
+  b.onclick = ()=>{
+    activeStyle = b.dataset.chooseStyle;
     applyState(true);
     document.getElementById("planChooser").hidden = true;
     document.body.style.overflow = "";
