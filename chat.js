@@ -19,7 +19,8 @@
   var MSG_MAX = 600;      // mirrors the backend's per-message cap
   var TIP_FIRST_MS = 9000;
   var TIP_INTERVAL_MS = 75000;
-  var TIP_SHOW_MS = 7000;
+  var TIP_SHOW_MS = 7000;   // auto-hide delay when the mouse never touches it
+  var TIP_LEAVE_MS = 1200;  // grace delay once the cursor actually leaves it
 
   // ---------------- i18n ----------------
   function lang() {
@@ -168,6 +169,16 @@
     if (!fabTip) return;
     fabTip.classList.remove("show");
     setTimeout(function () { if (!fabTip.classList.contains("show")) fabTip.hidden = true; }, 220);
+  }
+  // A mouse hovering the tip means the user is mid-read — pause the auto-hide
+  // countdown entirely while hovered (no fixed cap: read at your own pace)
+  // and only resume dismissing it a moment after the cursor actually leaves.
+  function pauseTipHide() {
+    if (tipHideTimer) { clearTimeout(tipHideTimer); tipHideTimer = null; }
+  }
+  function resumeTipHide() {
+    if (tipHideTimer) clearTimeout(tipHideTimer);
+    tipHideTimer = setTimeout(hideTip, TIP_LEAVE_MS);
   }
   function startTipCycle() {
     setTimeout(function () {
@@ -325,6 +336,8 @@
       if (!isAuthed()) { if (window.GymUI) GymUI.promptSignIn(); return; }
       openChat();
     });
+    fabTip.addEventListener("mouseenter", pauseTipHide);
+    fabTip.addEventListener("mouseleave", resumeTipHide);
     closeBtn.addEventListener("click", closeChat);
     backdrop.addEventListener("click", closeChat);
     document.addEventListener("keydown", function (e) { if (open && e.key === "Escape") closeChat(); });
