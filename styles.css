@@ -415,8 +415,14 @@ header.hero .sub{ color:var(--paper-dim); font-size:12.5px; }
 #coachFabTip.show{ opacity:1; transform:none; }
 
 @media (min-width:900px){
-  #coachFab{ bottom:24px; }
-  #coachFabTip{ bottom:86px; }
+  /* the bottom nav becomes a fixed left rail at this width (#appNav, below) —
+     these were still anchored to the viewport edge and ended up rendered
+     underneath the rail (z-index 120 vs 65), invisible and unclickable.
+     Physical left/right + [dir=rtl] flip, matching #timerBar's approach. */
+  #coachFab{ bottom:24px; left:calc(var(--side-w) + 16px); right:auto; }
+  #coachFabTip{ bottom:86px; left:calc(var(--side-w) + 16px); right:auto; }
+  [dir="rtl"] #coachFab{ left:auto; right:calc(var(--side-w) + 16px); }
+  [dir="rtl"] #coachFabTip{ left:auto; right:calc(var(--side-w) + 16px); }
 }
 
 /* ---- chat drawer ---- */
@@ -485,13 +491,13 @@ header.hero .sub{ color:var(--paper-dim); font-size:12.5px; }
 
 @media (min-width:900px){
   .coach-chat-panel{
-    left:16px; right:auto; bottom:24px; width:380px; max-height:min(560px, 80vh);
+    left:calc(var(--side-w) + 16px); right:auto; bottom:24px; width:380px; max-height:min(560px, 80vh);
     border-radius:18px;
     transform:translateY(16px) scale(.96); opacity:0;
     transition:transform .2s cubic-bezier(.34,1.56,.64,1), opacity .18s ease;
   }
   #coachChat.show .coach-chat-panel{ transform:none; opacity:1; }
-  [dir="rtl"] .coach-chat-panel{ left:auto; right:16px; }
+  [dir="rtl"] .coach-chat-panel{ left:auto; right:calc(var(--side-w) + 16px); }
 }
 
 /* entrance animations */

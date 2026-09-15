@@ -30,7 +30,15 @@
   // Device-local keys that must NEVER round-trip through the server. gym_user_sub
   // especially: if a stale value comes back down it flips the "account switched"
   // check on the next load and can wedge the app in a reload loop.
-  var LOCAL_ONLY = { gym_meta_updatedAt: 1, gym_user_sub: 1, gym_tab: 1, gym_anon: 1 };
+  // gym_session_active is a single-device, right-now runtime fact (is a timer
+  // ticking on THIS device), not shareable user data — and ending a workout
+  // clears it with a raw localStorage.removeItem (app.js), which never goes
+  // through onLocalWrite. Since this sync protocol has no delete/tombstone
+  // concept (a PUT only ever adds/overwrites keys it's given), syncing this
+  // key meant an ended session's stale "still running" blob could never be
+  // deleted server-side — the next pull (interval/focus/reload) would merge
+  // it straight back into localStorage, making "End Workout" look broken.
+  var LOCAL_ONLY = { gym_meta_updatedAt: 1, gym_user_sub: 1, gym_tab: 1, gym_anon: 1, gym_session_active: 1 };
   function syncable(k) { return k && k.indexOf("gym_") === 0 && !LOCAL_ONLY[k]; }
   var FETCH_TIMEOUT_MS = 8000;
   var DEBOUNCE_MS = 1500;
