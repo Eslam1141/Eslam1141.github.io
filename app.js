@@ -291,13 +291,6 @@ const T = {
   wtPH:["wt","وزن"], repPH:["rep","عدد"],
   resetChecklist:["Reset today's checklist","إعادة ضبط قائمة اليوم"],
   resetConfirm:["Reset today's checklist for this workout?","إعادة ضبط قائمة اليوم لهذا التمرين؟"],
-  backup:["Back up progress","نسخة احتياطية"], restore:["Restore","استعادة"],
-  backupHint:["Save the backup file to iCloud Drive / Files. Restore it if you clear your browser or switch phones.","احفظ ملف النسخة الاحتياطية في iCloud Drive / الملفات. استعِده إذا مسحت المتصفح أو غيّرت الهاتف."],
-  notLookRight:["That file doesn't look like a backup.","هذا الملف لا يبدو نسخة احتياطية صحيحة."],
-  noProgress:["No progress found in that file.","لم يُعثر على تقدم في هذا الملف."],
-  restoreConfirm:["Restore backup from {when}?\nThis replaces the progress currently on this device.","استعادة النسخة الاحتياطية من {when}؟\nسيحل هذا محل التقدم الحالي على هذا الجهاز."],
-  restoreDone:["Progress restored. Reloading…","تمت استعادة التقدم. إعادة التحميل…"],
-  badFile:["Couldn't read that file — is it a valid backup?","تعذّرت قراءة الملف — هل هو نسخة احتياطية صحيحة؟"],
   notesTitle:["Important Notes","ملاحظات مهمة"],
   skip:["Skip","تخطٍّ"],
   restTimer:["Rest — {name}","راحة — {name}"],
@@ -312,7 +305,6 @@ const T = {
   navMore:["More","المزيد"],
   coachTitle:["AI Coach","المدرّب الذكي"],
   coachSub:["A diet & training plan built from your numbers","خطة تغذية وتمرين مبنية على أرقامك"],
-  backupLabel:["Progress backup","نسخة احتياطية للتقدّم"],
   styleCoach:["Coach plan","خطة المدرّب"]
 };
 const NOTES = {
@@ -974,74 +966,13 @@ if("serviceWorker" in navigator){
   });
 }
 
-// ---------------- PERSISTENT STORAGE + BACKUP ----------------
+// ---------------- PERSISTENT STORAGE ----------------
 // Ask the browser not to auto-evict our data (iOS/Safari can clear it otherwise).
 if(navigator.storage && navigator.storage.persist){
   navigator.storage.persist().catch(()=>{});
 }
 
-function gymKeys(){ return Object.keys(localStorage).filter(k=>k.indexOf("gym_") === 0); }
-
-function collectBackup(){
-  const data = {};
-  gymKeys().forEach(k=>{
-    const v = localStorage.getItem(k);
-    if(v !== null) data[k] = v;
-  });
-  return { app:"muscle-building-plan", version:2, exportedAt:new Date().toISOString(), data };
-}
-
-async function doBackup(){
-  const payload = JSON.stringify(collectBackup(), null, 2);
-  const fname = "gym-progress-" + todayStr + ".json";
-  try {
-    const file = new File([payload], fname, { type:"application/json" });
-    if(navigator.canShare && navigator.canShare({ files:[file] })){
-      await navigator.share({ files:[file], title:"Gym progress backup" });
-      return;
-    }
-  } catch(e){
-    if(e && e.name === "AbortError") return; // user cancelled the share sheet
-  }
-  const url = URL.createObjectURL(new Blob([payload], { type:"application/json" }));
-  const a = document.createElement("a");
-  a.href = url; a.download = fname;
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url), 4000);
-}
-
-function applyRestore(obj){
-  if(!obj || typeof obj !== "object" || !obj.data || typeof obj.data !== "object"){
-    alert(t("notLookRight")); return;
-  }
-  const keys = Object.keys(obj.data).filter(k=>k.indexOf("gym_") === 0);
-  if(!keys.length){ alert(t("noProgress")); return; }
-  const when = obj.exportedAt ? new Date(obj.exportedAt).toLocaleString() : "?";
-  if(!confirm(t("restoreConfirm").replace("{when}", when))) return;
-  keys.forEach(k=>{
-    const v = obj.data[k];
-    if(typeof v === "string") localStorage.setItem(k, v);
-  });
-  alert(t("restoreDone"));
-  location.reload();
-}
-
-document.getElementById("backupBtn").onclick = doBackup;
-document.getElementById("restoreBtn").onclick = ()=> document.getElementById("restoreInput").click();
-document.getElementById("restoreInput").onchange = (e)=>{
-  const f = e.target.files && e.target.files[0];
-  if(!f) return;
-  const reader = new FileReader();
-  reader.onload = ()=>{
-    try { applyRestore(JSON.parse(reader.result)); }
-    catch(err){ alert(t("badFile")); }
-  };
-  reader.readAsText(f);
-  e.target.value = "";
-};
-
 // Called by sync.js after it writes newer progress pulled from the server.
-// Reuses the same refresh path applyRestore() relies on.
 window.GymApplyExternalUpdate = function(){
   try { location.reload(); } catch(e){}
 };

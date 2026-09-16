@@ -5,16 +5,21 @@
  * rendered diet + workout plan. Loads after app.js (reads the global
  * activeLang / gym_plan) and after ui.js. No external deps.
  *
- * Local keys (NOT synced — deliberately not gym_-prefixed):
- *   gymcoach_form  live form values (saved on every edit, restored on return)
- *   gymcoach_last  last successful result (pinned so the screen reopens to it)
+ * Local keys:
+ *   gym_coach_form_draft  live form values (saved on every edit, restored on
+ *     return) — gym_-prefixed and synced (sync.js), so a cleared/lost
+ *     localStorage on one device can still recover the in-progress draft
+ *     from the account on next sign-in, instead of losing it outright.
+ *   gymcoach_last  last successful result (pinned so the screen reopens to
+ *     it) — NOT synced (deliberately not gym_-prefixed): it's a cheap,
+ *     re-derivable cache of the last AI answer, not user-authored input.
  */
 (function () {
   "use strict";
 
   var ASSIST_BASE = (window.GYM_API_BASE || "/api/v1").replace(/\/+$/, "") + "/assistant";
   var CALL_TIMEOUT_MS = 45000;
-  var FORM_KEY = "gymcoach_form";   // live form values (local only)
+  var FORM_KEY = "gym_coach_form_draft"; // live form values (synced — see header)
   var LAST_KEY = "gymcoach_last";   // last result, for quick reopen (local only)
   var SAVED_KEY = "gym_coach_saved"; // gym_ prefix -> synced to the account
   var SAVED_MAX = 3;
@@ -468,7 +473,7 @@
     var st = preState || loadState();
     var form = h("form", { class: "coach-form", novalidate: "novalidate" });
 
-    function persist() { saveJSON(FORM_KEY, st); }
+    function persist() { saveSynced(FORM_KEY, st); }
     function refreshValidity() {
       var v = validate(st);
       form.querySelectorAll("[data-field]").forEach(function (fEl) {
