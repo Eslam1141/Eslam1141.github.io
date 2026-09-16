@@ -693,10 +693,29 @@ body.anon-mode [data-style-btn].locked{ opacity:.4; }
 }
 @keyframes shimmer{ 100%{ transform:translateX(100%); } }
 
-/* view-transition fade for tab / view swaps (Track B+D) */
+/* view-transition cross-fade for tab / view swaps (Track B+D).
+   Each screen gets its own view-transition-name so old/new content animates
+   as its own group instead of the whole page as one anonymous root group —
+   gives a gentle slide-fade (using this app's existing --ease/--dur-med
+   motion language, same curve as .ex-card's cardIn entrance) rather than a
+   flat opacity cross-dissolve. ui.js only calls startViewTransition() when
+   prefers-reduced-motion is "no-preference", so this block never runs
+   under reduced motion regardless of this guard. */
 @media (prefers-reduced-motion: no-preference){
-  ::view-transition-old(root),
-  ::view-transition-new(root){ animation-duration:.22s; }
+  #screen-plan{ view-transition-name:screen-plan; }
+  #screen-coach{ view-transition-name:screen-coach; }
+  #screen-more{ view-transition-name:screen-more; }
+
+  @keyframes screen-fade-out{ to{ opacity:0; transform:translateY(-8px); } }
+  @keyframes screen-fade-in{ from{ opacity:0; transform:translateY(8px); } }
+
+  ::view-transition-old(screen-plan),
+  ::view-transition-old(screen-coach),
+  ::view-transition-old(screen-more){ animation:var(--dur-med) var(--ease) both screen-fade-out; }
+
+  ::view-transition-new(screen-plan),
+  ::view-transition-new(screen-coach),
+  ::view-transition-new(screen-more){ animation:var(--dur-med) var(--ease) both screen-fade-in; }
 }
 
 @media (prefers-reduced-motion: reduce){

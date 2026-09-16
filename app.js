@@ -291,6 +291,7 @@ const T = {
   wtPH:["wt","وزن"], repPH:["rep","عدد"],
   resetChecklist:["Reset today's checklist","إعادة ضبط قائمة اليوم"],
   resetConfirm:["Reset today's checklist for this workout?","إعادة ضبط قائمة اليوم لهذا التمرين؟"],
+  dayAlreadyDone:["This workout is already complete for today. Reset the checklist if you want to log it again.","اكتمل هذا التمرين لهذا اليوم بالفعل. أعد ضبط القائمة إذا أردت تسجيله مرة أخرى."],
   notesTitle:["Important Notes","ملاحظات مهمة"],
   skip:["Skip","تخطٍّ"],
   restTimer:["Rest — {name}","راحة — {name}"],
@@ -431,6 +432,27 @@ function activeDayStoreKey(){ return "gym_active_day_" + (activePlan || "male") 
 const todayStr = new Date().toISOString().slice(0,10);
 let activeDay = localStorage.getItem(activeDayStoreKey()) || DAYS[0].id;
 if(!DAYS.some(d=>d.id===activeDay)) activeDay = DAYS[0].id;
+
+// Auto-advance to the next day in rotation the day after a day was marked
+// fully complete (gym-style plans only — DAYS_PREVIEW and AI-coach custom
+// plans don't have a meaningful rotation to step through). This overrides
+// the normal last-selected-tab restore for exactly this one load; manual
+// tab taps still work exactly as before and simply override the suggestion.
+// "gymday_last_completed" is deliberately NOT gym_-prefixed (see sync.js's
+// LOCAL_ONLY convention / gymauth_session, gymcoach_form, gymchat_history)
+// so it stays device-local and is never round-tripped through sync.
+(function applyDayRotation(){
+  const rotatable = DAYS === DAYS_MALE || DAYS === DAYS_FEMALE || DAYS === DAYS_MALE_CAL || DAYS === DAYS_FEMALE_CAL;
+  if(!rotatable) return;
+  const last = loadJSON("gymday_last_completed", null);
+  if(!last || !last.dayId || last.date === todayStr) return; // nothing to do, or completed today (not "the day after" yet)
+  const idx = DAYS.findIndex(d=>d.id===last.dayId);
+  if(idx === -1) return; // that day isn't part of the currently active plan
+  activeDay = DAYS[(idx + 1) % DAYS.length].id;
+  setPref(activeDayStoreKey(), activeDay);
+  localStorage.removeItem("gymday_last_completed");
+})();
+
 let openVideoId = null; // which exercise currently has an inline player mounted
 let animateCards = true; // replay the card entrance only on a real context change (day/plan/language)
 
@@ -599,6 +621,7 @@ function renderExercises(){
     el.onclick = ()=>{
       const id = el.dataset.id;
       const k = sessionKey(activeDay);
+      const wasComplete = isDayComplete(activeDay);
       checks[k] = checks[k] || {};
       checks[k][id] = !checks[k][id];
       saveJSON("gym_checks", checks);
@@ -607,6 +630,12 @@ function renderExercises(){
       const card = el.closest(".ex-card");
       if(card) card.classList.toggle("done", on);
       updateProgress();
+      // Record the moment this day's checklist *transitions* to complete
+      // (not on every click once already complete) so applyDayRotation()
+      // can auto-select the next day in rotation on a later day's visit.
+      if(!wasComplete && isDayComplete(activeDay)){
+        saveJSON("gymday_last_completed", { date: todayStr, dayId: activeDay });
+      }
       if(window.GymCalendar && typeof window.GymCalendar.onCheckChanged === "function"){
         window.GymCalendar.onCheckChanged(activeDay, todayStr);
       }
@@ -684,12 +713,23 @@ function renderNotes(){
   list.innerHTML = arr.map(li=>`<li>${li}</li>`).join("");
 }
 
-function updateProgress(){
-  const day = DAYS.find(d=>d.id===activeDay);
-  const key = sessionKey(day.id);
-  const dayChecks = checks[key] || {};
+// Shared done/total computation for a day's checklist, reused by
+// updateProgress() (active day's progress pill/bar) and isDayComplete()
+// (blocking timer start / driving day-rotation) so the two never drift.
+function dayProgress(dayId){
+  const day = DAYS.find(d=>d.id===dayId);
+  if(!day) return { done:0, total:0 };
+  const dayChecks = checks[sessionKey(dayId)] || {};
   const total = day.exercises.length;
   const done = day.exercises.filter(ex=>dayChecks[ex.id]).length;
+  return { done, total };
+}
+function isDayComplete(dayId){
+  const { done, total } = dayProgress(dayId);
+  return total>0 && done===total;
+}
+function updateProgress(){
+  const { done, total } = dayProgress(activeDay);
   progressPill.textContent = `${done}/${total}`;
   progressPill.classList.toggle("done", done===total && total>0);
   barFill.style.width = total ? (done/total*100)+"%" : "0%";
@@ -946,6 +986,10 @@ sessionBtn.onclick = ()=>{
     activeSession = null;
     localStorage.removeItem("gym_session_active");
   } else {
+    if(isDayComplete(activeDay)){
+      alert(t("dayAlreadyDone"));
+      return;
+    }
     const now = Date.now();
     activeSession = { dayId: activeDay, startedAt: now, running: true, accumSec: 0, segStart: now };
     saveJSON("gym_session_active", activeSession);
