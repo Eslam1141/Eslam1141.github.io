@@ -96,6 +96,8 @@
   function refreshCoach() {
     try { if (window.GymCoach && typeof GymCoach.refresh === "function") GymCoach.refresh(); }
     catch (e) { if (window.console) console.warn("coach refresh failed", e); }
+    try { if (window.GymCalendar && typeof GymCalendar.refresh === "function") GymCalendar.refresh(); }
+    catch (e) { if (window.console) console.warn("calendar refresh failed", e); }
   }
 
   function startAnon() {

@@ -38,7 +38,9 @@
   // key meant an ended session's stale "still running" blob could never be
   // deleted server-side — the next pull (interval/focus/reload) would merge
   // it straight back into localStorage, making "End Workout" look broken.
-  var LOCAL_ONLY = { gym_meta_updatedAt: 1, gym_user_sub: 1, gym_tab: 1, gym_anon: 1, gym_session_active: 1 };
+  // gym_push_endpoint: the browser's current Web Push subscription endpoint on
+  // THIS device — a per-device fact (calendar.js), not shareable user data.
+  var LOCAL_ONLY = { gym_meta_updatedAt: 1, gym_user_sub: 1, gym_tab: 1, gym_anon: 1, gym_session_active: 1, gym_push_endpoint: 1 };
   function syncable(k) { return k && k.indexOf("gym_") === 0 && !LOCAL_ONLY[k]; }
   var FETCH_TIMEOUT_MS = 8000;
   var DEBOUNCE_MS = 1500;
@@ -328,6 +330,7 @@
       }
     } catch (e) {}
     if (typeof window.GymAppRebuild === "function") window.GymAppRebuild();
+    try { if (window.GymCalendar && typeof GymCalendar.refresh === "function") GymCalendar.refresh(); } catch (e) {}
   }
 
   function ensureAuthContainer() {

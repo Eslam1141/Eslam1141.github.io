@@ -420,6 +420,14 @@ function pickDays(){
 }
 let DAYS = pickDays();
 
+// Read-only accessor for calendar.js — DAYS is otherwise module-private, and
+// the calendar needs a day's exercise list to compute done===total locally.
+window.GymApp = window.GymApp || {};
+window.GymApp.dayExercises = function(dayId){
+  const day = DAYS.find(d=>d.id===dayId);
+  return day ? day.exercises : [];
+};
+
 function t(key){ const e = T[key]; return e ? (e[activeLang === "ar" ? 1 : 0]) : key; }
 function exName(ex){ return activeLang === "ar" ? (AR_EX[ex.en] || ex.en) : ex.en; }
 function dayLabel(d){ return activeLang === "ar" ? (AR_DAY[d.label] || d.label) : d.label; }
@@ -607,6 +615,9 @@ function renderExercises(){
       const card = el.closest(".ex-card");
       if(card) card.classList.toggle("done", on);
       updateProgress();
+      if(window.GymCalendar && typeof window.GymCalendar.onCheckChanged === "function"){
+        window.GymCalendar.onCheckChanged(activeDay, todayStr);
+      }
     };
   });
 
@@ -1080,6 +1091,9 @@ function applyLang(lang, persist){
   try {
     if(window.GymCoach && typeof window.GymCoach.refresh === "function") window.GymCoach.refresh();
   } catch(e){ if(window.console) console.warn("coach re-render failed", e); }
+  try {
+    if(window.GymCalendar && typeof window.GymCalendar.refresh === "function") window.GymCalendar.refresh(true);
+  } catch(e){ if(window.console) console.warn("calendar re-render failed", e); }
 }
 
 // ---------------- PLAN + STYLE ----------------

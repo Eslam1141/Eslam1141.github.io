@@ -9,6 +9,7 @@ on:
       - "coach.js"
       - "chat.js"
       - "sync.js"
+      - "calendar.js"
       - "styles.css"
       - "service-worker.js"
       - "manifest.json"

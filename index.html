@@ -85,6 +85,7 @@
   </div>
 
   <div class="wrap">
+    <div id="calendarStrip"></div>
     <div class="day-tabs" id="dayTabs" role="tablist" aria-label="Training day"></div>
   </div>
 
@@ -180,6 +181,10 @@
 
     <div class="more-group" id="moreAccount"></div>
 
+    <div class="more-group" id="moreTrainingDays"></div>
+
+    <div class="more-group" id="morePush"></div>
+
     <div class="more-group">
       <div class="more-label" data-i18n="backupLabel">Progress backup</div>
       <div class="backup-row">
@@ -218,6 +223,21 @@
       </button>
     </div>
     <div class="modal-frame" id="modalFrame"></div>
+  </div>
+</div>
+
+<div id="calendarModal" hidden role="dialog" aria-modal="true" aria-label="Workout calendar">
+  <div id="calendarModalBackdrop"></div>
+  <div class="cal-modal-panel">
+    <div class="cal-modal-head">
+      <button type="button" id="calMonthPrev"></button>
+      <div class="cal-modal-title" id="calMonthLabel"></div>
+      <button type="button" id="calMonthNext"></button>
+      <button type="button" id="calendarModalClose" class="cal-modal-close"></button>
+    </div>
+    <div class="cal-weekday-row" id="calWeekdayRow"></div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-day-detail" id="calDayDetail" hidden></div>
   </div>
 </div>
 
@@ -263,5 +283,6 @@
 <script src="coach.js" defer></script>
 <script src="chat.js" defer></script>
 <script src="sync.js" defer></script>
+<script src="calendar.js" defer></script>
 </body>
 </html>
