@@ -193,6 +193,26 @@
   </div>
 </div>
 
+<script>
+  // Runs synchronously at parse time, before first paint settles — without
+  // this, #screen-plan (the only screen with no `hidden` attribute in the
+  // raw HTML) briefly flashes on every refresh regardless of which tab the
+  // user was actually on, since ui.js's boot()/navigate() can't run until
+  // DOMContentLoaded fires (parser finish + the deferred scripts below).
+  // ui.js still runs its own navigate() afterward exactly as before — this
+  // is purely an additive early-paint fix, not a replacement for it.
+  (function(){
+    try {
+      var tab = localStorage.getItem("gym_tab") || "plan";
+      if (tab !== "plan") {
+        var p = document.getElementById("screen-plan"); if (p) p.hidden = true;
+        var t = document.getElementById("screen-" + tab); if (t) t.hidden = false;
+        document.body.setAttribute("data-tab", tab);
+      }
+    } catch (e) {}
+  })();
+</script>
+
 <div id="timerBar">
   <div class="timer-row">
     <div class="timer-info">
