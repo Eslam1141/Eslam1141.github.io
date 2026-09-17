@@ -136,7 +136,17 @@
   function boot() {
     ob = el("onboarding");
     wireNav();
-    navigate(ls("gym_tab") || "plan", { instant: true, keepScroll: true });
+    // The inline pre-paint script in index.html already applied gym_tab to
+    // the DOM before this ran (to avoid a flash of #screen-plan). Only call
+    // navigate() here if the DOM doesn't already reflect the target tab —
+    // otherwise this is a second, redundant application of the same key
+    // that itself caused a visible flash/redirect on refresh. curTab is
+    // still always initialized so later same-tab clicks behave correctly.
+    var targetTab = ls("gym_tab") || "plan";
+    curTab = targetTab;
+    if (document.body.getAttribute("data-tab") !== targetTab) {
+      navigate(targetTab, { instant: true, keepScroll: true });
+    }
 
     var cont = el("obContinueBtn");
     if (cont) cont.addEventListener("click", startAnon);
