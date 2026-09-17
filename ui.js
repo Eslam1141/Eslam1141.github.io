@@ -30,6 +30,21 @@
 
   function screenEl(tab) { return el("screen-" + tab); }
 
+  // Sets aria-current="page" on the #appNav button matching `tab` and clears
+  // it on the others. Shared by navigate()'s swap() (real tab-switch clicks)
+  // and boot()'s skip-branch (when the inline pre-paint script already put
+  // the DOM in the right state and navigate() itself is skipped), so the
+  // nav-bar highlight is always correct without duplicating this logic.
+  function updateNavHighlight(tab) {
+    var nav = el("appNav");
+    if (!nav) return;
+    nav.querySelectorAll("button[data-tab]").forEach(function (b) {
+      var on = b.getAttribute("data-tab") === tab;
+      if (on) b.setAttribute("aria-current", "page");
+      else b.removeAttribute("aria-current");
+    });
+  }
+
   function navigate(tab, opts) {
     if (TABS.indexOf(tab) === -1) tab = "plan";
     opts = opts || {};
@@ -41,14 +56,7 @@
         var s = screenEl(name);
         if (s) s.hidden = (name !== tab);
       });
-      var nav = el("appNav");
-      if (nav) {
-        nav.querySelectorAll("button[data-tab]").forEach(function (b) {
-          var on = b.getAttribute("data-tab") === tab;
-          if (on) b.setAttribute("aria-current", "page");
-          else b.removeAttribute("aria-current");
-        });
-      }
+      updateNavHighlight(tab);
       document.body.setAttribute("data-tab", tab);
     };
 
@@ -146,6 +154,12 @@
     curTab = targetTab;
     if (document.body.getAttribute("data-tab") !== targetTab) {
       navigate(targetTab, { instant: true, keepScroll: true });
+    } else {
+      // navigate()/swap() were skipped, but swap() is also the only thing
+      // that sets aria-current on the #appNav buttons — without this, the
+      // nav bar would stay highlighted on "Plan" (the static HTML default)
+      // until the user's first tap, even though the correct screen is shown.
+      updateNavHighlight(targetTab);
     }
 
     var cont = el("obContinueBtn");
