@@ -60,11 +60,48 @@
     return 280;
   }
 
+  // In-flight state for the CSS-class fallback (setTimeout-based swap, used
+  // when document.startViewTransition isn't available). Native View
+  // Transitions auto-supersede a still-running transition when a new one
+  // starts; the fallback needs to replicate that explicitly, or two nav
+  // calls landing within one --dur-med window (e.g. two rapid taps) can (a)
+  // let the FIRST call's stale scheduled swap fire and briefly show a
+  // screen nobody asked for, and (b) leave a fade-in class stuck forever on
+  // a screen that gets hidden (which cancels its animation without firing
+  // `animationend`) before its fade-in finishes.
+  var pendingFallbackTimer = null;
+  var pendingFallbackIncoming = null;
+  var pendingFallbackIncomingCleanup = null;
+
+  // Cancels any scheduled-but-not-yet-fired fallback swap, and if a
+  // previous fallback swap already fired and is still mid-fade-in, finishes
+  // it synchronously (removes the class + detaches its animationend
+  // listener) so nothing about a superseded navigate() call remains
+  // visible or attached. Safe to call unconditionally at the top of every
+  // navigate(), whether or not a fallback is actually pending.
+  function cancelPendingFallback() {
+    if (pendingFallbackTimer !== null) {
+      clearTimeout(pendingFallbackTimer);
+      pendingFallbackTimer = null;
+    }
+    if (pendingFallbackIncoming) {
+      pendingFallbackIncoming.classList.remove("screen-fade-in-fallback");
+      if (pendingFallbackIncomingCleanup) {
+        pendingFallbackIncoming.removeEventListener("animationend", pendingFallbackIncomingCleanup);
+      }
+      pendingFallbackIncoming = null;
+      pendingFallbackIncomingCleanup = null;
+    }
+    var stillFadingOut = document.querySelector(".screen-fade-out-fallback");
+    if (stillFadingOut) stillFadingOut.classList.remove("screen-fade-out-fallback");
+  }
+
   function navigate(tab, opts) {
     if (TABS.indexOf(tab) === -1) tab = "plan";
     opts = opts || {};
     curTab = tab;
     set("gym_tab", tab);
+    cancelPendingFallback();
 
     var swap = function () {
       TABS.forEach(function (name) {
@@ -87,14 +124,19 @@
       // visible at once — no overlap/double-render mid-transition.
       var outgoing = document.querySelector(".screen:not([hidden])");
       if (outgoing) outgoing.classList.add("screen-fade-out-fallback");
-      setTimeout(function () {
+      pendingFallbackTimer = setTimeout(function () {
+        pendingFallbackTimer = null;
         swap();
         var incoming = document.querySelector(".screen:not([hidden])");
         if (incoming) {
           incoming.classList.add("screen-fade-in-fallback");
-          incoming.addEventListener("animationend", function () {
+          pendingFallbackIncoming = incoming;
+          pendingFallbackIncomingCleanup = function () {
             incoming.classList.remove("screen-fade-in-fallback");
-          }, { once: true });
+            pendingFallbackIncoming = null;
+            pendingFallbackIncomingCleanup = null;
+          };
+          incoming.addEventListener("animationend", pendingFallbackIncomingCleanup, { once: true });
         }
         if (outgoing) outgoing.classList.remove("screen-fade-out-fallback");
       }, fallbackDurMs());
