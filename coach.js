@@ -361,6 +361,19 @@
     return svg;
   }
 
+  // small functional icon (e.g. for the "my plans" icon-button) — same
+  // inline-SVG construction as mascot(), but a plain currentColor glyph
+  // instead of the gradient mascot face.
+  function plansIcon(size) {
+    var px = size || 22;
+    var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("width", px); svg.setAttribute("height", px);
+    svg.setAttribute("aria-hidden", "true");
+    svg.innerHTML = '<path fill="currentColor" d="M7 3h10a2 2 0 0 1 2 2v16l-7-3-7 3V5a2 2 0 0 1 2-2z"/>';
+    return svg;
+  }
+
   function renderTeaser() {
     var bullets = h("ul", { class: "coach-bullets" },
       h("li", {}, s("teaseB1")), h("li", {}, s("teaseB2")), h("li", {}, s("teaseB3")));
@@ -516,7 +529,18 @@
         } }
       }, s(w === "both" ? "wantBoth" : w === "diet" ? "wantDiet" : "wantWorkout")));
     });
-    form.appendChild(h("div", { class: "coach-field" }, h("span", { class: "coach-field-l" }, s("want")), wantWrap));
+    var wantField = h("div", { class: "coach-field" }, h("span", { class: "coach-field-l" }, s("want")), wantWrap);
+    var formHeaderRow = h("div", { class: "coach-form-header-row" }, wantField);
+    var nSavedForHeader = loadSaved().length;
+    if (nSavedForHeader > 0) {
+      formHeaderRow.appendChild(h("button", {
+        type: "button", class: "coach-icon-btn coach-myplans-icon",
+        "aria-label": s("myPlansN").replace(/\{n\}/g, nSavedForHeader),
+        title: s("myPlansN").replace(/\{n\}/g, nSavedForHeader),
+        on: { click: renderMyPlans }
+      }, [plansIcon(22)]));
+    }
+    form.appendChild(formHeaderRow);
 
     // sex control — locked to the plan when there is one
     var ps = planSex();
@@ -597,14 +621,6 @@
     var submit = h("button", { type: "submit", class: "coach-primary" }, s("generate"));
     form.appendChild(topErr);
     form.appendChild(submit);
-
-    var nSaved = loadSaved().length;
-    if (nSaved > 0) {
-      form.appendChild(h("button", {
-        type: "button", class: "coach-link coach-myplans-link",
-        on: { click: renderMyPlans }
-      }, s("myPlansN").replace(/\{n\}/g, nSaved)));
-    }
 
     form.addEventListener("submit", function (e) {
       e.preventDefault();
@@ -835,8 +851,12 @@
       }, s("btnApply")) : null);
 
     var links = h("div", { class: "coach-links" },
-      loadSaved().length ? h("button", { type: "button", class: "coach-link", on: { click: renderMyPlans } },
-        s("myPlansN").replace(/\{n\}/g, loadSaved().length)) : null,
+      loadSaved().length ? h("button", {
+        type: "button", class: "coach-icon-btn coach-myplans-icon",
+        "aria-label": s("myPlansN").replace(/\{n\}/g, loadSaved().length),
+        title: s("myPlansN").replace(/\{n\}/g, loadSaved().length),
+        on: { click: renderMyPlans }
+      }, [plansIcon(22)]) : null,
       h("button", { type: "button", class: "coach-link", on: { click: renderHistory } }, s("btnHistory")),
       (window.GymChat && GymChat.open) ? h("button", {
         type: "button", class: "coach-link", on: { click: function () { GymChat.open(); } }
