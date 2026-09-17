@@ -314,6 +314,7 @@
       }
     });
     Object.keys(ENUMS).forEach(function (name) {
+      if (name === "dietPreference" && st.want === "workout") return;
       if (ENUMS[name].indexOf(st[name]) === -1) errors[name] = ["vRequired"];
     });
     if (!(st.sex === "male" || st.sex === "female")) errors.sex = ["vRequired"];
@@ -525,6 +526,7 @@
             x.setAttribute("aria-pressed", x.getAttribute("data-want") === w ? "true" : "false");
           });
           if (ibGroup) ibGroup.hidden = (w === "workout"); // InBody informs diet macros, not the workout
+          if (dietGroup) dietGroup.hidden = (w === "workout"); // diet fields don't apply in workout-only mode
           persist();
         } }
       }, s(w === "both" ? "wantBoth" : w === "diet" ? "wantDiet" : "wantWorkout")));
@@ -581,11 +583,14 @@
     // Diet
     var allergies = chipsInput("allergies", st.allergies, function (a) { st.allergies = a; persist(); });
     var dislikes = chipsInput("dislikes", st.dislikes, function (a) { st.dislikes = a; persist(); });
-    form.appendChild(h("fieldset", { class: "coach-group" },
+    var dietGroup = h("fieldset", { class: "coach-group" },
       h("legend", {}, s("grpDiet")),
       field("dietPreference", "dietPreference", selectInput("dietPreference", st.dietPreference), { required: true }),
       field("allergies", "allergies", allergies),
-      field("dislikes", "dislikes", dislikes)));
+      field("dislikes", "dislikes", dislikes));
+    // diet preference/allergies/dislikes don't apply in workout-only mode
+    dietGroup.hidden = st.want === "workout";
+    form.appendChild(dietGroup);
 
     // InBody (collapsible, optional)
     var ibBody = h("div", { class: "coach-ib-body" },
@@ -806,9 +811,11 @@
         mascot(48),
         h("div", {},
           h("div", { class: "coach-res-model" }, r.model || ""),
-          h("h2", {}, s("resTargets")))),
-      stats
+          h("h2", {}, s("resTargets"))))
     ];
+    // stats (BMI/BMR/TDEE/macros) only make sense when a diet plan was generated;
+    // also guards against a "both" response that came back missing dietPlan.
+    if (r.want !== "workout" && r.dietPlan) sections.push(stats);
     if (r.summary) sections.push(h("div", { class: "coach-block card-fx" },
       h("h3", {}, s("resSummary")), h("p", {}, r.summary)));
     if (r.dietPlan) sections.push(renderDiet(r.dietPlan));
