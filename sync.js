@@ -140,15 +140,28 @@
   function buildEntries() {
     var m = readMeta();
     var entries = {};
+    var metaChanged = false;
     gymKeys().forEach(function (k) {
       var v = localStorage.getItem(k);
       if (v === null) return;
-      // hasOwnProperty, not `m[k] || 0`: a key genuinely never recorded in
-      // meta (undefined) must stay distinguishable from a key with a known
-      // old timestamp — both would otherwise collapse to epoch 0.
-      var ts = Object.prototype.hasOwnProperty.call(m, k) ? m[k] : undefined;
-      entries[k] = { value: v, updatedAt: new Date(ts || 0).toISOString() };
+      var ts;
+      if (Object.prototype.hasOwnProperty.call(m, k)) {
+        ts = m[k];
+      } else {
+        // meta has no record for this key even though a local value exists
+        // — a key genuinely never recorded must not collapse to epoch 0 the
+        // way `m[k] || 0` did (that made a stale/deleted meta entry look
+        // ancient and lose to any remote value). Self-heal right here: treat
+        // it as just-written and persist that backfill, so a single key
+        // missing its own meta entry — not just a fully wiped meta object —
+        // never gets pushed with an epoch-0 timestamp.
+        ts = nowMs();
+        m[k] = ts;
+        metaChanged = true;
+      }
+      entries[k] = { value: v, updatedAt: new Date(ts).toISOString() };
     });
+    if (metaChanged) writeMeta(m);
     return entries;
   }
 
