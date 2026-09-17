@@ -125,8 +125,8 @@
     histEmpty: ["No past assessments yet.", "لا توجد تقييمات سابقة بعد."],
     histOpen: ["Open", "افتح"],
     back: ["Back", "رجوع"],
-    pdf: ["Download PDF", "تنزيل PDF"],
     pdfTitle: ["Gym Coach plan", "خطة المدرّب"],
+    shareImage: ["Save Image", "حفظ كصورة"],
     saveAcct: ["Save to my plans", "حفظ في خططي"],
     savedTick: ["Saved ✓", "تم الحفظ ✓"],
     useAsWorkoutQ: ["Saved. Use this as your workout now?", "تم الحفظ. هل تريد استخدامها كتمرينك الآن؟"],
@@ -216,8 +216,9 @@
     catch (e) { return ""; }
   }
 
-  // ---- print / "download PDF" (browser's Save as PDF) ----
-  function downloadPdf() {
+  // ---- print / "download PDF" (browser's Save as PDF) — offline/CDN-failure
+  // fallback for downloadResultImage() below. Logic unchanged from before. ----
+  function downloadPdfFallback() {
     var prev = document.title, done = false;
     document.title = s("pdfTitle") + " — " + fmtDate(Date.now());
     var restore = function () {
@@ -228,6 +229,69 @@
     window.addEventListener("afterprint", restore);
     setTimeout(function () { try { window.print(); } catch (e) {} }, 30);
     setTimeout(restore, 60000); // fallback if afterprint never fires
+  }
+
+  // App background to capture on — this app is dark-theme-only, so the
+  // heading/body text is light-on-transparent; a hardcoded white capture
+  // background left that text ~invisible. Read the real root background,
+  // falling back to the app's known --bg if that's ever falsy/transparent
+  // (e.g. an unusual UA default before styles.css applies).
+  function exportBgColor() {
+    try {
+      var c = getComputedStyle(document.documentElement).backgroundColor;
+      if (c && c !== "transparent" && c !== "rgba(0, 0, 0, 0)") return c;
+    } catch (e) {}
+    return "#0d1117";
+  }
+
+  // scale:2 on an unbounded-height result card (a full diet+workout plan can
+  // be several thousand CSS px tall on a narrow phone) can exceed mobile
+  // Safari's canvas-area ceiling (~16.7M px), past which iOS silently
+  // returns a blank canvas instead of throwing — neither the success path
+  // nor the catch/fallback would catch that. Clamp scale by measured area.
+  function exportScale(card) {
+    var w = card.scrollWidth, h = card.scrollHeight;
+    if (!w || !h) return 2;
+    return Math.max(1, Math.min(2, Math.sqrt(16000000 / (w * h))));
+  }
+
+  // ---- "Save Image" — screenshot the live result card via html2canvas
+  // (CDN-loaded, see index.html) and download it as a PNG. Falls back to
+  // downloadPdfFallback() if the CDN script didn't load or capture throws.
+  //
+  // Uses html2canvas's onclone to mutate a cloned, off-DOM copy of the card
+  // before it's rasterized — mirroring what @media print already does for
+  // the PDF fallback (hide the on-screen action/link button rows, show the
+  // "Gym Coach plan — <date>" print-head title) without ever touching the
+  // live page, so there's nothing to clean up even if capture rejects. ----
+  function downloadResultImage() {
+    var card = document.querySelector(".coach-result");
+    if (!card || typeof html2canvas !== "function") { downloadPdfFallback(); return; }
+    try {
+      html2canvas(card, {
+        backgroundColor: exportBgColor(),
+        scale: exportScale(card),
+        onclone: function (clonedDoc, clonedCard) {
+          var root = clonedCard || clonedDoc.querySelector(".coach-result");
+          if (!root) return;
+          root.querySelectorAll(".coach-actions, .coach-links").forEach(function (el) { el.style.display = "none"; });
+          var head = root.querySelector(".coach-print-head");
+          if (head) head.style.display = "block";
+        }
+      }).then(function (canvas) {
+        canvas.toBlob(function (blob) {
+          if (!blob) { downloadPdfFallback(); return; }
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement("a");
+          a.href = url; a.download = "coach-plan-" + Date.now() + ".png";
+          document.body.appendChild(a); a.click(); a.remove();
+          // Defer revocation — Firefox/Safari can abort an in-flight
+          // download if the blob URL is revoked synchronously right after
+          // click() (Chromium tolerates it, but not everything does).
+          setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+        }, "image/png");
+      }, function () { downloadPdfFallback(); });
+    } catch (e) { downloadPdfFallback(); }
   }
 
   // ---------------- field spec (drives render + validation) ----------------
@@ -314,6 +378,7 @@
       }
     });
     Object.keys(ENUMS).forEach(function (name) {
+      if (name === "dietPreference" && st.want === "workout") return;
       if (ENUMS[name].indexOf(st[name]) === -1) errors[name] = ["vRequired"];
     });
     if (!(st.sex === "male" || st.sex === "female")) errors.sex = ["vRequired"];
@@ -358,6 +423,19 @@
       '<rect x="38" y="30" width="18" height="24" rx="3" fill="var(--panel2)" stroke="var(--line)" stroke-width="1.5"/>' +
       '<rect x="44" y="27" width="6" height="5" rx="1.5" fill="var(--paper-dim)"/>' +
       '<path d="M41 38h9M41 43h12M41 48h8" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>';
+    return svg;
+  }
+
+  // small functional icon (e.g. for the "my plans" icon-button) — same
+  // inline-SVG construction as mascot(), but a plain currentColor glyph
+  // instead of the gradient mascot face.
+  function plansIcon(size) {
+    var px = size || 22;
+    var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("width", px); svg.setAttribute("height", px);
+    svg.setAttribute("aria-hidden", "true");
+    svg.innerHTML = '<path fill="currentColor" d="M7 3h10a2 2 0 0 1 2 2v16l-7-3-7 3V5a2 2 0 0 1 2-2z"/>';
     return svg;
   }
 
@@ -512,11 +590,23 @@
             x.setAttribute("aria-pressed", x.getAttribute("data-want") === w ? "true" : "false");
           });
           if (ibGroup) ibGroup.hidden = (w === "workout"); // InBody informs diet macros, not the workout
+          if (dietGroup) dietGroup.hidden = (w === "workout"); // diet fields don't apply in workout-only mode
           persist();
         } }
       }, s(w === "both" ? "wantBoth" : w === "diet" ? "wantDiet" : "wantWorkout")));
     });
-    form.appendChild(h("div", { class: "coach-field" }, h("span", { class: "coach-field-l" }, s("want")), wantWrap));
+    var wantField = h("div", { class: "coach-field" }, h("span", { class: "coach-field-l" }, s("want")), wantWrap);
+    var formHeaderRow = h("div", { class: "coach-form-header-row" }, wantField);
+    var nSavedForHeader = loadSaved().length;
+    if (nSavedForHeader > 0) {
+      formHeaderRow.appendChild(h("button", {
+        type: "button", class: "coach-icon-btn coach-myplans-icon",
+        "aria-label": s("myPlansN").replace(/\{n\}/g, nSavedForHeader),
+        title: s("myPlansN").replace(/\{n\}/g, nSavedForHeader),
+        on: { click: renderMyPlans }
+      }, [plansIcon(22)]));
+    }
+    form.appendChild(formHeaderRow);
 
     // sex control — locked to the plan when there is one
     var ps = planSex();
@@ -557,11 +647,14 @@
     // Diet
     var allergies = chipsInput("allergies", st.allergies, function (a) { st.allergies = a; persist(); });
     var dislikes = chipsInput("dislikes", st.dislikes, function (a) { st.dislikes = a; persist(); });
-    form.appendChild(h("fieldset", { class: "coach-group" },
+    var dietGroup = h("fieldset", { class: "coach-group" },
       h("legend", {}, s("grpDiet")),
       field("dietPreference", "dietPreference", selectInput("dietPreference", st.dietPreference), { required: true }),
       field("allergies", "allergies", allergies),
-      field("dislikes", "dislikes", dislikes)));
+      field("dislikes", "dislikes", dislikes));
+    // diet preference/allergies/dislikes don't apply in workout-only mode
+    dietGroup.hidden = st.want === "workout";
+    form.appendChild(dietGroup);
 
     // InBody (collapsible, optional)
     var ibBody = h("div", { class: "coach-ib-body" },
@@ -597,14 +690,6 @@
     var submit = h("button", { type: "submit", class: "coach-primary" }, s("generate"));
     form.appendChild(topErr);
     form.appendChild(submit);
-
-    var nSaved = loadSaved().length;
-    if (nSaved > 0) {
-      form.appendChild(h("button", {
-        type: "button", class: "coach-link coach-myplans-link",
-        on: { click: renderMyPlans }
-      }, s("myPlansN").replace(/\{n\}/g, nSaved)));
-    }
 
     form.addEventListener("submit", function (e) {
       e.preventDefault();
@@ -790,9 +875,11 @@
         mascot(48),
         h("div", {},
           h("div", { class: "coach-res-model" }, r.model || ""),
-          h("h2", {}, s("resTargets")))),
-      stats
+          h("h2", {}, s("resTargets"))))
     ];
+    // stats (BMI/BMR/TDEE/macros) only make sense when a diet plan was generated;
+    // also guards against a "both" response that came back missing dietPlan.
+    if (r.want !== "workout" && r.dietPlan) sections.push(stats);
     if (r.summary) sections.push(h("div", { class: "coach-block card-fx" },
       h("h3", {}, s("resSummary")), h("p", {}, r.summary)));
     if (r.dietPlan) sections.push(renderDiet(r.dietPlan));
@@ -823,7 +910,7 @@
         on: { click: function () { runAssessment(buildRequest(loadState()), true); } }
       }, s("btnDetail")),
       saveBtn,
-      h("button", { type: "button", class: "coach-secondary", on: { click: downloadPdf } }, s("pdf")),
+      h("button", { type: "button", class: "coach-secondary", on: { click: downloadResultImage } }, s("shareImage")),
       (r.workoutPlan && r.workoutPlan.days && r.workoutPlan.days.length) ? h("button", {
         type: "button", class: "coach-primary",
         on: { click: function (e) {
@@ -835,8 +922,12 @@
       }, s("btnApply")) : null);
 
     var links = h("div", { class: "coach-links" },
-      loadSaved().length ? h("button", { type: "button", class: "coach-link", on: { click: renderMyPlans } },
-        s("myPlansN").replace(/\{n\}/g, loadSaved().length)) : null,
+      loadSaved().length ? h("button", {
+        type: "button", class: "coach-icon-btn coach-myplans-icon",
+        "aria-label": s("myPlansN").replace(/\{n\}/g, loadSaved().length),
+        title: s("myPlansN").replace(/\{n\}/g, loadSaved().length),
+        on: { click: renderMyPlans }
+      }, [plansIcon(22)]) : null,
       h("button", { type: "button", class: "coach-link", on: { click: renderHistory } }, s("btnHistory")),
       (window.GymChat && GymChat.open) ? h("button", {
         type: "button", class: "coach-link", on: { click: function () { GymChat.open(); } }
