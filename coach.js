@@ -127,6 +127,7 @@
     back: ["Back", "رجوع"],
     pdf: ["Download PDF", "تنزيل PDF"],
     pdfTitle: ["Gym Coach plan", "خطة المدرّب"],
+    shareImage: ["Save Image", "حفظ كصورة"],
     saveAcct: ["Save to my plans", "حفظ في خططي"],
     savedTick: ["Saved ✓", "تم الحفظ ✓"],
     useAsWorkoutQ: ["Saved. Use this as your workout now?", "تم الحفظ. هل تريد استخدامها كتمرينك الآن؟"],
@@ -216,8 +217,9 @@
     catch (e) { return ""; }
   }
 
-  // ---- print / "download PDF" (browser's Save as PDF) ----
-  function downloadPdf() {
+  // ---- print / "download PDF" (browser's Save as PDF) — offline/CDN-failure
+  // fallback for downloadResultImage() below. Logic unchanged from before. ----
+  function downloadPdfFallback() {
     var prev = document.title, done = false;
     document.title = s("pdfTitle") + " — " + fmtDate(Date.now());
     var restore = function () {
@@ -228,6 +230,26 @@
     window.addEventListener("afterprint", restore);
     setTimeout(function () { try { window.print(); } catch (e) {} }, 30);
     setTimeout(restore, 60000); // fallback if afterprint never fires
+  }
+
+  // ---- "Save Image" — screenshot the live result card via html2canvas
+  // (CDN-loaded, see index.html) and download it as a PNG. Falls back to
+  // downloadPdfFallback() if the CDN script didn't load or capture throws. ----
+  function downloadResultImage() {
+    var card = document.querySelector(".coach-result");
+    if (!card || typeof html2canvas !== "function") { downloadPdfFallback(); return; }
+    try {
+      html2canvas(card, { backgroundColor: "#ffffff", scale: 2 }).then(function (canvas) {
+        canvas.toBlob(function (blob) {
+          if (!blob) { downloadPdfFallback(); return; }
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement("a");
+          a.href = url; a.download = "coach-plan-" + Date.now() + ".png";
+          document.body.appendChild(a); a.click(); a.remove();
+          URL.revokeObjectURL(url);
+        }, "image/png");
+      }, function () { downloadPdfFallback(); });
+    } catch (e) { downloadPdfFallback(); }
   }
 
   // ---------------- field spec (drives render + validation) ----------------
@@ -846,7 +868,7 @@
         on: { click: function () { runAssessment(buildRequest(loadState()), true); } }
       }, s("btnDetail")),
       saveBtn,
-      h("button", { type: "button", class: "coach-secondary", on: { click: downloadPdf } }, s("pdf")),
+      h("button", { type: "button", class: "coach-secondary", on: { click: downloadResultImage } }, s("shareImage")),
       (r.workoutPlan && r.workoutPlan.days && r.workoutPlan.days.length) ? h("button", {
         type: "button", class: "coach-primary",
         on: { click: function (e) {
