@@ -18,7 +18,13 @@
   "use strict";
 
   var ASSIST_BASE = (window.GYM_API_BASE || "/api/v1").replace(/\/+$/, "") + "/assistant";
-  var CALL_TIMEOUT_MS = 45000;
+  // Must comfortably exceed the backend's own outer request deadline
+  // (REQUEST_TIMEOUT, currently 80s in deploy/helm/gym-assistant/values.yaml)
+  // or this abort fires before the backend's retry loop can succeed — a
+  // want=both assessment's single Anthropic call takes ~2x as long as
+  // either half alone, which is what pushed the old 45s value into that
+  // exact race in production.
+  var CALL_TIMEOUT_MS = 85000;
   var FORM_KEY = "gym_coach_form_draft"; // live form values (synced — see header)
   var LAST_KEY = "gymcoach_last";   // last result, for quick reopen (local only)
   var SAVED_KEY = "gym_coach_saved"; // gym_ prefix -> synced to the account
