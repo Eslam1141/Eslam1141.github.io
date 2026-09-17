@@ -125,7 +125,6 @@
     histEmpty: ["No past assessments yet.", "لا توجد تقييمات سابقة بعد."],
     histOpen: ["Open", "افتح"],
     back: ["Back", "رجوع"],
-    pdf: ["Download PDF", "تنزيل PDF"],
     pdfTitle: ["Gym Coach plan", "خطة المدرّب"],
     shareImage: ["Save Image", "حفظ كصورة"],
     saveAcct: ["Save to my plans", "حفظ في خططي"],
@@ -232,21 +231,64 @@
     setTimeout(restore, 60000); // fallback if afterprint never fires
   }
 
+  // App background to capture on — this app is dark-theme-only, so the
+  // heading/body text is light-on-transparent; a hardcoded white capture
+  // background left that text ~invisible. Read the real root background,
+  // falling back to the app's known --bg if that's ever falsy/transparent
+  // (e.g. an unusual UA default before styles.css applies).
+  function exportBgColor() {
+    try {
+      var c = getComputedStyle(document.documentElement).backgroundColor;
+      if (c && c !== "transparent" && c !== "rgba(0, 0, 0, 0)") return c;
+    } catch (e) {}
+    return "#0d1117";
+  }
+
+  // scale:2 on an unbounded-height result card (a full diet+workout plan can
+  // be several thousand CSS px tall on a narrow phone) can exceed mobile
+  // Safari's canvas-area ceiling (~16.7M px), past which iOS silently
+  // returns a blank canvas instead of throwing — neither the success path
+  // nor the catch/fallback would catch that. Clamp scale by measured area.
+  function exportScale(card) {
+    var w = card.scrollWidth, h = card.scrollHeight;
+    if (!w || !h) return 2;
+    return Math.max(1, Math.min(2, Math.sqrt(16000000 / (w * h))));
+  }
+
   // ---- "Save Image" — screenshot the live result card via html2canvas
   // (CDN-loaded, see index.html) and download it as a PNG. Falls back to
-  // downloadPdfFallback() if the CDN script didn't load or capture throws. ----
+  // downloadPdfFallback() if the CDN script didn't load or capture throws.
+  //
+  // Uses html2canvas's onclone to mutate a cloned, off-DOM copy of the card
+  // before it's rasterized — mirroring what @media print already does for
+  // the PDF fallback (hide the on-screen action/link button rows, show the
+  // "Gym Coach plan — <date>" print-head title) without ever touching the
+  // live page, so there's nothing to clean up even if capture rejects. ----
   function downloadResultImage() {
     var card = document.querySelector(".coach-result");
     if (!card || typeof html2canvas !== "function") { downloadPdfFallback(); return; }
     try {
-      html2canvas(card, { backgroundColor: "#ffffff", scale: 2 }).then(function (canvas) {
+      html2canvas(card, {
+        backgroundColor: exportBgColor(),
+        scale: exportScale(card),
+        onclone: function (clonedDoc, clonedCard) {
+          var root = clonedCard || clonedDoc.querySelector(".coach-result");
+          if (!root) return;
+          root.querySelectorAll(".coach-actions, .coach-links").forEach(function (el) { el.style.display = "none"; });
+          var head = root.querySelector(".coach-print-head");
+          if (head) head.style.display = "block";
+        }
+      }).then(function (canvas) {
         canvas.toBlob(function (blob) {
           if (!blob) { downloadPdfFallback(); return; }
           var url = URL.createObjectURL(blob);
           var a = document.createElement("a");
           a.href = url; a.download = "coach-plan-" + Date.now() + ".png";
           document.body.appendChild(a); a.click(); a.remove();
-          URL.revokeObjectURL(url);
+          // Defer revocation — Firefox/Safari can abort an in-flight
+          // download if the blob URL is revoked synchronously right after
+          // click() (Chromium tolerates it, but not everything does).
+          setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
         }, "image/png");
       }, function () { downloadPdfFallback(); });
     } catch (e) { downloadPdfFallback(); }
