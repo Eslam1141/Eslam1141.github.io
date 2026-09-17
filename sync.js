@@ -143,7 +143,11 @@
     gymKeys().forEach(function (k) {
       var v = localStorage.getItem(k);
       if (v === null) return;
-      entries[k] = { value: v, updatedAt: new Date(m[k] || 0).toISOString() };
+      // hasOwnProperty, not `m[k] || 0`: a key genuinely never recorded in
+      // meta (undefined) must stay distinguishable from a key with a known
+      // old timestamp — both would otherwise collapse to epoch 0.
+      var ts = Object.prototype.hasOwnProperty.call(m, k) ? m[k] : undefined;
+      entries[k] = { value: v, updatedAt: new Date(ts || 0).toISOString() };
     });
     return entries;
   }
@@ -152,20 +156,54 @@
     if (!entries) return false;
     var m = readMeta();
     var changed = false;
+    var metaChanged = false;
     Object.keys(entries).forEach(function (k) {
       if (!syncable(k)) return;
       var remote = entries[k];
       var remoteMs = Date.parse(remote.updatedAt) || 0;
-      var localMs = m[k] || 0;
+      var hasLocalMeta = Object.prototype.hasOwnProperty.call(m, k);
+      var localMs = hasLocalMeta ? m[k] : undefined;
       var localVal = localStorage.getItem(k);
-      if (remoteMs > localMs || (remoteMs === localMs && localVal !== remote.value)) {
+      // meta has no record for this key, but a local value already exists —
+      // that's "meta got wiped, data didn't", not "never synced". Don't let
+      // a (possibly stale) remote value stomp real local data: keep local
+      // and backfill meta from now, so future syncs compare correctly. Only
+      // take remote outright when there's no local value at all.
+      if (!hasLocalMeta && localVal !== null) {
+        m[k] = nowMs();
+        metaChanged = true;
+        return;
+      }
+      var effectiveLocalMs = localMs === undefined ? 0 : localMs;
+      if (remoteMs > effectiveLocalMs || (remoteMs === effectiveLocalMs && localVal !== remote.value)) {
         try { localStorage.setItem(k, remote.value); } catch (e) { return; }
         m[k] = remoteMs;
         changed = true;
       }
     });
-    if (changed) writeMeta(m);
+    if (changed || metaChanged) writeMeta(m);
     return changed;
+  }
+
+  // Anomaly guard: gym_meta_updatedAt (META_KEY) looks like disposable cache
+  // metadata, so it's exactly the kind of key someone poking around DevTools
+  // -> Local Storage deletes. If meta comes back completely empty but real
+  // gym_* data already exists, that's "meta got wiped, data didn't" rather
+  // than "nothing has ever synced on this device" — backfill meta for every
+  // existing gym_* key to now and persist it immediately, before this
+  // session's first buildEntries()/push, so that push looks fresh instead of
+  // stale (and doesn't tell the server/other devices this data is epoch-0
+  // old). Cheap to call every time: once meta is non-empty this is a no-op,
+  // and it self-heals again if meta gets wiped again mid-session.
+  function repairMetaIfWiped() {
+    var m = readMeta();
+    if (Object.keys(m).length > 0) return;
+    var keys = gymKeys().filter(function (k) { return localStorage.getItem(k) !== null; });
+    if (!keys.length) return;
+    var ts = nowMs();
+    var backfill = {};
+    keys.forEach(function (k) { backfill[k] = ts; });
+    writeMeta(backfill);
   }
 
   function fetchWithTimeout(url, opts) {
@@ -179,6 +217,7 @@
   function syncNow(reason) {
     if (syncing || !isSignedIn()) return Promise.resolve(false);
     syncing = true;
+    repairMetaIfWiped();
     log("[sync] start", reason);
     var body = JSON.stringify({ entries: buildEntries() });
     return fetchWithTimeout(API_BASE + "/progress", {
