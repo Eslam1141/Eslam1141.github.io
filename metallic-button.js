@@ -483,6 +483,20 @@
     return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   }
 
+  // Reads a CSS custom property (e.g. "--accent") off <html>, so the shader
+  // can pick up Athlex's own brand color instead of a generic default, and
+  // stays in sync when the male/female plan theme (which repoints these
+  // variables via [data-plan]) is switched at runtime.
+  function readThemeColor(varName, fallback) {
+    if (!varName) return fallback;
+    try {
+      var v = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+      return v || fallback;
+    } catch (e) {
+      return fallback;
+    }
+  }
+
   function enhance(button, options) {
     if (!button || button.__metallicMounted) return;
     if (typeof WebGL2RenderingContext === "undefined") return;
@@ -490,6 +504,7 @@
     var opts = {
       baseColor: "#000000",
       sheenColor: "#ffffff",
+      themeVar: null,
       bandCount: 4,
       edgeBlur: 0.5,
       flowAngle: 45,
@@ -503,6 +518,7 @@
       shellClass: ""
     };
     if (options) for (var k in options) if (Object.prototype.hasOwnProperty.call(options, k)) opts[k] = options[k];
+    if (opts.themeVar) opts.sheenColor = readThemeColor(opts.themeVar, opts.sheenColor);
 
     var shell = document.createElement("span");
     shell.className = "metallic-shell" + (opts.shellClass ? " " + opts.shellClass : "");
@@ -534,6 +550,13 @@
     }
 
     button.__metallicMounted = true;
+
+    if (opts.themeVar && typeof MutationObserver !== "undefined") {
+      var themeObserver = new MutationObserver(function () {
+        mount.setUniforms({ colorTint: readThemeColor(opts.themeVar, opts.sheenColor) });
+      });
+      themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["data-plan"] });
+    }
 
     function spawnRipple(x, y) {
       if (reduced) return;
