@@ -244,9 +244,6 @@
 
     var cont = el("obContinueBtn");
     if (cont) cont.addEventListener("click", startAnon);
-    if (cont && window.MetallicButton) {
-      window.MetallicButton.enhance(cont, { shellClass: "metallic-shell--ob", themeVar: "--accent", idleSpeed: 0.35, hoverSpeed: 0.7 });
-    }
     var whyToggle = el("obWhyToggle");
     var why = el("obWhy");
     if (whyToggle && why) {
