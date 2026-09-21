@@ -160,6 +160,16 @@
   }
 
   // ---------------- onboarding ----------------
+  // Two-step reveal: a single "Start Changing Yourself" CTA first, then a
+  // smooth crossfade into the real choices (Google icon + continue-anon).
+  function showObStep(step) {
+    var start = el("obStepStart");
+    var choices = el("obStepChoices");
+    if (!start || !choices) return;
+    start.inert = step !== "start";
+    choices.inert = step !== "choices";
+  }
+
   function showOnboarding() {
     if (!ob) return;
     ob.hidden = false;
@@ -167,6 +177,7 @@
     var pc = el("planChooser"); if (pc) pc.hidden = true;
     document.body.style.overflow = "hidden";
     window.scrollTo(0, 0);
+    showObStep("start");
     if (heroVideo) { heroVideo.start(); heroVideo.play(); }
   }
   function hideOnboarding() {
@@ -205,9 +216,13 @@
     refreshCoach();
   }
 
-  // A locked control asks the user to sign in: bring the hero back so the
-  // Google button is reachable.
-  function promptSignIn() { showOnboarding(); }
+  // A locked control (or a lost session) asks the user to sign in: bring the
+  // hero back and skip straight past the Start splash to the actual choices,
+  // so the Google button is reachable in one tap, not two.
+  function promptSignIn() {
+    showOnboarding();
+    showObStep("choices");
+  }
 
   window.GymUI = {
     isAuthed: isAuthed,
@@ -242,6 +257,13 @@
       updateNavHighlight(targetTab);
     }
 
+    var startBtn = el("obStartBtn");
+    if (startBtn) {
+      startBtn.addEventListener("click", function () { showObStep("choices"); });
+      if (window.MetallicButton) {
+        window.MetallicButton.enhance(startBtn, { shellClass: "metallic-shell--start", themeVar: "--accent" });
+      }
+    }
     var cont = el("obContinueBtn");
     if (cont) cont.addEventListener("click", startAnon);
     var whyToggle = el("obWhyToggle");

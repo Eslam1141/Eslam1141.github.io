@@ -403,10 +403,11 @@
   function renderAuthUI() {
     var signedIn = isSignedIn();
 
-    // The onboarding hero's Google button (primary sign-in surface).
+    // The onboarding hero's Google button — icon-only, revealed alongside
+    // "Continue without signing in" after the Start step (see ui.js).
     var ob = document.getElementById("obGoogleBtn");
     if (ob && !signedIn) {
-      renderGoogleButton(ob, { theme: "filled_blue", size: "large", type: "standard", shape: "pill", width: 260 });
+      renderGoogleButton(ob, { theme: "filled_blue", size: "large", type: "icon" });
     }
 
     var box = ensureAuthContainer();

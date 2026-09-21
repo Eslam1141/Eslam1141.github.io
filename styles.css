@@ -127,7 +127,7 @@ header.hero .sub{ color:var(--paper-dim); font-size:12.5px; }
   color:#fff; background:var(--rust); white-space:nowrap;
 }
 
-/* --- metallic-button.js: WebGL shader sheen behind session-btn / ob-secondary --- */
+/* --- metallic-button.js: WebGL shader sheen behind session-btn / obStartBtn --- */
 .metallic-shell{
   position:relative; display:inline-block; flex:none; border-radius:10px;
   box-shadow:0 0 0 1px rgba(0,0,0,.3), 0 20px 12px rgba(0,0,0,.08), 0 9px 9px rgba(0,0,0,.12), 0 2px 5px rgba(0,0,0,.15);
@@ -139,6 +139,7 @@ header.hero .sub{ color:var(--paper-dim); font-size:12.5px; }
 .metallic-shell.is-pressed{
   box-shadow:0 0 0 1px rgba(0,0,0,.5), 0 1px 2px rgba(0,0,0,.3);
 }
+.metallic-shell--start{ width:100%; max-width:280px; border-radius:14px; }
 .metallic-canvas-wrap{
   position:absolute; inset:0; overflow:hidden; border-radius:inherit; pointer-events:none;
 }
@@ -641,9 +642,37 @@ body.onboarding-open #coachFabTip{ display:none !important; }
   font-family:inherit; font-weight:700; font-size:13.5px;
   padding:11px 18px; border-radius:12px; cursor:pointer; width:100%; max-width:280px;
 }
+
+/* --- ob-step-stack: Start Changing Yourself -> Google icon + continue-anon --- */
+.ob-step-stack{ display:grid; width:100%; }
+.ob-step{
+  grid-area:1 / 1; width:100%; min-height:100%;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
+  transition:opacity .35s ease, transform .35s ease;
+}
+.ob-step-choices{ opacity:0; transform:scale(1.04); }
+.ob-step-choices:not([inert]){ opacity:1; transform:scale(1); }
+.ob-step-start[inert]{ opacity:0; transform:scale(.92); }
+.ob-start-btn{
+  border:none; cursor:pointer; font-family:inherit; font-weight:800; font-size:14.5px;
+  padding:14px 20px; border-radius:14px; color:#fff; width:100%; max-width:280px;
+  background-image:linear-gradient(135deg, var(--accent), var(--accent-2));
+}
+@media (prefers-reduced-motion: reduce){
+  .ob-step{ transition:none; }
+}
 .ob-why-toggle{
   background:none; border:none; color:var(--paper-dim); font-family:inherit;
   font-size:12.5px; cursor:pointer; text-decoration:underline; padding:4px;
+  text-shadow:0 0 8px var(--glow);
+  animation:ob-why-glow 3.2s ease-in-out infinite;
+}
+@keyframes ob-why-glow{
+  0%, 100%{ text-shadow:0 0 6px var(--glow); }
+  50%{ text-shadow:0 0 15px var(--glow); }
+}
+@media (prefers-reduced-motion: reduce){
+  .ob-why-toggle{ animation:none; }
 }
 .ob-why{
   list-style:none; margin:0; padding:0; max-height:0; overflow:hidden;

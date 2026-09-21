@@ -30,14 +30,21 @@
     <img class="ob-logo" src="icons/logo.svg" alt="" width="96" height="96">
     <h1 class="ob-title" data-i18n="obTitle">Your workout, everywhere</h1>
     <p class="ob-sub" data-i18n="obSub">Plans, a rest timer, form videos and progress that follows you across devices.</p>
-    <div id="obGoogleBtn" class="ob-gbtn"></div>
-    <button id="obContinueBtn" class="ob-secondary" data-i18n="obContinue">Continue without an account</button>
-    <button id="obWhyToggle" class="ob-why-toggle" aria-expanded="false" data-i18n="obWhy">Why sign in?</button>
-    <ul id="obWhy" class="ob-why">
-      <li data-i18n="obWhy1">Keep progress across devices</li>
-      <li data-i18n="obWhy2">All training days &amp; important notes</li>
-      <li data-i18n="obWhy3">A personalised AI coach</li>
-    </ul>
+    <div class="ob-step-stack">
+      <div id="obStepStart" class="ob-step ob-step-start">
+        <button id="obStartBtn" class="ob-start-btn" data-i18n="obStart">Start Changing Yourself</button>
+      </div>
+      <div id="obStepChoices" class="ob-step ob-step-choices" inert>
+        <div id="obGoogleBtn" class="ob-gbtn"></div>
+        <button id="obContinueBtn" class="ob-secondary" data-i18n="obContinue">Continue without signing in</button>
+        <button id="obWhyToggle" class="ob-why-toggle" aria-expanded="false" data-i18n="obWhy">Why sign in?</button>
+        <ul id="obWhy" class="ob-why">
+          <li data-i18n="obWhy1">Keep progress across devices</li>
+          <li data-i18n="obWhy2">All training days &amp; important notes</li>
+          <li data-i18n="obWhy3">A personalised AI coach</li>
+        </ul>
+      </div>
+    </div>
   </div>
 </section>
 
