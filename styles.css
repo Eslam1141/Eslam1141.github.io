@@ -139,7 +139,6 @@ header.hero .sub{ color:var(--paper-dim); font-size:12.5px; }
 .metallic-shell.is-pressed{
   box-shadow:0 0 0 1px rgba(0,0,0,.5), 0 1px 2px rgba(0,0,0,.3);
 }
-.metallic-shell--ob{ width:100%; max-width:280px; border-radius:12px; }
 .metallic-canvas-wrap{
   position:absolute; inset:0; overflow:hidden; border-radius:inherit; pointer-events:none;
 }
