@@ -1,4 +1,4 @@
-const CACHE_NAME = "gym-plan-v22";
+const CACHE_NAME = "gym-plan-v23";
 const ASSETS = [
   "./index.html",
   "./styles.css",
@@ -8,6 +8,8 @@ const ASSETS = [
   "./chat.js",
   "./sync.js",
   "./calendar.js",
+  "./hero-video.js",
+  "./metallic-button.js",
   "./config.js",
   "./manifest.json",
   "./icons/logo.svg",
