@@ -358,6 +358,10 @@
   function handleAuthLost() {
     idToken = null; tokenExpEpoch = 0; profile = null;
     renderAuthUI();
+    // Same pattern coach.js/chat.js/calendar.js already use on their own
+    // 401s: a signed-out user gets sent back to the welcome screen instead
+    // of being left inside the app in the gated anon preview.
+    if (window.GymUI && typeof GymUI.promptSignIn === "function") GymUI.promptSignIn();
   }
 
   function signOut() {
