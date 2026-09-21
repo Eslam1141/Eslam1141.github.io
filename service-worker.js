@@ -1,4 +1,4 @@
-const CACHE_NAME = "gym-plan-v21";
+const CACHE_NAME = "gym-plan-v22";
 const ASSETS = [
   "./index.html",
   "./styles.css",
@@ -14,6 +14,8 @@ const ASSETS = [
   "./icons/coach.svg",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
+  "./icons/icon-maskable-192.png",
+  "./icons/icon-maskable-512.png",
   "./icons/apple-touch-icon.png"
 ];
 

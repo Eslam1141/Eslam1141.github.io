@@ -1,23 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Muscle Building Plan logo">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Athlex logo">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#4c9dff"/>
-      <stop offset="1" stop-color="#2f6fd6"/>
+    <linearGradient id="mk" x1="0.05" y1="0.95" x2="0.95" y2="0.05">
+      <stop offset="0" stop-color="#10123a"/>
+      <stop offset="0.5" stop-color="#305dab"/>
+      <stop offset="1" stop-color="#4896ff"/>
     </linearGradient>
-    <radialGradient id="hi" cx="0.3" cy="0.22" r="0.95">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0.34"/>
-      <stop offset="0.55" stop-color="#ffffff" stop-opacity="0"/>
-    </radialGradient>
+    <linearGradient id="hl" gradientUnits="userSpaceOnUse" x1="0" y1="-14.38" x2="0" y2="256.86">
+      <stop offset="0" stop-color="#aacdff" stop-opacity="0"/>
+      <stop offset="0.25" stop-color="#aacdff" stop-opacity="0.38"/>
+      <stop offset="0.375" stop-color="#aacdff" stop-opacity="0.67"/>
+      <stop offset="0.5" stop-color="#aacdff" stop-opacity="1"/>
+      <stop offset="0.625" stop-color="#aacdff" stop-opacity="0.67"/>
+      <stop offset="0.75" stop-color="#aacdff" stop-opacity="0.38"/>
+      <stop offset="1" stop-color="#aacdff" stop-opacity="0"/>
+    </linearGradient>
+    <clipPath id="cp"><polygon points="96.25,384.03 184.66,310.35 237.96,310.35 280.03,178.13 343.13,361.12 421.55,387.26 432.87,353.30 371.21,332.74 278.66,64.35 211.78,274.55 171.70,274.55 73.33,356.53"/></clipPath>
   </defs>
-  <rect width="512" height="512" rx="114" fill="url(#bg)"/>
-  <rect width="512" height="512" rx="114" fill="url(#hi)"/>
-  <g transform="rotate(-18 256 256)" fill="#ffffff">
-    <rect x="181" y="240" width="150" height="32" rx="16"/>
-    <rect x="165" y="196" width="40" height="120" rx="18" opacity="0.97"/>
-    <rect x="307" y="196" width="40" height="120" rx="18" opacity="0.97"/>
-    <rect x="132" y="176" width="36" height="160" rx="17"/>
-    <rect x="344" y="176" width="36" height="160" rx="17"/>
-    <rect x="110" y="218" width="24" height="76" rx="12" opacity="0.9"/>
-    <rect x="378" y="218" width="24" height="76" rx="12" opacity="0.9"/>
-  </g>
+  <rect width="512" height="512" rx="112.6" fill="#090a10"/>
+  <polygon points="96.25,384.03 184.66,310.35 237.96,310.35 280.03,178.13 343.13,361.12 421.55,387.26 432.87,353.30 371.21,332.74 278.66,64.35 211.78,274.55 171.70,274.55 73.33,356.53" fill="url(#mk)"/>
+  <polygon points="178.18,288.87 226.21,288.87 274.47,125.14 360.58,345.83 363.92,344.53 273.99,114.08 223.53,285.29 178.18,285.29" fill="url(#hl)" clip-path="url(#cp)"/>
 </svg>
