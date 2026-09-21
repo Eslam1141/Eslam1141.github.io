@@ -10,6 +10,8 @@ on:
       - "chat.js"
       - "sync.js"
       - "calendar.js"
+      - "hero-video.js"
+      - "metallic-button.js"
       - "styles.css"
       - "service-worker.js"
       - "manifest.json"
