@@ -880,6 +880,9 @@ const sessionTimeEl = document.getElementById("sessionTime");
 const sessionHintEl = document.getElementById("sessionHint");
 const sessionBtn = document.getElementById("sessionBtn");
 const sessionPauseBtn = document.getElementById("sessionPauseBtn");
+if (sessionBtn && window.MetallicButton) {
+  window.MetallicButton.enhance(sessionBtn, { shellClass: "metallic-shell--session", themeVar: "--accent" });
+}
 const miniTimer = document.getElementById("miniTimer");
 const miniLabel = document.getElementById("miniLabel");
 const miniTime = document.getElementById("miniTime");

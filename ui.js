@@ -23,6 +23,7 @@
   function onboarded() { return ls("gym_onboarded") === "1"; }
 
   var ob = null;
+  var heroVideo = null;
 
   // ---------------- navigation ----------------
   var TABS = ["plan", "coach", "more"];
@@ -166,11 +167,13 @@
     var pc = el("planChooser"); if (pc) pc.hidden = true;
     document.body.style.overflow = "hidden";
     window.scrollTo(0, 0);
+    if (heroVideo) { heroVideo.start(); heroVideo.play(); }
   }
   function hideOnboarding() {
     if (ob) ob.hidden = true;
     document.body.classList.remove("onboarding-open");
     document.body.style.overflow = "";
+    if (heroVideo) heroVideo.pause();
   }
 
   function rebuild() {
@@ -219,6 +222,7 @@
 
   function boot() {
     ob = el("onboarding");
+    if (window.HeroVideo) heroVideo = window.HeroVideo.init(".ob-video");
     wireNav();
     // The inline pre-paint script in index.html already applied gym_tab to
     // the DOM before this ran (to avoid a flash of #screen-plan). Only call
@@ -240,6 +244,9 @@
 
     var cont = el("obContinueBtn");
     if (cont) cont.addEventListener("click", startAnon);
+    if (cont && window.MetallicButton) {
+      window.MetallicButton.enhance(cont, { shellClass: "metallic-shell--ob", themeVar: "--accent", idleSpeed: 0.35, hoverSpeed: 0.7 });
+    }
     var whyToggle = el("obWhyToggle");
     var why = el("obWhy");
     if (whyToggle && why) {
