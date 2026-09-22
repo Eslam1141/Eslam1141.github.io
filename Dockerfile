@@ -27,7 +27,7 @@ RUN cd /usr/share/nginx/html && \
         icons/logo.svg icons/coach.svg icons/icon-192.png icons/icon-512.png \
         icons/icon-maskable-192.png icons/icon-maskable-512.png \
         icons/apple-touch-icon.png | sha256sum | cut -c1-12) && \
-    sed -i "s/__CACHE_HASH__/${HASH}/" service-worker.js
+    sed -i "/^const CACHE_NAME/s/__CACHE_HASH__/${HASH}/" service-worker.js
 
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s CMD ["wget", "-qO-", "http://127.0.0.1:8080/healthz"]
