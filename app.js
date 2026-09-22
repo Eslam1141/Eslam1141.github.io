@@ -258,6 +258,7 @@ const T = {
   obWhy1:["Keep progress across devices","احفظ تقدّمك عبر الأجهزة"],
   obWhy2:["All training days & important notes","كل أيام التمرين والملاحظات المهمة"],
   obWhy3:["A personalised AI coach","مدرّب ذكاء اصطناعي مخصّص"],
+  resolvingSession:["Resolving your session…","جارٍ التحقق من جلستك…"],
   anonLockTitle:["Sign in to unlock everything","سجّل الدخول لفتح كل المزايا"],
   anonLockBody:["The full multi-day plans, important notes, cross-device sync and the AI coach are free with a Google account.","الخطط الكاملة متعددة الأيام، الملاحظات المهمة، المزامنة بين الأجهزة، ومدرّب الذكاء الاصطناعي — كلها مجانية مع حساب جوجل."],
   anonSignIn:["Sign in with Google","سجّل الدخول عبر جوجل"],

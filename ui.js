@@ -165,9 +165,11 @@
   function showObStep(step) {
     var start = el("obStepStart");
     var choices = el("obStepChoices");
+    var resolving = el("obStepResolving");
     if (!start || !choices) return;
     start.inert = step !== "start";
     choices.inert = step !== "choices";
+    if (resolving) resolving.inert = step !== "resolving";
   }
 
   function showOnboarding() {
@@ -199,6 +201,12 @@
   }
 
   function startAnon() {
+    clearResolvingFallback();
+    // Also drop any "a sign-in was starting" marker (sync.js) for a Google
+    // button tap the user backed out of by choosing this instead — left
+    // alone it could interrupt this same anon session with the resolving
+    // overlay on a later reload (see sync.js's isSignInPending()).
+    try { if (window.GymSync && typeof GymSync.clearSignInPending === "function") GymSync.clearSignInPending(); } catch (e) {}
     set("gym_onboarded", "1");
     set("gym_anon", "1");
     hideOnboarding();
@@ -209,6 +217,7 @@
 
   // Called by sync.js from onCredential once a Google token is in hand.
   function completeSignIn() {
+    clearResolvingFallback();
     set("gym_onboarded", "1");
     del("gym_anon");
     hideOnboarding();
@@ -220,8 +229,37 @@
   // hero back and skip straight past the Start splash to the actual choices,
   // so the Google button is reachable in one tap, not two.
   function promptSignIn() {
+    clearResolvingFallback();
     showOnboarding();
     showObStep("choices");
+  }
+
+  // Belt-and-suspenders backstop for showResolvingSession() below: sync.js
+  // already gives up on a pending sign-in after ~8s (GIS timeout, definitive
+  // failure, or its own hard timeout) and routes to promptSignIn() itself —
+  // but that logic lives behind `GOOGLE_CLIENT_ID` being configured at all
+  // (initAuth() no-ops without one, same as every other sync.js feature). A
+  // stray marker with sync disabled would otherwise hold "resolving…" with
+  // nothing to ever move it forward. This timer is ui.js's own independent
+  // guarantee that the hold is always brief, regardless of sync.js's state.
+  var resolvingFallbackTimer = null;
+  function clearResolvingFallback() {
+    if (resolvingFallbackTimer) { clearTimeout(resolvingFallbackTimer); resolvingFallbackTimer = null; }
+  }
+
+  // A sign-in was mid-flight when this tab last unloaded (sync.js's
+  // isSignInPending()) — hold a neutral, non-committal screen while GIS
+  // gets a chance at a silent re-auth, instead of flashing the ordinary
+  // login choices (which would visually contradict a sign-in that's about
+  // to quietly succeed) or leaving the user on a stale cached tab.
+  function showResolvingSession() {
+    showOnboarding();
+    showObStep("resolving");
+    clearResolvingFallback();
+    resolvingFallbackTimer = setTimeout(function () {
+      resolvingFallbackTimer = null;
+      if (!isAuthed()) promptSignIn();
+    }, 9000);
   }
 
   window.GymUI = {
@@ -231,6 +269,7 @@
     startAnon: startAnon,
     completeSignIn: completeSignIn,
     promptSignIn: promptSignIn,
+    showResolvingSession: showResolvingSession,
     navigate: navigate,
     currentTab: function () { return curTab; }
   };
@@ -274,7 +313,28 @@
         whyToggle.setAttribute("aria-expanded", open ? "true" : "false");
       });
     }
-    if (!onboarded()) showOnboarding();
+    // Auth-driven routing, on top of whatever tab was just restored above.
+    // Three states: signed in (nothing to do — sync.js's initAuth() already
+    // hid onboarding via completeSignIn() if a cached session existed), the
+    // existing explicit anon-preview choice (untouched, existing UX), or —
+    // new — "no choice made yet": always route to a real login/resolving
+    // screen instead of leaving the visitor on whatever tab gym_tab cached,
+    // which is the bug this replaces (a random last-active tab with a
+    // sign-in prompt buried inside it, instead of a dedicated screen).
+    if (isAuthed()) {
+      // signed in — the restored tab above is correct, nothing to route.
+    } else if (isAnon()) {
+      // explicit "continue without signing in" choice — leave it alone.
+    } else if (window.GymSync && typeof GymSync.isSignInPending === "function" && GymSync.isSignInPending()) {
+      // sync.js's initAuth() already put up the "resolving…" hold (it runs
+      // before this, see ui.js/sync.js load order) and is racing a silent
+      // GIS re-auth — don't downgrade that to the plain login screen here.
+      showResolvingSession();
+    } else if (!onboarded()) {
+      showOnboarding(); // first-ever visit: the full hero splash
+    } else {
+      promptSignIn(); // returning, signed-out, no active choice: straight to login
+    }
   }
 
   if (document.readyState === "loading") {

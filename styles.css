@@ -652,6 +652,8 @@ body.onboarding-open #coachFabTip{ display:none !important; }
 }
 .ob-step-choices{ opacity:0; transform:scale(1.04); }
 .ob-step-choices:not([inert]){ opacity:1; transform:scale(1); }
+.ob-step-resolving{ opacity:0; transform:scale(1.04); }
+.ob-step-resolving:not([inert]){ opacity:1; transform:scale(1); }
 .ob-step-start[inert]{ opacity:0; transform:scale(.92); }
 .ob-start-btn{
   border:none; cursor:pointer; font-family:inherit; font-weight:800; font-size:14.5px;
