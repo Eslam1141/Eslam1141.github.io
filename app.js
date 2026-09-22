@@ -249,7 +249,7 @@ window.GymExerciseVideo = function(name){
   return hit ? EX_VID[hit] : "";
 };
 const T = {
-  appTitle:["Muscle Building Plan","خطة بناء العضلات"],
+  appTitle:["Athlex","Athlex"],
   obTitle:["Your workout, everywhere","تمرينك في كل مكان"],
   obSub:["Plans, a rest timer, form videos and progress that follows you across devices.","خطط، مؤقّت راحة، فيديوهات أداء، وتقدّم يتابعك عبر أجهزتك."],
   obStart:["Start Changing Yourself","ابدأ بتغيير نفسك"],
