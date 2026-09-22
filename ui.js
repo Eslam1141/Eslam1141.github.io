@@ -314,22 +314,28 @@
       });
     }
     // Auth-driven routing, on top of whatever tab was just restored above.
-    // Three states: signed in (nothing to do — sync.js's initAuth() already
-    // hid onboarding via completeSignIn() if a cached session existed), the
-    // existing explicit anon-preview choice (untouched, existing UX), or —
-    // new — "no choice made yet": always route to a real login/resolving
-    // screen instead of leaving the visitor on whatever tab gym_tab cached,
-    // which is the bug this replaces (a random last-active tab with a
-    // sign-in prompt buried inside it, instead of a dedicated screen).
+    // Checked in this order on purpose: signed in (nothing to do — sync.js's
+    // initAuth() already hid onboarding via completeSignIn() if a cached
+    // session existed) beats everything; a legitimate reason to expect a
+    // silent re-auth (GymSync.shouldResolveSilently() — a mid-flight sign-in,
+    // an account switch, or a cold start on a previously-signed-in device)
+    // is checked BEFORE the anon-preview choice, since an in-progress
+    // anon-to-authed upgrade (or an account switch) must win even while
+    // gym_anon is still "1" — only THEN the existing explicit anon-preview
+    // choice (untouched, existing UX), or — new — "no choice made yet":
+    // always route to a real login screen instead of leaving the visitor on
+    // whatever tab gym_tab cached, which is the bug this replaces (a random
+    // last-active tab with a sign-in prompt buried inside it, instead of a
+    // dedicated screen).
     if (isAuthed()) {
       // signed in — the restored tab above is correct, nothing to route.
-    } else if (isAnon()) {
-      // explicit "continue without signing in" choice — leave it alone.
-    } else if (window.GymSync && typeof GymSync.isSignInPending === "function" && GymSync.isSignInPending()) {
+    } else if (window.GymSync && typeof GymSync.shouldResolveSilently === "function" && GymSync.shouldResolveSilently()) {
       // sync.js's initAuth() already put up the "resolving…" hold (it runs
       // before this, see ui.js/sync.js load order) and is racing a silent
-      // GIS re-auth — don't downgrade that to the plain login screen here.
+      // GIS re-auth — don't downgrade that to the plain login/anon screen here.
       showResolvingSession();
+    } else if (isAnon()) {
+      // explicit "continue without signing in" choice — leave it alone.
     } else if (!onboarded()) {
       showOnboarding(); // first-ever visit: the full hero splash
     } else {
