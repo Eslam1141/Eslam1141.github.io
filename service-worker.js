@@ -1,4 +1,4 @@
-const CACHE_NAME = "gym-plan-v23";
+const CACHE_NAME = "athlex-v1";
 const ASSETS = [
   "./index.html",
   "./styles.css",
