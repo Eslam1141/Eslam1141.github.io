@@ -67,17 +67,20 @@ jobs:
         if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
         run: |
           TREE_SHA="${{ steps.tree-sha.outputs.tree_sha }}"
-          docker buildx imagetools inspect "ghcr.io/eslam1141/gym-ui:tree-$TREE_SHA" > /dev/null 2>&1
-          echo "exists=$?" >> "$GITHUB_OUTPUT"
+          if docker buildx imagetools inspect "ghcr.io/eslam1141/gym-ui:tree-$TREE_SHA" > /dev/null 2>&1; then
+            echo "exists=0" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=1" >> "$GITHUB_OUTPUT"
+          fi
       - name: Build
-        if: steps.cache-check.outputs.exists != '0'
+        if: github.event_name == 'pull_request' || steps.cache-check.outputs.exists != '0'
         uses: docker/build-push-action@v7.4.0
         with:
           context: .
           load: true
           tags: gym-ui:ci
       - name: Smoke
-        if: steps.cache-check.outputs.exists != '0'
+        if: github.event_name == 'pull_request' || steps.cache-check.outputs.exists != '0'
         run: |
           docker run -d --rm -p 8080:8080 -e GOOGLE_CLIENT_ID=ci.apps.googleusercontent.com --name ui gym-ui:ci
           for i in $(seq 1 20); do curl -fsS localhost:8080/healthz && break; sleep 1; done
@@ -87,7 +90,7 @@ jobs:
           test "$(curl -s -o /dev/null -w '%{http_code}' localhost:8080/missing)" = "404"
           docker rm -f ui
       - name: Smoke (read-only rootfs)
-        if: steps.cache-check.outputs.exists != '0'
+        if: github.event_name == 'pull_request' || steps.cache-check.outputs.exists != '0'
         run: |
           docker run -d --rm -p 8090:8080 --read-only \
             --tmpfs /tmp --tmpfs /var/cache/nginx --tmpfs /var/run \
