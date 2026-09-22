@@ -17,6 +17,8 @@ on:
       - "manifest.json"
       - "config.js"
       - "icons/**"
+      - "widgets/**"
+      - "web/coach-loading/**"
       - "docker/**"
       - "Dockerfile"
       - ".github/workflows/docker-image.yml"
@@ -28,6 +30,22 @@ jobs:
     permissions: { contents: read, packages: write }
     steps:
       - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: web/coach-loading/package-lock.json
+      - name: Build coach-loading widget and check for drift
+        run: |
+          cd web/coach-loading
+          npm ci
+          npm run build
+          cd ../..
+          if ! git diff --quiet -- widgets/; then
+            echo "::error::widgets/ is out of date with web/coach-loading/src — run 'npm run build' in web/coach-loading and commit the result."
+            git diff -- widgets/
+            exit 1
+          fi
       - uses: docker/setup-buildx-action@v4.4.1
       - name: Build
         uses: docker/build-push-action@v7.4.0

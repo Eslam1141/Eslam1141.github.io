@@ -10,6 +10,7 @@ USER 101
 
 COPY --chown=101:101 index.html styles.css app.js ui.js coach.js chat.js sync.js calendar.js hero-video.js metallic-button.js service-worker.js manifest.json config.js /usr/share/nginx/html/
 COPY --chown=101:101 icons/ /usr/share/nginx/html/icons/
+COPY --chown=101:101 widgets/ /usr/share/nginx/html/widgets/
 
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s CMD ["wget", "-qO-", "http://127.0.0.1:8080/healthz"]
