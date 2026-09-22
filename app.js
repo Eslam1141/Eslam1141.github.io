@@ -304,7 +304,7 @@ const T = {
   daysLabel:["Days","الأيام"],
   navPlan:["Plan","الخطة"],
   navCoach:["Coach","المدرّب"],
-  navMore:["Profile","الملف الشخصي"],
+  navMore:["More","المزيد"],
   coachTitle:["AI Coach","المدرّب الذكي"],
   coachSub:["A diet & training plan built from your numbers","خطة تغذية وتمرين مبنية على أرقامك"],
   styleCoach:["Coach plan","خطة المدرّب"]
