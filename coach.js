@@ -779,10 +779,19 @@
   function renderLoading() {
     var rows = [];
     for (var i = 0; i < 4; i++) rows.push(h("div", { class: "skeleton", style: "height:56px;margin-bottom:10px" }));
+    var aiLoadingHost = h("div", { class: "coach-ai-loading" });
     mount(h("div", { class: "coach-loading" },
       h("div", { class: "coach-spin", "aria-hidden": "true" }),
-      h("p", {}, s("generating")),
+      aiLoadingHost,
       h("div", {}, rows)));
+    // coach.js's own mount() above has already attached aiLoadingHost to
+    // the live DOM by the time we get here (it's synchronous), so it's
+    // safe to hand it to the widget now.
+    if (window.CoachLoadingWidget) {
+      window.CoachLoadingWidget.mount(aiLoadingHost, { texts: [s("generating")] });
+    } else {
+      aiLoadingHost.textContent = s("generating");
+    }
   }
 
   function runAssessment(reqBody, strong) {
