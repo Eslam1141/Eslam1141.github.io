@@ -44,6 +44,19 @@
   // "resolving" forever.
   var PENDING_KEY = "gymauth_pending";
   var PENDING_MAX_AGE_MS = 120000;
+  // A much tighter window used only when deciding whether a pending marker
+  // should override an ACTIVE anon-preview session (shouldResolveSilently()
+  // below). The marker is set on any pointerdown near a Google button
+  // (renderGoogleButton()) — including the More→Sync panel's button, which
+  // sits in plain view during ordinary anon browsing with no overlay up at
+  // all, so a touch-scroll that grazes it or a tap immediately backed out
+  // of sets the same marker a real sign-in does. A genuine popup/FedCM
+  // round trip settles within a few seconds; capping the anon-override
+  // window this tight means a marker that never led anywhere stops
+  // interrupting anon browsing almost immediately instead of for the full
+  // PENDING_MAX_AGE_MS (2 minutes). The non-anon case still uses the longer
+  // window — there's no anon session to protect there.
+  var PENDING_ANON_OVERRIDE_MAX_AGE_MS = 12000;
   // Device-local keys that must NEVER round-trip through the server. gym_user_sub
   // especially: if a stale value comes back down it flips the "account switched"
   // check on the next load and can wedge the app in a reload loop.
@@ -105,13 +118,22 @@
   function clearSignInPending() {
     try { sessionStorage.removeItem(PENDING_KEY); } catch (e) {}
   }
-  function isSignInPending() {
+  // Milliseconds since the marker was set, or -1 if there isn't one / it's
+  // unreadable. Shared by isSignInPending() (the general PENDING_MAX_AGE_MS
+  // window) and shouldResolveSilently()'s tighter anon-override check
+  // (PENDING_ANON_OVERRIDE_MAX_AGE_MS) so both read the exact same marker
+  // the exact same way.
+  function pendingMarkerAgeMs() {
     try {
       var raw = sessionStorage.getItem(PENDING_KEY);
-      if (!raw) return false;
+      if (!raw) return -1;
       var ts = parseInt(raw, 10);
-      return isFinite(ts) && (nowMs() - ts) < PENDING_MAX_AGE_MS;
-    } catch (e) { return false; }
+      return isFinite(ts) ? (nowMs() - ts) : -1;
+    } catch (e) { return -1; }
+  }
+  function isSignInPending() {
+    var age = pendingMarkerAgeMs();
+    return age >= 0 && age < PENDING_MAX_AGE_MS;
   }
 
   function readMeta() {
@@ -493,14 +515,25 @@
   // doing nothing to an unrelated anon-preview visitor's session. Three
   // distinct signals, each covering a different refresh-mid-flow gap:
   //  - isSignInPending(): a sign-in the user just started on this tab
-  //    (Google button tapped). Always wins, even over an existing anon
-  //    choice — the user is actively mid-upgrade from anon to authed right
-  //    now, and that in-progress action outranks whatever they'd picked
-  //    before it started.
+  //    (Google button tapped). Overrides an existing anon choice — the user
+  //    is actively mid-upgrade from anon to authed right now, and that
+  //    in-progress action outranks whatever they'd picked before it started
+  //    — but ONLY within PENDING_ANON_OVERRIDE_MAX_AGE_MS, a much tighter
+  //    window than the marker's general PENDING_MAX_AGE_MS lifetime. The
+  //    marker is set on any pointerdown near a Google button, including the
+  //    More→Sync panel's, which is reachable mid ordinary anon browsing
+  //    with no overlay up at all — a graze or a backed-out tap sets the
+  //    same marker a real sign-in does, and without this tighter window
+  //    that alone could hold an anon session's login overlay open for up to
+  //    2 minutes on an unrelated refresh. A genuine popup/FedCM round trip
+  //    settles within a few seconds, so this doesn't meaningfully shrink
+  //    the real "refresh mid-upgrade" case it exists for. Outside anon mode
+  //    there's no anon session to protect, so the full window still applies.
   //  - gym_switch: sync.js's own account-switch reload (onCredential()'s
   //    storedSub-mismatch branch) — a real credential just verified for a
   //    *different* account than the one on this device; always an active
-  //    authed transition, never something an anon visitor triggers.
+  //    authed transition, never something an anon visitor triggers, so no
+  //    shortened window is needed here.
   //  - gym_user_sub with no explicit anon choice: this device has signed in
   //    before (localStorage survives a browser restart; the session cache
   //    and the two markers above are sessionStorage and don't) and never
@@ -511,10 +544,16 @@
   //    lapsed is respected on every later cold start, not just this tab.
   function shouldResolveSilently() {
     if (isSignedIn()) return false;
-    if (isSignInPending()) return true;
+    var anon = false;
+    try { anon = localStorage.getItem("gym_anon") === "1"; } catch (e) {}
+    if (isSignInPending()) {
+      if (!anon) return true;
+      var age = pendingMarkerAgeMs();
+      return age >= 0 && age < PENDING_ANON_OVERRIDE_MAX_AGE_MS;
+    }
     try { if (sessionStorage.getItem("gym_switch") === "1") return true; } catch (e) {}
     try {
-      if (localStorage.getItem("gym_anon") !== "1" && localStorage.getItem("gym_user_sub")) return true;
+      if (!anon && localStorage.getItem("gym_user_sub")) return true;
     } catch (e) {}
     return false;
   }
