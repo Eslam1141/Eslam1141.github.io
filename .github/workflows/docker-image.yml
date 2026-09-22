@@ -30,6 +30,11 @@ jobs:
     permissions: { contents: read, packages: write }
     steps:
       - uses: actions/checkout@v7.0.1
+      - name: Compute tree SHA
+        id: tree-sha
+        run: |
+          TREE_SHA=$(git rev-parse HEAD^{tree})
+          echo "tree_sha=$TREE_SHA" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
@@ -49,13 +54,30 @@ jobs:
             exit 1
           fi
       - uses: docker/setup-buildx-action@v4.4.1
+      - name: Login to ghcr.io (for cache check)
+        id: ghcr-login-cache
+        if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: docker/login-action@v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Check whether this tree's image is already cached
+        id: cache-check
+        if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          TREE_SHA="${{ steps.tree-sha.outputs.tree_sha }}"
+          docker buildx imagetools inspect "ghcr.io/eslam1141/gym-ui:tree-$TREE_SHA" > /dev/null 2>&1
+          echo "exists=$?" >> "$GITHUB_OUTPUT"
       - name: Build
+        if: steps.cache-check.outputs.exists != '0'
         uses: docker/build-push-action@v7.4.0
         with:
           context: .
           load: true
           tags: gym-ui:ci
       - name: Smoke
+        if: steps.cache-check.outputs.exists != '0'
         run: |
           docker run -d --rm -p 8080:8080 -e GOOGLE_CLIENT_ID=ci.apps.googleusercontent.com --name ui gym-ui:ci
           for i in $(seq 1 20); do curl -fsS localhost:8080/healthz && break; sleep 1; done
@@ -65,6 +87,7 @@ jobs:
           test "$(curl -s -o /dev/null -w '%{http_code}' localhost:8080/missing)" = "404"
           docker rm -f ui
       - name: Smoke (read-only rootfs)
+        if: steps.cache-check.outputs.exists != '0'
         run: |
           docker run -d --rm -p 8090:8080 --read-only \
             --tmpfs /tmp --tmpfs /var/cache/nginx --tmpfs /var/run \
@@ -72,14 +95,20 @@ jobs:
           for i in $(seq 1 20); do curl -fsS localhost:8090/healthz && break; sleep 1; done
           curl -fsS localhost:8090/config.js | grep -q ro.apps.googleusercontent.com
           docker rm -f uiro
+      - name: Push tree-tagged image (cache for later promotion)
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && steps.cache-check.outputs.exists != '0'
+        run: |
+          TREE_SHA="${{ steps.tree-sha.outputs.tree_sha }}"
+          docker tag gym-ui:ci "ghcr.io/eslam1141/gym-ui:tree-$TREE_SHA"
+          docker push "ghcr.io/eslam1141/gym-ui:tree-$TREE_SHA"
       - uses: docker/login-action@v4.6.0
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && steps.cache-check.outputs.exists != '0'
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Push
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && steps.cache-check.outputs.exists != '0'
         uses: docker/build-push-action@v7.4.0
         with:
           context: .
@@ -87,6 +116,14 @@ jobs:
           tags: |
             ghcr.io/eslam1141/gym-ui:${{ github.sha }}
             ghcr.io/eslam1141/gym-ui:latest
+      - name: Promote cached tree image to release tags
+        if: github.ref == 'refs/heads/main' && steps.cache-check.outputs.exists == '0'
+        run: |
+          TREE_SHA="${{ steps.tree-sha.outputs.tree_sha }}"
+          docker buildx imagetools create \
+            --tag "ghcr.io/eslam1141/gym-ui:${{ github.sha }}" \
+            --tag ghcr.io/eslam1141/gym-ui:latest \
+            "ghcr.io/eslam1141/gym-ui:tree-$TREE_SHA"
 
   deploy:
     needs: build
