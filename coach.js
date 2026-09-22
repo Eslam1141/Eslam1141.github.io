@@ -131,7 +131,7 @@
     histEmpty: ["No past assessments yet.", "لا توجد تقييمات سابقة بعد."],
     histOpen: ["Open", "افتح"],
     back: ["Back", "رجوع"],
-    pdfTitle: ["Gym Coach plan", "خطة المدرّب"],
+    pdfTitle: ["Athlex Coach plan", "خطة مدرّب Athlex"],
     shareImage: ["Save Image", "حفظ كصورة"],
     saveAcct: ["Save to my plans", "حفظ في خططي"],
     savedTick: ["Saved ✓", "تم الحفظ ✓"],
@@ -268,7 +268,7 @@
   // Uses html2canvas's onclone to mutate a cloned, off-DOM copy of the card
   // before it's rasterized — mirroring what @media print already does for
   // the PDF fallback (hide the on-screen action/link button rows, show the
-  // "Gym Coach plan — <date>" print-head title) without ever touching the
+  // "Athlex Coach plan — <date>" print-head title) without ever touching the
   // live page, so there's nothing to clean up even if capture rejects. ----
   function downloadResultImage() {
     var card = document.querySelector(".coach-result");
