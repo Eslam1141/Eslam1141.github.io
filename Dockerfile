@@ -12,5 +12,22 @@ COPY --chown=101:101 index.html styles.css app.js ui.js coach.js chat.js sync.js
 COPY --chown=101:101 icons/ /usr/share/nginx/html/icons/
 COPY --chown=101:101 widgets/ /usr/share/nginx/html/widgets/
 
+# Bake a content hash of the precached assets (the ASSETS list in
+# service-worker.js) into CACHE_NAME at build time — this is what makes SW
+# cache busting automatic instead of a hand-maintained "athlex-vNN" bump.
+# Identical asset content always hashes the same (no needless invalidation
+# on a no-op rebuild); any real content change yields a new CACHE_NAME, and
+# service-worker.js's own activate handler deletes whatever old cache key
+# doesn't match it. Keep this file list in sync with ASSETS.
+# sha256sum/cut/sed are all busybox applets already present in this Alpine
+# base image, so no extra tooling is needed.
+RUN cd /usr/share/nginx/html && \
+    HASH=$(cat index.html styles.css app.js ui.js coach.js chat.js sync.js \
+        calendar.js hero-video.js metallic-button.js config.js manifest.json \
+        icons/logo.svg icons/coach.svg icons/icon-192.png icons/icon-512.png \
+        icons/icon-maskable-192.png icons/icon-maskable-512.png \
+        icons/apple-touch-icon.png | sha256sum | cut -c1-12) && \
+    sed -i "s/__CACHE_HASH__/${HASH}/" service-worker.js
+
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s CMD ["wget", "-qO-", "http://127.0.0.1:8080/healthz"]
