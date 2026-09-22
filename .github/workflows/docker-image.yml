@@ -41,8 +41,10 @@ jobs:
           npm ci
           npm run build
           cd ../..
-          if ! git diff --quiet -- widgets/; then
+          ! grep -q "process.env.NODE_ENV" widgets/coach-loading.js || { echo "::error::coach-loading widget shipped a dev React build (process.env.NODE_ENV unresolved)"; exit 1; }
+          if [ -n "$(git status --porcelain -- widgets/)" ]; then
             echo "::error::widgets/ is out of date with web/coach-loading/src — run 'npm run build' in web/coach-loading and commit the result."
+            git status --porcelain -- widgets/
             git diff -- widgets/
             exit 1
           fi

@@ -788,7 +788,7 @@
     // the live DOM by the time we get here (it's synchronous), so it's
     // safe to hand it to the widget now.
     if (window.CoachLoadingWidget) {
-      window.CoachLoadingWidget.mount(aiLoadingHost);
+      window.CoachLoadingWidget.mount(aiLoadingHost, { texts: [s("generating")] });
     } else {
       aiLoadingHost.textContent = s("generating");
     }

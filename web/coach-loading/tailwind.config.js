@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: "class",
   content: ["./src/**/*.{ts,tsx}"],
   corePlugins: {
     // Preflight is a global element-selector reset — bundling it would

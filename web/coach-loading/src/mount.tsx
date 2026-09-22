@@ -10,6 +10,14 @@ function mount(el: Element, opts?: { texts?: string[]; interval?: number }) {
     unmount(el);
   }
 
+  // The host app (Eslam1141.github.io/styles.css) is unconditionally
+  // dark-themed with no `prefers-color-scheme` media query at all, but
+  // Tailwind's `dark:` variants are gated behind `darkMode: "class"`
+  // (see tailwind.config.js) rather than the OS preference. Force the
+  // dark variant here so a light-OS user doesn't get the base (non-dark)
+  // gradient painted on the host's always-dark background.
+  el.classList.add("dark");
+
   const root = createRoot(el);
   roots.set(el, root);
   root.render(<AITextLoading texts={opts?.texts} interval={opts?.interval} />);
