@@ -403,11 +403,15 @@
   function renderAuthUI() {
     var signedIn = isSignedIn();
 
-    // The onboarding hero's Google button — icon-only, revealed alongside
-    // "Continue without signing in" after the Start step (see ui.js).
+    // The onboarding hero's Google button — full-width dark pill with the
+    // logo and label (filled_black is the closest Google's own renderer
+    // gets to a bordered near-black button; GIS renders inside an iframe,
+    // so it can't be restyled with our own CSS beyond these options),
+    // revealed alongside "Continue without signing in" after the Start
+    // step (see ui.js).
     var ob = document.getElementById("obGoogleBtn");
     if (ob && !signedIn) {
-      renderGoogleButton(ob, { theme: "filled_blue", size: "large", type: "icon" });
+      renderGoogleButton(ob, { theme: "filled_black", size: "large", type: "standard", text: "continue_with", shape: "pill", logo_alignment: "left", width: 280 });
     }
 
     var box = ensureAuthContainer();

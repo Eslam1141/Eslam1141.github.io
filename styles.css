@@ -636,7 +636,7 @@ body.onboarding-open #coachFabTip{ display:none !important; }
 .ob-logo{ width:88px; height:88px; border-radius:22px; box-shadow:0 12px 34px rgba(0,0,0,.45); }
 .ob-title{ margin:4px 0 0; font-size:23px; font-weight:900; line-height:1.25; }
 .ob-sub{ margin:0; color:var(--paper-dim); font-size:13.5px; max-width:32ch; }
-.ob-gbtn{ min-height:44px; display:flex; justify-content:center; margin-top:4px; }
+.ob-gbtn{ min-height:44px; display:flex; justify-content:center; margin-top:4px; width:100%; max-width:280px; }
 .ob-secondary{
   background:transparent; border:1px solid var(--line); color:var(--paper);
   font-family:inherit; font-weight:700; font-size:13.5px;
