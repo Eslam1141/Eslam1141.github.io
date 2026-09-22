@@ -27,6 +27,36 @@
   // Restoring it instantly on load fixes that; GIS still silently renews it
   // in the background before it expires.
   var SESSION_KEY = "gymauth_session";
+  // sessionStorage marker for "a sign-in was just started on this tab" — set
+  // right as the user taps the real Google button (renderGoogleButton()
+  // below), cleared once onCredential() resolves either way. Not gym_-
+  // prefixed, same single-device/never-synced convention as SESSION_KEY:
+  // without this, sign-in has ZERO persisted representation until
+  // onCredential() finishes (it's the first thing to write anything, at the
+  // very end of that function), so a refresh at any point during the
+  // Google popup/FedCM round-trip wiped the whole in-flight attempt with
+  // nothing to recover from — the app just cold-booted back to signed-out,
+  // which reads to the user as "it redirected me back". This marker gives
+  // boot() something to hold onto: a brief "resolving…" state instead of an
+  // immediate, possibly-wrong "you're signed out" screen. PENDING_MAX_AGE_MS
+  // is a hard safety net so a marker that somehow never gets cleared (tab
+  // closed mid-flow, callback never fires) can't wedge a future load on
+  // "resolving" forever.
+  var PENDING_KEY = "gymauth_pending";
+  var PENDING_MAX_AGE_MS = 120000;
+  // A much tighter window used only when deciding whether a pending marker
+  // should override an ACTIVE anon-preview session (shouldResolveSilently()
+  // below). The marker is set on any pointerdown near a Google button
+  // (renderGoogleButton()) — including the More→Sync panel's button, which
+  // sits in plain view during ordinary anon browsing with no overlay up at
+  // all, so a touch-scroll that grazes it or a tap immediately backed out
+  // of sets the same marker a real sign-in does. A genuine popup/FedCM
+  // round trip settles within a few seconds; capping the anon-override
+  // window this tight means a marker that never led anywhere stops
+  // interrupting anon browsing almost immediately instead of for the full
+  // PENDING_MAX_AGE_MS (2 minutes). The non-anon case still uses the longer
+  // window — there's no anon session to protect there.
+  var PENDING_ANON_OVERRIDE_MAX_AGE_MS = 12000;
   // Device-local keys that must NEVER round-trip through the server. gym_user_sub
   // especially: if a stale value comes back down it flips the "account switched"
   // check on the next load and can wedge the app in a reload loop.
@@ -80,6 +110,30 @@
   }
   function clearCachedSession() {
     try { sessionStorage.removeItem(SESSION_KEY); } catch (e) {}
+  }
+
+  function markSignInPending() {
+    try { sessionStorage.setItem(PENDING_KEY, String(nowMs())); } catch (e) {}
+  }
+  function clearSignInPending() {
+    try { sessionStorage.removeItem(PENDING_KEY); } catch (e) {}
+  }
+  // Milliseconds since the marker was set, or -1 if there isn't one / it's
+  // unreadable. Shared by isSignInPending() (the general PENDING_MAX_AGE_MS
+  // window) and shouldResolveSilently()'s tighter anon-override check
+  // (PENDING_ANON_OVERRIDE_MAX_AGE_MS) so both read the exact same marker
+  // the exact same way.
+  function pendingMarkerAgeMs() {
+    try {
+      var raw = sessionStorage.getItem(PENDING_KEY);
+      if (!raw) return -1;
+      var ts = parseInt(raw, 10);
+      return isFinite(ts) ? (nowMs() - ts) : -1;
+    } catch (e) { return -1; }
+  }
+  function isSignInPending() {
+    var age = pendingMarkerAgeMs();
+    return age >= 0 && age < PENDING_MAX_AGE_MS;
   }
 
   function readMeta() {
@@ -293,6 +347,10 @@
   }
 
   function onCredential(response) {
+    // Definitive resolution of whatever sign-in attempt was in flight —
+    // success or a malformed callback either way, so this can never get
+    // stuck (see PENDING_KEY comment above).
+    clearSignInPending();
     if (!response || !response.credential) return;
     idToken = response.credential;
     var p = parseJwt(idToken);
@@ -357,20 +415,25 @@
 
   function handleAuthLost() {
     idToken = null; tokenExpEpoch = 0; profile = null;
-    renderAuthUI();
+    renderAuthUI(); // flips any "Signed in as X" / sign-out button back to the Google button immediately, no refresh needed
     // Same pattern coach.js/chat.js/calendar.js already use on their own
-    // 401s: a signed-out user gets sent back to the welcome screen instead
-    // of being left inside the app in the gated anon preview.
+    // 401s: a signed-out user gets sent to the real, dedicated login screen
+    // (ui.js's onboarding overlay, jumped straight to the sign-in choices)
+    // instead of being left on whatever tab happens to be cached.
     if (window.GymUI && typeof GymUI.promptSignIn === "function") GymUI.promptSignIn();
   }
 
   function signOut() {
-    handleAuthLost();
-    clearUserData();                            // don't leave this account's data for the next person
-    try {
-      localStorage.setItem("gym_anon", "1");   // back to the gated preview
-      localStorage.removeItem("gym_user_sub");
-    } catch (e) {}
+    handleAuthLost();                            // updates the auth UI + routes to the login screen, see above
+    clearUserData();                             // don't leave this account's data for the next person
+    try { localStorage.removeItem("gym_user_sub"); } catch (e) {}
+    // Deliberately NOT re-granting gym_anon="1" here: sign-out used to drop
+    // the user straight back into the gated anon preview, which is a silent
+    // third choice nobody made. It now leaves both isAuthed() and isAnon()
+    // false, which ui.js's boot()/promptSignIn() routes to the same login
+    // screen a signed-out, never-chosen visitor lands on (see ui.js boot()).
+    // Anon mode is still available — just only via its own explicit
+    // "Continue without signing in" button on that screen.
     try {
       if (window.google && google.accounts && google.accounts.id) {
         google.accounts.id.disableAutoSelect();
@@ -397,6 +460,19 @@
     try {
       target.innerHTML = "";
       google.accounts.id.renderButton(target, opts);
+      // GIS renders the actual button inside a cross-origin iframe, so
+      // there's no real "onclick" of ours to hook before the popup/FedCM
+      // prompt opens. A capturing pointerdown on this wrapping container
+      // still reaches us — hit-testing starts in the parent document before
+      // the iframe takes over — and fires right as the user taps, which is
+      // the earliest reliable moment to record "a sign-in is starting" (see
+      // PENDING_KEY / markSignInPending). Wired once per container, since
+      // renderAuthUI() re-renders the button (and wipes its innerHTML) on
+      // every auth-state change but the container element itself persists.
+      if (!target._gymPendingWired) {
+        target.addEventListener("pointerdown", markSignInPending, true);
+        target._gymPendingWired = true;
+      }
     } catch (e) {}
   }
 
@@ -433,6 +509,78 @@
     }
   }
 
+  // True when there's a real, legitimate reason to hold on a "resolving…"
+  // screen and let GIS attempt a silent re-auth, instead of either an
+  // immediate login screen or (just as importantly) instead of silently
+  // doing nothing to an unrelated anon-preview visitor's session. Three
+  // distinct signals, each covering a different refresh-mid-flow gap:
+  //  - isSignInPending(): a sign-in the user just started on this tab
+  //    (Google button tapped). Overrides an existing anon choice — the user
+  //    is actively mid-upgrade from anon to authed right now, and that
+  //    in-progress action outranks whatever they'd picked before it started
+  //    — but ONLY within PENDING_ANON_OVERRIDE_MAX_AGE_MS, a much tighter
+  //    window than the marker's general PENDING_MAX_AGE_MS lifetime. The
+  //    marker is set on any pointerdown near a Google button, including the
+  //    More→Sync panel's, which is reachable mid ordinary anon browsing
+  //    with no overlay up at all — a graze or a backed-out tap sets the
+  //    same marker a real sign-in does, and without this tighter window
+  //    that alone could hold an anon session's login overlay open for up to
+  //    2 minutes on an unrelated refresh. A genuine popup/FedCM round trip
+  //    settles within a few seconds, so this doesn't meaningfully shrink
+  //    the real "refresh mid-upgrade" case it exists for. Outside anon mode
+  //    there's no anon session to protect, so the full window still applies.
+  //  - gym_switch: sync.js's own account-switch reload (onCredential()'s
+  //    storedSub-mismatch branch) — a real credential just verified for a
+  //    *different* account than the one on this device; always an active
+  //    authed transition, never something an anon visitor triggers, so no
+  //    shortened window is needed here.
+  //  - gym_user_sub with no explicit anon choice: this device has signed in
+  //    before (localStorage survives a browser restart; the session cache
+  //    and the two markers above are sessionStorage and don't) and never
+  //    said "continue without signing in" since — a cold start, not a
+  //    fresh/anon visitor, so it's worth a moment for auto_select/FedCM to
+  //    silently restore the session before falling to the login screen.
+  //    Gated on gym_anon so an explicit anon choice made after a session
+  //    lapsed is respected on every later cold start, not just this tab.
+  function shouldResolveSilently() {
+    if (isSignedIn()) return false;
+    var anon = false;
+    try { anon = localStorage.getItem("gym_anon") === "1"; } catch (e) {}
+    if (isSignInPending()) {
+      if (!anon) return true;
+      var age = pendingMarkerAgeMs();
+      return age >= 0 && age < PENDING_ANON_OVERRIDE_MAX_AGE_MS;
+    }
+    try { if (sessionStorage.getItem("gym_switch") === "1") return true; } catch (e) {}
+    try {
+      if (!anon && localStorage.getItem("gym_user_sub")) return true;
+    } catch (e) {}
+    return false;
+  }
+
+  // Give up on resuming a mid-flight sign-in/switch/cold-start and fall back
+  // to the ordinary login screen. Shared by the prompt() moment-listener,
+  // error_callback, s.onerror, and the hard timeout below, so "give up"
+  // always means the same things: stop treating any of the three signals
+  // above as live, stop showing "resolving…", and put the user somewhere
+  // real instead of leaving them stuck on a hold screen.
+  //
+  // Gating this on shouldResolveSilently() (re-checked fresh at call time,
+  // not just "was a marker ever set") is also what keeps it from firing on
+  // routine GIS chatter that has nothing to do with any of this: `prompt()`
+  // runs unconditionally for every non-signed-in visitor including
+  // anon-preview ones, and error_callback fires routinely for those
+  // (opt_out_or_no_session, unknown, ...) — with no pending marker, no
+  // switch, and gym_anon="1", shouldResolveSilently() is false and this is
+  // a complete no-op instead of forcing the login overlay open over an
+  // untouched anon session.
+  function abandonPendingSignIn() {
+    if (!shouldResolveSilently()) return;
+    clearSignInPending();
+    try { sessionStorage.removeItem("gym_switch"); } catch (e) {}
+    if (!isSignedIn() && window.GymUI && typeof GymUI.promptSignIn === "function") GymUI.promptSignIn();
+  }
+
   function initAuth() {
     if (!CLIENT_ID) { log("[sync] no GOOGLE_CLIENT_ID, sync disabled"); return; }
 
@@ -448,6 +596,16 @@
       renderAuthUI();
       startTriggers();
       scheduleTokenRefresh();
+    } else if (shouldResolveSilently()) {
+      // No completed session, but one of the three legitimate reasons above
+      // to expect a silent re-auth might still land. Nothing to literally
+      // resume — the whole JS context reloaded — but hold a neutral
+      // "resolving…" screen instead of dropping straight to "signed out"
+      // while GIS's own auto_select/prompt() below gets a chance. A hard
+      // timeout guarantees this never outlives a few seconds even if the
+      // GIS script hangs and neither onload nor onerror ever fires.
+      if (window.GymUI && typeof GymUI.showResolvingSession === "function") GymUI.showResolvingSession();
+      setTimeout(abandonPendingSignIn, 8000);
     }
 
     var s = document.createElement("script");
@@ -459,17 +617,45 @@
           client_id: CLIENT_ID,
           callback: onCredential,
           auto_select: true,
-          use_fedcm_for_prompt: true
+          use_fedcm_for_prompt: true,
+          // A definitive failure of a button-triggered flow (popup closed,
+          // FedCM aborted, third-party sign-in blocked, ...) — onCredential
+          // never fires for these. Also fires routinely for ordinary
+          // anon/first-visit prompts with nothing pending at all; the
+          // shouldResolveSilently() gate inside abandonPendingSignIn() is
+          // what keeps those a no-op instead of surfacing the login screen.
+          error_callback: function () { abandonPendingSignIn(); }
         });
         renderAuthUI();
         // Only auto-prompt (One Tap) when we don't already have a live
         // session. Firing it unconditionally alongside the onboarding
         // screen's own explicit "Sign in with Google" button is what made a
         // first-time visit show two separate sign-in prompts.
-        if (!isSignedIn()) google.accounts.id.prompt();
+        if (!isSignedIn()) {
+          google.accounts.id.prompt(function (notification) {
+            // Only worth interpreting when we're actually holding for one of
+            // the reasons above — an ordinary anonymous/first-visit prompt
+            // has its own onboarding screen already and none of this
+            // applies. Note: isNotDisplayed()/isSkippedMoment() are
+            // partial/unsupported under FedCM (use_fedcm_for_prompt above),
+            // so this often won't fire before the 8s timeout does instead —
+            // that's fine, the timeout is the real backstop either way.
+            if (!shouldResolveSilently()) return;
+            var settled = false;
+            try {
+              settled = (notification.isNotDisplayed && notification.isNotDisplayed()) ||
+                        (notification.isSkippedMoment && notification.isSkippedMoment()) ||
+                        (notification.isDismissedMoment && notification.isDismissedMoment());
+            } catch (e) { settled = true; }
+            if (settled) abandonPendingSignIn();
+          });
+        }
       } catch (e) { log("[sync] GIS init failed", e && e.message); }
     };
-    s.onerror = function () { log("[sync] GIS script failed to load"); };
+    s.onerror = function () {
+      log("[sync] GIS script failed to load");
+      abandonPendingSignIn();
+    };
     document.head.appendChild(s);
   }
 
@@ -482,10 +668,28 @@
     token: function () { return isSignedIn() ? idToken : null; },
     profile: function () { return profile ? { email: profile.email, name: profile.name } : null; },
     signOut: signOut,
+    // True when a sign-in was started on this tab (Google button tapped)
+    // and hasn't yet resolved (success or definitive failure) — see
+    // PENDING_KEY.
+    isSignInPending: isSignInPending,
+    // True when there's a legitimate reason (a mid-flight sign-in, an
+    // account-switch reload, or a cold start on a device that's signed in
+    // before and hasn't explicitly gone anon) to hold ui.js's boot() on a
+    // "resolving…" screen instead of either an immediate login screen or a
+    // silent no-op over an anon-preview session. See shouldResolveSilently().
+    shouldResolveSilently: shouldResolveSilently,
+    // Lets ui.js's startAnon() clean up a marker for a sign-in the user
+    // backed out of before it resolved (tapped the Google button, then
+    // chose "Continue without signing in" instead) — otherwise it could
+    // still be fresh enough to interrupt this same anon session with the
+    // resolving overlay on a later reload within PENDING_MAX_AGE_MS.
+    clearSignInPending: clearSignInPending,
     _debug: {
       gymKeys: gymKeys, readMeta: readMeta, buildEntries: buildEntries,
       loadCachedSession: loadCachedSession, clearCachedSession: clearCachedSession,
       flushOnHide: flushOnHide,
+      markSignInPending: markSignInPending, clearSignInPending: clearSignInPending,
+      abandonPendingSignIn: abandonPendingSignIn,
       // identity-forging / data-wiping hooks: test builds only, never on the
       // real production origin (see IS_PROD above).
       onCredential: IS_PROD ? undefined : onCredential,
