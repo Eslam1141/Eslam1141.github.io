@@ -6,6 +6,10 @@ const roots = new WeakMap<Element, Root>();
 const observers = new WeakMap<Element, MutationObserver>();
 
 function mount(el: Element, opts?: { texts?: string[]; interval?: number }) {
+  if (roots.has(el)) {
+    unmount(el);
+  }
+
   const root = createRoot(el);
   roots.set(el, root);
   root.render(<AITextLoading texts={opts?.texts} interval={opts?.interval} />);

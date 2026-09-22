@@ -5,6 +5,7 @@ import path from "node:path";
 export default defineConfig({
   plugins: [react()],
   resolve: { alias: { "@": path.resolve(__dirname, "./src") } },
+  define: { "process.env.NODE_ENV": JSON.stringify("production") },
   build: {
     // Two levels up from web/coach-loading/ is the repo root.
     outDir: "../../widgets",
