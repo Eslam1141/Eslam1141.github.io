@@ -1028,9 +1028,16 @@ body:has(#planChooser:not([hidden])) #appNav{ display:none; }
 
 /* ---- Coach: loading ---- */
 .coach-loading{ text-align:center; padding:24px 8px; color:var(--paper-dim); font-size:13px; }
+/* Orbital loader: a fading arc that sweeps the ring, rather than a flat
+   two-color spinner. The ring shape is a radial-gradient mask over a
+   conic-gradient fill — the fill goes from transparent up to solid at
+   0deg, giving the "comet trail" look; the mask carves out the center so
+   only a thin ring remains. */
 .coach-spin{
-  width:34px; height:34px; margin:0 auto 12px; border-radius:50%;
-  border:3px solid var(--line); border-top-color:var(--accent);
+  width:36px; height:36px; margin:0 auto 12px; border-radius:50%;
+  background:conic-gradient(from 0deg, transparent 0%, rgba(255,255,255,.12) 55%, #fff 100%);
+  -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+          mask:radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
   animation:coachspin .9s linear infinite;
 }
 @keyframes coachspin{ to{ transform:rotate(360deg); } }
