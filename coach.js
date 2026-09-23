@@ -723,15 +723,17 @@
     // Entry point for the drag-and-drop custom workout builder
     // (workout-builder.js) — a sibling action to "Generate my plan" since
     // both live on the Coach screen and both end up mounting into the same
-    // #coachBody. window.GymWorkoutBuilder is defined by workout-builder.js,
-    // a deferred <script> that may not have registered yet (or may not be
-    // wired into index.html until Task 4), so this stays optional/no-op-safe.
-    if (window.GymWorkoutBuilder) {
-      form.appendChild(h("button", {
-        type: "button", class: "coach-secondary",
-        on: { click: function () { window.GymWorkoutBuilder && window.GymWorkoutBuilder.open(); } }
-      }, s("wbEntryBtn")));
-    }
+    // #coachBody. Always rendered, unconditionally: script defer order plus
+    // a document.readyState fast-path elsewhere in this app means
+    // renderForm() can run before workout-builder.js has registered
+    // window.GymWorkoutBuilder on some cold-reload paths, and there's no
+    // later re-render that would repair a button skipped here. Safety is
+    // handled at the click-handler level instead (below), which already
+    // null-checks window.GymWorkoutBuilder before calling it.
+    form.appendChild(h("button", {
+      type: "button", class: "coach-secondary",
+      on: { click: function () { window.GymWorkoutBuilder && window.GymWorkoutBuilder.open(); } }
+    }, s("wbEntryBtn")));
 
     form.addEventListener("submit", function (e) {
       e.preventDefault();

@@ -1299,6 +1299,8 @@ body:has(#planChooser:not([hidden])) #appNav{ display:none; }
 .wb-ex-disabled{ opacity:.35; cursor:not-allowed; }
 .wb-ex-empty{ opacity:.5; font-size:.85em; font-style:italic; }
 .wb-day{ border:1px dashed var(--line); border-radius:var(--radius); padding:10px; margin-bottom:12px; }
+.wb-day-selected{ border-style:solid; border-color:var(--green); background:var(--panel2); }
+.wb-day-head{ cursor:pointer; }
 .wb-day-name{
   background:transparent; border:none; color:var(--paper); font-weight:600;
   font-size:1.05em; margin-bottom:8px; width:100%;

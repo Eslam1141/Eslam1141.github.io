@@ -46,7 +46,9 @@
     wbNoExercisesYet: ["No exercises yet for this area", "لا توجد تمارين لهذه المنطقة بعد"],
     wbAddDay: ["+ Add day", "+ أضف يوم"],
     wbRemoveDay: ["Remove day", "إزالة اليوم"],
-    wbSaveBtn: ["Save this plan", "حفظ هذه الخطة"]
+    wbSaveBtn: ["Save this plan", "حفظ هذه الخطة"],
+    wbSaveFull: ["Couldn't save — your 3 saved-plan slots are full. Delete one from My Plans first.", "تعذر الحفظ — خانات الحفظ الثلاث ممتلئة. احذف واحدة من \"خططي\" أولاً."],
+    wbBack: ["Back", "رجوع"]
   };
   function s(k) {
     var e = STR[k];
@@ -109,6 +111,8 @@
 
   // ---------------- plan state + one-per-shape constraint ----------------
   var plan = null; // { days: [{ name, exercises: [exerciseObj, ...] }] } while the builder is open
+  var selectedDayIndex = 0; // which day tap-to-add places into; clamped in daysEl() whenever a day is removed
+  var saveFailedMsg = false; // true after a Save click failed (3 saved-plan slots full); cleared on open()/successful save
 
   function newPlan() {
     return { days: [{ name: "Day 1", exercises: [] }] };
@@ -166,16 +170,21 @@
                 draggable: disabled ? "false" : "true",
                 "data-ex-name": ex.en,
                 on: disabled ? {} : {
-                  dragstart: function (e) { e.dataTransfer.setData("text/plain", ex.en); }
+                  dragstart: function (e) { e.dataTransfer.setData("text/plain", ex.en); },
+                  click: function () { if (placeExercise(selectedDayIndex, ex)) rerender(); }
                 }
-              }, ex.en + (ex.tier === "easy" ? " (" + s("wbEasy") + ")" : ""));
+              }, window.exName(ex) + (ex.tier === "easy" ? " (" + s("wbEasy") + ")" : ""));
             })
           : [h("div", { class: "wb-ex-empty" }, s("wbNoExercisesYet"))];
         return h("div", { class: "wb-shape" },
           h("div", { class: "wb-shape-label" }, lang() === "ar" ? shape.labelAr : shape.label),
           h.apply(null, ["div", { class: "wb-shape-options" }].concat(optionEls)));
       });
-      return h("div", { class: "wb-group" }, h("h4", {}, groupName), h.apply(null, ["div", {}].concat(shapeEls)));
+      // groups is keyed by the English `group` string; look up the Arabic
+      // label from any shape entry in that group's own array rather than
+      // building a second lookup table.
+      var groupLabel = lang() === "ar" ? groups[groupName][0].groupAr : groupName;
+      return h("div", { class: "wb-group" }, h("h4", {}, groupLabel), h.apply(null, ["div", {}].concat(shapeEls)));
     });
     return h.apply(null, ["div", { class: "wb-palette" }].concat(sections));
   }
@@ -184,11 +193,24 @@
   function dayEl(day, dayIndex) {
     var exList = day.exercises.map(function (ex, exIndex) {
       return h("div", { class: "wb-placed-ex" },
-        h("span", {}, ex.en),
+        h("span", {}, window.exName(ex)),
         h("button", { type: "button", class: "wb-remove-btn", on: { click: function () { removeExercise(dayIndex, exIndex); rerender(); } } }, "×"));
     });
+    var isSelected = dayIndex === selectedDayIndex;
+    // Tap-to-add target: tapping this header selects the day so the palette's
+    // click-to-add chips (see paletteEl()) know where to place. Guarded on
+    // an actual change so a click that merely focuses the already-selected
+    // day's rename input doesn't rerender and steal focus mid-edit.
+    var head = h("div", {
+      class: "wb-day-head",
+      on: { click: function () { if (selectedDayIndex !== dayIndex) { selectedDayIndex = dayIndex; rerender(); } } }
+    },
+      h("input", {
+        class: "wb-day-name", value: day.name,
+        on: { input: function (e) { day.name = e.target.value; } }
+      }));
     return h("div", {
-      class: "wb-day",
+      class: "wb-day" + (isSelected ? " wb-day-selected" : ""),
       on: {
         dragover: function (e) { e.preventDefault(); },
         drop: function (e) {
@@ -199,10 +221,7 @@
         }
       }
     },
-      h("input", {
-        class: "wb-day-name", value: day.name,
-        on: { input: function (e) { day.name = e.target.value; } }
-      }),
+      head,
       h.apply(null, ["div", { class: "wb-day-list" }].concat(exList)),
       plan.days.length > 1 ? h("button", {
         type: "button", class: "wb-remove-day", on: { click: function () { plan.days.splice(dayIndex, 1); rerender(); } }
@@ -210,6 +229,11 @@
   }
 
   function daysEl() {
+    // Clamp selectedDayIndex whenever a day has been removed since the last
+    // render (e.g. the remove-day button spliced the selected or a later
+    // day out) so it never points past the end of plan.days.
+    if (selectedDayIndex >= plan.days.length) selectedDayIndex = plan.days.length - 1;
+    if (selectedDayIndex < 0) selectedDayIndex = 0;
     var dayEls = plan.days.map(function (d, i) { return dayEl(d, i); });
     var addBtn = h("button", {
       type: "button", class: "wb-add-day",
@@ -232,19 +256,38 @@
   }
 
   function screenEl() {
-    return h("div", { class: "wb-screen" },
+    var hasAnyExercise = plan.days.some(function (d) { return d.exercises.length > 0; });
+    var children = [
+      h("button", {
+        type: "button", class: "coach-secondary",
+        on: { click: function () { window.GymCoach && window.GymCoach.refresh(); } }
+      }, s("wbBack")),
       h("h2", {}, s("wbTitle")),
       h("div", { class: "wb-layout" }, paletteEl(), daysEl()),
       h("button", {
-        type: "button", class: "coach-primary", on: { click: function () {
-          if (window.GymWorkoutBuilderSave) window.GymWorkoutBuilderSave(exportAsWorkoutPlan());
+        type: "button", class: "coach-primary", disabled: !hasAnyExercise ? "disabled" : false,
+        on: { click: function () {
+          // Defensive: skip even if the disabled attribute is ever bypassed.
+          if (!hasAnyExercise || !window.GymWorkoutBuilderSave) return;
+          var ok = window.GymWorkoutBuilderSave(exportAsWorkoutPlan());
+          if (ok) {
+            saveFailedMsg = false; // navigates away (renderMyPlans) — no rerender here
+          } else {
+            saveFailedMsg = true;
+            rerender();
+          }
         } }
-      }, s("wbSaveBtn")));
+      }, s("wbSaveBtn"))
+    ];
+    if (saveFailedMsg) children.push(h("p", { class: "coach-err" }, s("wbSaveFull")));
+    return h.apply(null, ["div", { class: "wb-screen" }].concat(children));
   }
 
   // ---------------- public API ----------------
   function open() {
     plan = newPlan();
+    selectedDayIndex = 0;
+    saveFailedMsg = false;
     rerender();
   }
 
