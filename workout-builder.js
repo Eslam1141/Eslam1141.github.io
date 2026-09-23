@@ -149,13 +149,18 @@
       groups[shape.group] = groups[shape.group] || [];
       groups[shape.group].push(shape);
     });
-    var used = shapesUsed();
     var sections = Object.keys(groups).map(function (groupName) {
       var shapeEls = groups[groupName].map(function (shape) {
         var options = exercisesForShape(shape.id);
-        var disabled = !!used[shape.id];
+        // Per-exercise, not per-section: a dual-tagged exercise (shape2 set)
+        // must grey out here too once EITHER of its two shapes is used
+        // elsewhere, even if this section's own shape.id is still free.
+        // canPlace(ex) already checks both ex.shape and ex.shape2, so it's
+        // the correct single source of truth for whether this exact option
+        // is still placeable (used[shape.id] alone under-disables it).
         var optionEls = options.length
           ? options.map(function (ex) {
+              var disabled = !canPlace(ex);
               return h("div", {
                 class: "wb-ex" + (ex.tier === "easy" ? " wb-ex-easy" : "") + (disabled ? " wb-ex-disabled" : ""),
                 draggable: disabled ? "false" : "true",
