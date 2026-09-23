@@ -22,6 +22,7 @@ const ASSETS = [
   "./chat.js",
   "./sync.js",
   "./calendar.js",
+  "./workout-builder.js",
   "./hero-video.js",
   "./metallic-button.js",
   "./config.js",
