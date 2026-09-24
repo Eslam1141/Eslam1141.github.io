@@ -6,3 +6,4 @@
 - Ruling: OTP password kept in memory only; after a reload the OTP view re-asks for it.
 - 2026-09-24 plan written: docs/superpowers/plans/2026-09-24-email-otp-auth-ui.md
 - 2026-09-24 Task 1 done: sync.js token-source-agnostic (acceptToken/signInWithToken/authMethod, local expiry->re-login, signOut clears gymauth_method/email); node --check + scratch vm harness (6 scenarios) pass
+- PAUSED 2026-09-24 21:39 — next step: finish auth-email.js (views: open()/render for login/signup/otp/forgot/reset, lang MutationObserver, init), then Task 2 wiring (index.html script+css link, Dockerfile COPY+hash, SW ASSETS), Task 3 ui.js showObStep('email') hook + #obStepEmail/#obEmailBtn markup + auth-email.css, Task 4 nginx /reset-password + ?reset_token handling, then PR. auth-email.js is WIP (open() not yet defined).
