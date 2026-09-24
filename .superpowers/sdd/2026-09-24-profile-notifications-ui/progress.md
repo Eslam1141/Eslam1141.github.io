@@ -1,0 +1,11 @@
+# W1-A progress ledger — profile + notifications UI
+- 2026-09-24 worktree created on feat/profile-notifications-ui from origin/main 38a4907
+- 2026-09-24 read specs + gym-be handlers (me.go/photo.go on worktree-profile-photo-streak, notifications.go on main)
+- Ruling: photo upload is a RAW body with Content-Type image/jpeg|png (backend photo.go), not multipart; accept only jpeg/png client-side.
+- Ruling: CSP img-src lacks blob:, so the authenticated GET /me/photo blob is shown via a FileReader data: URL.
+- Ruling: CORS Allow-Methods omits POST but POST is a CORS-safelisted method, so POST /me/photo and /notifications/{id}/read pass preflight; no backend change needed.
+- Ruling: polling rides sync.js cadence via a `gym:synctick` DOM event emitted from syncNow() (non-debounce reasons); auth changes via `gym:authchange` emitted from renderAuthUI().
+- Ruling: profile form requires all three fields (backend validateProfile rejects missing weight/height).
+- Ruling: photos are downscaled client-side to <=1024px JPEG before upload (fallback: original file) so typical phone photos fit the 5 MiB cap.
+- Ruling: existing browser push subscriptions are not actively unsubscribed; notifyjob no longer sends push so they are inert. gym_push_endpoint stays in sync.js LOCAL_ONLY and is removed from localStorage once.
+- 2026-09-24 plan written: docs/superpowers/plans/2026-09-24-profile-notifications-ui.md
