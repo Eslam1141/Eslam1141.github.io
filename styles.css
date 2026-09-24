@@ -1313,3 +1313,65 @@ body:has(#planChooser:not([hidden])) #appNav{ display:none; }
   .coach-stats{ display:flex !important; flex-wrap:wrap; gap:6px !important; }
   .coach-stat{ flex:1 1 90px; }
 }
+
+/* ============================================================
+   Shared top-right header (header.js): streak badge, notification
+   bell (notifications.js) and avatar menu. Sits on the inline-END edge;
+   the ≥900px nav rail is on the inline-START edge, so they never overlap.
+   ============================================================ */
+#topBar{
+  position:fixed; z-index:110;
+  top:calc(env(safe-area-inset-top) + 10px); right:12px; left:auto;
+  display:flex; align-items:center; gap:6px;
+  padding:4px; border-radius:999px;
+  background:var(--nav-bg); border:1px solid var(--line);
+  box-shadow:var(--elev-1);
+  backdrop-filter:blur(14px) saturate(1.2); -webkit-backdrop-filter:blur(14px) saturate(1.2);
+}
+[dir="rtl"] #topBar{ right:auto; left:12px; }
+#topBar[hidden],
+body.onboarding-open #topBar,
+body:has(#planChooser:not([hidden])) #topBar{ display:none !important; }
+/* keep the centred hero titles clear of the fixed bar on phones */
+@media (max-width:899.98px){
+  body.has-topbar header.hero{ padding-top:58px; }
+}
+.tb-streak{
+  display:inline-flex; align-items:center; height:32px; padding:0 10px;
+  border-radius:999px; font-size:13px; font-weight:800; white-space:nowrap;
+  color:var(--paper); background:var(--panel2); border:1px solid var(--line);
+  font-variant-numeric:tabular-nums;
+}
+.tb-streak[hidden]{ display:none; }
+.tb-slot{ display:inline-flex; }
+.tb-slot:empty{ display:none; }
+.tb-avatar-wrap{ position:relative; display:inline-flex; }
+.tb-avatar{
+  width:36px; height:36px; padding:0; border-radius:50%; cursor:pointer;
+  border:2px solid var(--accent); background:var(--panel2); overflow:hidden;
+  display:inline-flex; align-items:center; justify-content:center;
+  transition:transform var(--dur-fast) var(--ease);
+}
+.tb-avatar.is-default{ border-color:var(--line); }
+.tb-avatar:active{ transform:scale(.92); }
+.tb-avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
+.tb-menu{
+  position:absolute; top:calc(100% + 8px); right:0; min-width:190px; z-index:1;
+  display:flex; flex-direction:column; padding:6px;
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+  box-shadow:var(--elev-2);
+}
+[dir="rtl"] .tb-menu{ right:auto; left:0; }
+.tb-menu[hidden]{ display:none; }
+.tb-menu-name{
+  padding:6px 10px 8px; font-size:12.5px; color:var(--paper-dim);
+  border-bottom:1px solid var(--line); margin-bottom:4px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:240px;
+}
+.tb-menu-name:empty{ display:none; }
+.tb-menu button{
+  text-align:start; padding:10px; border-radius:10px; cursor:pointer;
+  font-family:inherit; font-size:14px; font-weight:700;
+  background:transparent; border:none; color:var(--paper);
+}
+.tb-menu button:hover, .tb-menu button:focus-visible{ background:var(--panel2); outline:none; }

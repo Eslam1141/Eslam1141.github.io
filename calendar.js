@@ -138,6 +138,12 @@
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
       body: JSON.stringify({ date: date, dayId: dayId })
+    }).then(function (res) {
+      // header.js re-reads /me so the streak badge updates right away
+      // instead of on the next 2-minute sync tick.
+      if (res.ok) {
+        try { document.dispatchEvent(new CustomEvent("gym:workoutcomplete", { detail: { date: date, dayId: dayId } })); } catch (e) {}
+      }
     }).catch(function () { delete postedKeys[key]; });
   }
 

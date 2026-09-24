@@ -9,3 +9,4 @@
 - Ruling: photos are downscaled client-side to <=1024px JPEG before upload (fallback: original file) so typical phone photos fit the 5 MiB cap.
 - Ruling: existing browser push subscriptions are not actively unsubscribed; notifyjob no longer sends push so they are inert. gym_push_endpoint stays in sync.js LOCAL_ONLY and is removed from localStorage once.
 - 2026-09-24 plan written: docs/superpowers/plans/2026-09-24-profile-notifications-ui.md
+- PAUSED 2026-09-24 21:37 — Task 1 (header.js + plumbing: topBar, sync.js gym:authchange/gym:synctick, calendar gym:workoutcomplete, T keys for all 3 features, CSS, Dockerfile/SW lists) code written + node --check OK, committed as WIP; not yet smoke-tested (jsdom harness installed in scratchpad). Next step: smoke-test header.js, then Task 2 notifications.js, Task 3 profile.js (+ui.js TABS 'profile', #screen-profile), Task 4 push removal, Task 5 PR.

@@ -273,7 +273,15 @@
     return fetch(url, opts).finally(function () { clearTimeout(t); });
   }
 
+  // header.js/notifications.js refresh /me and the inbox on this same
+  // cadence (interval / tab visible / online / sign-in) instead of running
+  // their own timer. Debounced per-write syncs and manual calls don't tick.
+  function emit(name, detail) {
+    try { document.dispatchEvent(new CustomEvent(name, { detail: detail })); } catch (e) {}
+  }
+
   function syncNow(reason) {
+    if (reason !== "debounce" && reason !== "manual" && isSignedIn()) emit("gym:synctick", reason);
     if (syncing || !isSignedIn()) return Promise.resolve(false);
     syncing = true;
     log("[sync] start", reason);
@@ -478,6 +486,9 @@
 
   function renderAuthUI() {
     var signedIn = isSignedIn();
+    // Every auth transition (session restore, sign-in, auth lost, sign-out)
+    // passes through here — header.js listens to show/hide the top bar.
+    emit("gym:authchange", signedIn);
 
     // The onboarding hero's Google button — full-width dark pill with the
     // logo and label (filled_black is the closest Google's own renderer
