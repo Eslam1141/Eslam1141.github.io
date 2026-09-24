@@ -81,6 +81,7 @@
     notes: ["Notes", "ملاحظات"],
     generate: ["Generate my plan", "أنشئ خطتي"],
     generating: ["Building your plan… this can take 15–30s", "جارٍ بناء خطتك… قد تستغرق 15–30 ثانية"],
+    wbEntryBtn: ["Customize your own plan", "خصص خطتك الخاصة"],
     // validation
     vRequired: ["Required", "مطلوب"],
     vRange: ["Enter {min}–{max}", "أدخل {min}–{max}"],
@@ -216,6 +217,29 @@
     arr.splice(idx, 1);
     saveSynced(SAVED_KEY, arr);
   }
+
+  // Entry point for the custom workout builder (workout-builder.js) — wraps
+  // its plain {split, days} shape into the same minimal "coach result"
+  // object addSaved()/renderResult() already know how to store and render.
+  // Only workoutPlan is populated; dietPlan/computed/summary are correctly
+  // absent (renderResult already guards every section on presence — see
+  // coach.js:897-901 — so an absent dietPlan/computed just means no
+  // stats/diet section renders, which is exactly right for a workout-only
+  // custom plan).
+  window.GymWorkoutBuilderSave = function (workoutPlan) {
+    var res = {
+      id: "custom_" + Date.now(),
+      createdAt: Date.now(),
+      want: "workout",
+      model: "Custom",
+      workoutPlan: workoutPlan
+    };
+    if (addSaved(res)) {
+      renderMyPlans();
+      return true;
+    }
+    return false;
+  };
 
   function fmtDate(ts) {
     try { return new Date(ts).toLocaleDateString(lang() === "ar" ? "ar-EG" : "en-US", { year: "numeric", month: "short", day: "numeric" }); }
@@ -696,6 +720,20 @@
     var submit = h("button", { type: "submit", class: "coach-primary" }, s("generate"));
     form.appendChild(topErr);
     form.appendChild(submit);
+    // Entry point for the drag-and-drop custom workout builder
+    // (workout-builder.js) — a sibling action to "Generate my plan" since
+    // both live on the Coach screen and both end up mounting into the same
+    // #coachBody. Always rendered, unconditionally: script defer order plus
+    // a document.readyState fast-path elsewhere in this app means
+    // renderForm() can run before workout-builder.js has registered
+    // window.GymWorkoutBuilder on some cold-reload paths, and there's no
+    // later re-render that would repair a button skipped here. Safety is
+    // handled at the click-handler level instead (below), which already
+    // null-checks window.GymWorkoutBuilder before calling it.
+    form.appendChild(h("button", {
+      type: "button", class: "coach-secondary",
+      on: { click: function () { window.GymWorkoutBuilder && window.GymWorkoutBuilder.open(); } }
+    }, s("wbEntryBtn")));
 
     form.addEventListener("submit", function (e) {
       e.preventDefault();
