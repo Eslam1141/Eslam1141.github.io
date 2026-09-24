@@ -76,8 +76,19 @@
   var DEBOUNCE_MS = 1500;
   var INTERVAL_MS = 120000;
 
-  var idToken = null;        // current Google ID token
+  var idToken = null;        // current bearer token (Google ID token OR gym-be local JWT)
   var tokenExpEpoch = 0;     // seconds since epoch
+  // Which sign-in method produced idToken: "google" (GIS ID token, silently
+  // renewable via prompt()) or "local" (gym-be-issued JWT from email/password
+  // sign-in — 1h lifetime, NO refresh endpoint, so expiry = log in again).
+  var source = null;
+  // Device-local (not gym_-prefixed => never synced, and untouched by
+  // clearUserData) markers for the email/password path: METHOD_KEY remembers
+  // that the last session on this device was a local one (a cold start
+  // must not hold on the GIS "resolving…" screen — Google can't restore it),
+  // EMAIL_KEY prefills the re-login form. Both cleared by signOut().
+  var METHOD_KEY = "gymauth_method";
+  var EMAIL_KEY = "gymauth_email";
   var profile = null;        // { email, name }
   var debounceTimer = null;
   var intervalId = null;
@@ -104,7 +115,7 @@
   function saveCachedSession() {
     try {
       if (idToken && tokenExpEpoch) {
-        sessionStorage.setItem(SESSION_KEY, JSON.stringify({ token: idToken, exp: tokenExpEpoch, profile: profile }));
+        sessionStorage.setItem(SESSION_KEY, JSON.stringify({ token: idToken, exp: tokenExpEpoch, profile: profile, source: source || "google" }));
       }
     } catch (e) {}
   }
@@ -284,7 +295,7 @@
       body: body
     })
       .then(function (res) {
-        if (res.status === 401) { handleAuthLost(); return null; }
+        if (res.status === 401) { handleAuthLost("expired"); return null; }
         if (!res.ok) throw new Error("progress PUT " + res.status);
         return res.json();
       })
@@ -352,10 +363,39 @@
     // stuck (see PENDING_KEY comment above).
     clearSignInPending();
     if (!response || !response.credential) return;
-    idToken = response.credential;
+    acceptToken(response.credential, "google");
+  }
+
+  // Email/password sign-in (auth-email.js) hands over the gym-be-issued JWT
+  // here. It carries the same claims this file reads from a Google token
+  // (sub, email, exp), so it goes through the exact same account-switch
+  // detection + first-sign-in migration below. Returns false for a token
+  // that's unparseable or already (nearly) expired.
+  function signInWithToken(token) {
+    var p = parseJwt(token || "");
+    if (!p.sub || !p.exp || p.exp * 1000 <= nowMs() + 30000) return false;
+    clearSignInPending();
+    acceptToken(token, "local");
+    return true;
+  }
+
+  // Shared tail of both sign-in methods: install the token as THE session,
+  // detect an account switch by JWT `sub` (gym_user_sub), migrate anon data
+  // on first sign-in, and start syncing.
+  function acceptToken(token, src) {
+    idToken = token;
+    source = src;
     var p = parseJwt(idToken);
     tokenExpEpoch = p.exp;
     profile = { email: p.email, name: p.name };
+    try {
+      if (src === "local") {
+        localStorage.setItem(METHOD_KEY, "local");
+        if (p.email) localStorage.setItem(EMAIL_KEY, p.email);
+      } else {
+        localStorage.removeItem(METHOD_KEY);
+      }
+    } catch (e) {}
 
     var storedSub = null;
     try { storedSub = localStorage.getItem("gym_user_sub"); } catch (e) {}
@@ -371,6 +411,18 @@
       if (justSwitched) {
         try { localStorage.setItem("gym_user_sub", p.sub); } catch (e) {}
         try { sessionStorage.removeItem("gym_switch"); } catch (e) {}
+      } else if (src === "local") {
+        // A local JWT isn't silently re-issued after a reload the way GIS
+        // auto-select re-issues a Google one, so skip the gym_switch
+        // round-trip: wipe the previous account's data, then persist THIS
+        // session (clearUserData() just dropped the cache) so initAuth()
+        // restores it on the reload and pulls this account's data fresh.
+        clearUserData();
+        try { localStorage.setItem("gym_user_sub", p.sub); } catch (e) {}
+        try { localStorage.removeItem("gym_anon"); } catch (e) {}
+        saveCachedSession();
+        location.reload();
+        return;
       } else {
         clearUserData();
         try { localStorage.setItem("gym_user_sub", p.sub); } catch (e) {}
@@ -404,7 +456,17 @@
   function scheduleTokenRefresh() {
     if (refreshTimer) clearTimeout(refreshTimer);
     if (!tokenExpEpoch) return;
-    var ms = tokenExpEpoch * 1000 - nowMs() - 120000;
+    if (source === "local") {
+      // No refresh endpoint for gym-be's own JWT: when it runs out (the same
+      // 30s margin isSignedIn() uses), treat it exactly like a 401 — ask the
+      // user to log in again.
+      var left = tokenExpEpoch * 1000 - nowMs() - 30000;
+      refreshTimer = setTimeout(function () {
+        if (source === "local") handleAuthLost("expired");
+      }, left > 0 ? left : 0);
+      return;
+    }
+    var ms =tokenExpEpoch * 1000 - nowMs() - 120000;
     if (ms < 10000) ms = 10000;
     refreshTimer = setTimeout(function () {
       if (window.google && google.accounts && google.accounts.id) {
@@ -413,20 +475,34 @@
     }, ms);
   }
 
-  function handleAuthLost() {
-    idToken = null; tokenExpEpoch = 0; profile = null;
+  // reason "expired" = the session died on its own (401 / token ran out), as
+  // opposed to an explicit sign-out. For a LOCAL session that means typing
+  // the password again — auth-email.js opens its login view pre-filled
+  // (GymAuthEmail.onSessionExpired) on top of the usual login screen.
+  function handleAuthLost(reason) {
+    var wasLocal = source === "local";
+    var lostEmail = (profile && profile.email) || "";
+    // Google keeps its pending GIS re-prompt timer exactly as before; a local
+    // session's expiry timer is meaningless once the session is gone.
+    if (wasLocal && refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
+    idToken = null; tokenExpEpoch = 0; profile = null; source = null;
+    if (wasLocal) clearCachedSession(); // dead local token: nothing to restore on reload
     renderAuthUI(); // flips any "Signed in as X" / sign-out button back to the Google button immediately, no refresh needed
     // Same pattern coach.js/chat.js/calendar.js already use on their own
     // 401s: a signed-out user gets sent to the real, dedicated login screen
     // (ui.js's onboarding overlay, jumped straight to the sign-in choices)
     // instead of being left on whatever tab happens to be cached.
     if (window.GymUI && typeof GymUI.promptSignIn === "function") GymUI.promptSignIn();
+    if (reason === "expired" && wasLocal && window.GymAuthEmail && typeof GymAuthEmail.onSessionExpired === "function") {
+      try { GymAuthEmail.onSessionExpired(lostEmail); } catch (e) {}
+    }
   }
 
   function signOut() {
     handleAuthLost();                            // updates the auth UI + routes to the login screen, see above
     clearUserData();                             // don't leave this account's data for the next person
     try { localStorage.removeItem("gym_user_sub"); } catch (e) {}
+    try { localStorage.removeItem(METHOD_KEY); localStorage.removeItem(EMAIL_KEY); } catch (e) {}
     // Deliberately NOT re-granting gym_anon="1" here: sign-out used to drop
     // the user straight back into the gated anon preview, which is a silent
     // third choice nobody made. It now leaves both isAuthed() and isAnon()
@@ -553,7 +629,10 @@
     }
     try { if (sessionStorage.getItem("gym_switch") === "1") return true; } catch (e) {}
     try {
-      if (!anon && localStorage.getItem("gym_user_sub")) return true;
+      // ...except when the last session here was an email/password one: GIS
+      // can't silently restore a gym-be local JWT, so "resolving…" would just
+      // be an 8s dead wait (auth-email.js opens its login view instead).
+      if (!anon && localStorage.getItem("gym_user_sub") && localStorage.getItem(METHOD_KEY) !== "local") return true;
     } catch (e) {}
     return false;
   }
@@ -582,20 +661,26 @@
   }
 
   function initAuth() {
-    if (!CLIENT_ID) { log("[sync] no GOOGLE_CLIENT_ID, sync disabled"); return; }
-
     // Restore a still-valid session immediately, before the Google script even
     // loads — the app should look signed-in on the very first paint of a
     // reload, not flash "signed out" while GIS does a network round-trip.
+    // Read before the CLIENT_ID gate: an email/password (local) session
+    // doesn't depend on Google being configured at all.
     var cached = loadCachedSession();
+    if (!CLIENT_ID && !(cached && cached.source === "local")) {
+      log("[sync] no GOOGLE_CLIENT_ID, sync disabled");
+      return;
+    }
     if (cached) {
       idToken = cached.token;
       tokenExpEpoch = cached.exp;
       profile = cached.profile || null;
+      source = cached.source || "google";
       if (window.GymUI && typeof GymUI.completeSignIn === "function") GymUI.completeSignIn();
       renderAuthUI();
       startTriggers();
       scheduleTokenRefresh();
+      if (!CLIENT_ID) return; // local session, Google not configured: no GIS to load
     } else if (shouldResolveSilently()) {
       // No completed session, but one of the three legitimate reasons above
       // to expect a silent re-auth might still land. Nothing to literally
@@ -666,6 +751,11 @@
     // Current Google ID token for auth..."Bearer" calls to gym-be / gym-assistant.
     // null when signed out or the token is within 30s of expiry.
     token: function () { return isSignedIn() ? idToken : null; },
+    // "google" | "local" (email/password gym-be JWT) | null when signed out.
+    authMethod: function () { return isSignedIn() ? source : null; },
+    // Email/password sign-in success (auth-email.js): install a gym-be JWT as
+    // the session — same switch detection / migration / sync as Google.
+    signInWithToken: signInWithToken,
     profile: function () { return profile ? { email: profile.email, name: profile.name } : null; },
     signOut: signOut,
     // True when a sign-in was started on this tab (Google button tapped)

@@ -5,3 +5,4 @@
 - Ruling: strings live in auth-email.js and are merged into app.js's global T at load (avoids editing app.js concurrently with W1-A).
 - Ruling: OTP password kept in memory only; after a reload the OTP view re-asks for it.
 - 2026-09-24 plan written: docs/superpowers/plans/2026-09-24-email-otp-auth-ui.md
+- 2026-09-24 Task 1 done: sync.js token-source-agnostic (acceptToken/signInWithToken/authMethod, local expiry->re-login, signOut clears gymauth_method/email); node --check + scratch vm harness (6 scenarios) pass
