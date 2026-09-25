@@ -342,7 +342,7 @@
       dietPreference: "balanced", allergies: [], dislikes: [],
       inbodyOpen: false, bodyFatPct: "", skeletalMuscleMassKg: "", visceralFatLevel: "", bmrKcal: "",
       notes: "",
-      ramadan: false, ramadanAuto: ""
+      ramadan: false, ramadanAuto: "", ramadanManual: false
     };
   }
   // Is `date` (default: now) in Hijri month 9 (Ramadan)? Relies on the
@@ -397,6 +397,7 @@
     ["lose_fat", "gain_muscle", "maintain"].forEach(function (k) { st.goalChecks[k] = !!st.goalChecks[k]; });
     st.goal = deriveGoal(st.goalChecks);
     st.ramadan = !!st.ramadan;
+    st.ramadanManual = !!st.ramadanManual;
     st._ramadanSuggested = false;
     if (isHijriRamadan()) {
       var key = hijriKey();
@@ -404,7 +405,15 @@
         st.ramadan = true;
         st.ramadanAuto = key;
         st._ramadanSuggested = true;
+        st.ramadanManual = false; // fresh auto-suggest for this Hijri month
       }
+    } else if (st.ramadanAuto && st.ramadan && !st.ramadanManual) {
+      // Ramadan ended and this "on" state came from the auto-suggest (never
+      // touched by the user) — switch it back off so it doesn't stay on
+      // indefinitely after Eid. A manual tick made outside Ramadan (tracked
+      // via ramadanManual) is left alone.
+      st.ramadan = false;
+      saveSynced(FORM_KEY, st);
     }
     return st;
   }
@@ -700,6 +709,7 @@
     var ramadanHintEl = h("small", { class: "coach-hint" }, st.ramadan && st._ramadanSuggested ? s("ramadanSuggest") : s("ramadanHint"));
     ramadanCb.addEventListener("change", function () {
       st.ramadan = ramadanCb.checked;
+      st.ramadanManual = true; // explicit user choice — don't auto-clear this later
       st._ramadanSuggested = false; // manual toggle overrides the auto-suggest hint
       ramadanHintEl.textContent = s("ramadanHint");
       persist();
