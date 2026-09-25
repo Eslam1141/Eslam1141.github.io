@@ -144,7 +144,12 @@
     savedEmpty: ["No saved plans yet. Generate one, then \"Save to my plans\".", "لا خطط محفوظة بعد. أنشئ خطة ثم \"حفظ في خططي\"."],
     savedCap: ["You can keep up to {n} plans in your account.", "يمكنك الاحتفاظ بحتى {n} خطط في حسابك."],
     del: ["Delete", "حذف"],
-    delConfirm: ["Delete this saved plan?", "حذف هذه الخطة المحفوظة؟"]
+    delConfirm: ["Delete this saved plan?", "حذف هذه الخطة المحفوظة؟"],
+    ramadan: ["Ramadan mode", "وضع رمضان"],
+    ramadanHint: ["Plan meals around suhoor & iftar and train around your fast",
+      "خطط وجباتك حول السحور والإفطار ونظّم تمرينك حول صيامك"],
+    ramadanSuggest: ["It's Ramadan — we've turned this on for you",
+      "إنه رمضان — قمنا بتفعيل هذا الخيار لك"]
   };
   function s(k) {
     var e = STR[k];
@@ -336,8 +341,36 @@
       trainingDaysPerWeek: "4", equipment: "full_gym",
       dietPreference: "balanced", allergies: [], dislikes: [],
       inbodyOpen: false, bodyFatPct: "", skeletalMuscleMassKg: "", visceralFatLevel: "", bmrKcal: "",
-      notes: ""
+      notes: "",
+      ramadan: false, ramadanAuto: ""
     };
+  }
+  // Is `date` (default: now) in Hijri month 9 (Ramadan)? Relies on the
+  // Umm al-Qura calendar via Intl; browsers without it either throw or
+  // silently fall back to another calendar, so we verify resolvedOptions()
+  // actually gave us islamic-umalqura before trusting the month number —
+  // any failure just means no auto-suggest, never a crash.
+  function isHijriRamadan(date) {
+    try {
+      var fmt = new Intl.DateTimeFormat("en-u-ca-islamic-umalqura", { month: "numeric" });
+      if (fmt.resolvedOptions().calendar !== "islamic-umalqura") return false;
+      var part = fmt.formatToParts(date || new Date()).filter(function (p) { return p.type === "month"; })[0];
+      var month = part ? parseInt(part.value, 10) : NaN;
+      return month === 9;
+    } catch (e) { return false; }
+  }
+  // Hijri year-month key ("1448-9") the auto-suggest last fired for, so
+  // unchecking the box sticks for the rest of that Ramadan instead of
+  // re-flipping it back on at the next render.
+  function hijriKey(date) {
+    try {
+      var fmt = new Intl.DateTimeFormat("en-u-ca-islamic-umalqura", { year: "numeric", month: "numeric" });
+      if (fmt.resolvedOptions().calendar !== "islamic-umalqura") return "";
+      var parts = fmt.formatToParts(date || new Date());
+      var y = parts.filter(function (p) { return p.type === "year"; })[0];
+      var m = parts.filter(function (p) { return p.type === "month"; })[0];
+      return y && m ? (y.value + "-" + m.value) : "";
+    } catch (e) { return ""; }
   }
   // goalChecks {lose_fat, gain_muscle, maintain} -> the single enum value the
   // API expects. Both fat-loss + muscle boxes checked together = recomp.
@@ -363,6 +396,16 @@
     }
     ["lose_fat", "gain_muscle", "maintain"].forEach(function (k) { st.goalChecks[k] = !!st.goalChecks[k]; });
     st.goal = deriveGoal(st.goalChecks);
+    st.ramadan = !!st.ramadan;
+    st._ramadanSuggested = false;
+    if (isHijriRamadan()) {
+      var key = hijriKey();
+      if (key && st.ramadanAuto !== key) {
+        st.ramadan = true;
+        st.ramadanAuto = key;
+        st._ramadanSuggested = true;
+      }
+    }
     return st;
   }
 
@@ -650,6 +693,21 @@
         field("trainingDaysPerWeek", "trainingDaysPerWeek", numInput("trainingDaysPerWeek", st.trainingDaysPerWeek), { required: true }),
         field("equipment", "equipment", selectInput("equipment", st.equipment), { required: true }))));
 
+    // Ramadan mode — nameless checkbox (not part of the delegated
+    // input/change listener above, which only handles st[el.name]); own
+    // listener + persist(), auto-checked during Hijri month 9 by loadState().
+    var ramadanCb = h("input", { type: "checkbox", checked: st.ramadan ? "checked" : false });
+    var ramadanHintEl = h("small", { class: "coach-hint" }, st.ramadan && st._ramadanSuggested ? s("ramadanSuggest") : s("ramadanHint"));
+    ramadanCb.addEventListener("change", function () {
+      st.ramadan = ramadanCb.checked;
+      st._ramadanSuggested = false; // manual toggle overrides the auto-suggest hint
+      ramadanHintEl.textContent = s("ramadanHint");
+      persist();
+    });
+    form.appendChild(h("fieldset", { class: "coach-group coach-ramadan" },
+      h("label", { class: "coach-check" }, ramadanCb, h("span", {}, s("ramadan"))),
+      ramadanHintEl));
+
     // Diet
     var allergies = chipsInput("allergies", st.allergies, function (a) { st.allergies = a; persist(); });
     var dislikes = chipsInput("dislikes", st.dislikes, function (a) { st.dislikes = a; persist(); });
@@ -736,7 +794,14 @@
     return profile;
   }
   function buildRequest(st) {
-    return { want: st.want, lang: lang(), profile: buildProfile(st) };
+    var req = { want: st.want, lang: lang(), profile: buildProfile(st) };
+    if (st.ramadan) req.ramadan = true; // omit when false: backend hash stays unchanged for normal plans
+    return req;
+  }
+  // Current Ramadan-mode choice, for chat.js to add `ramadan:true` to its
+  // own request without duplicating the form-state logic (out of scope here).
+  function ramadanMode() {
+    return !!loadState().ramadan;
   }
   // For the floating chat: the user's saved coach profile, only when it's
   // actually complete/valid — otherwise the chat just answers generally.
@@ -1149,7 +1214,7 @@
     else renderForm();
   }
 
-  window.GymCoach = { refresh: refresh, currentProfile: currentProfile, newAssessment: renderForm, planSummary: planSummary };
+  window.GymCoach = { refresh: refresh, currentProfile: currentProfile, newAssessment: renderForm, planSummary: planSummary, ramadan: ramadanMode };
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", function () {
