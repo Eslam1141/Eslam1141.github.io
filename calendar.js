@@ -1,15 +1,11 @@
-/* calendar.js — workout calendar (week strip + full-month expand), the
- * training-days-of-week preference, and push-notification opt-in for missed
- * workouts.
+/* calendar.js — workout calendar (week strip + full-month expand) and the
+ * training-days-of-week preference.
  *
  * Data source for "was this day completed": signed in -> GET
  * /workouts/complete (server, cross-device correct); signed out/offline ->
  * computed from gym_checks via window.GymApp.dayExercises() (app.js).
  * "Completed" == every exercise on that day's checklist is checked, matching
  * app.js's own updateProgress() (done === total) — not the session timer.
- *
- * Local-only key (NOT synced — see sync.js LOCAL_ONLY):
- *   gym_push_endpoint   the endpoint this device is currently subscribed with
  */
 (function () {
   "use strict";
@@ -33,15 +29,7 @@
     inProgress: ["{d}/{t} exercises checked", "{d}/{t} تمارين مؤشَّرة"],
     trainingDaysLabel: ["Training days", "أيام التمرين"],
     trainingDaysHint: ["Pick the days you plan to train, so a missed day gets a smarter reminder.", "اختر أيام التمرين حتى يكون تذكير اليوم الفائت أذكى."],
-    trainingDaysSignIn: ["Sign in to set your training days.", "سجّل الدخول لتحديد أيام تمرينك."],
-    remindersLabel: ["Workout reminders", "تذكيرات التمرين"],
-    remindersHint: ["Get a push notification if you miss a training day.", "احصل على إشعار إذا فاتك يوم تمرين."],
-    remindersOn: ["Reminders on", "التذكيرات مفعّلة"],
-    remindersOff: ["Enable reminders", "فعّل التذكيرات"],
-    remindersDenied: ["Notifications are blocked for this site in your browser settings.", "الإشعارات محظورة لهذا الموقع في إعدادات المتصفح."],
-    remindersSignIn: ["Sign in to enable workout reminders.", "سجّل الدخول لتفعيل تذكيرات التمرين."],
-    remindersUnsupported: ["Push notifications aren't supported on this browser.", "الإشعارات غير مدعومة في هذا المتصفح."],
-    remindersError: ["Couldn't enable reminders. Try again.", "تعذّر تفعيل التذكيرات. حاول مرة أخرى."]
+    trainingDaysSignIn: ["Sign in to set your training days.", "سجّل الدخول لتحديد أيام تمرينك."]
   };
   var DOW_SHORT = [
     ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
@@ -138,6 +126,12 @@
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
       body: JSON.stringify({ date: date, dayId: dayId })
+    }).then(function (res) {
+      // header.js re-reads /me so the streak badge updates right away
+      // instead of on the next 2-minute sync tick.
+      if (res.ok) {
+        try { document.dispatchEvent(new CustomEvent("gym:workoutcomplete", { detail: { date: date, dayId: dayId } })); } catch (e) {}
+      }
     }).catch(function () { delete postedKeys[key]; });
   }
 
@@ -157,7 +151,7 @@
   // ---------------- DOM refs (filled in mount()) ----------------
   var stripHost, stripDays, expandBtn;
   var modal, modalBackdrop, monthLabel, weekdayRow, grid, dayDetail, prevBtn, nextBtn, closeBtn;
-  var trainingDaysHost, pushHost;
+  var trainingDaysHost;
   var viewYear, viewMonth; // month currently shown in the overlay (0-based month)
 
   var ICON_CHEVRON_L = '<svg viewBox="0 0 24 24"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>';
@@ -412,144 +406,6 @@
     }
   }
 
-  // ---------------- push opt-in ----------------
-  function urlBase64ToUint8Array(base64) {
-    var padding = "=".repeat((4 - (base64.length % 4)) % 4);
-    var b64 = (base64 + padding).replace(/-/g, "+").replace(/_/g, "/");
-    var raw = atob(b64);
-    var out = new Uint8Array(raw.length);
-    for (var i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
-    return out;
-  }
-
-  function pushSupported() {
-    return "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
-  }
-
-  function cachedEndpoint() { try { return localStorage.getItem("gym_push_endpoint"); } catch (e) { return null; } }
-  function setCachedEndpoint(v) { try { if (v) localStorage.setItem("gym_push_endpoint", v); else localStorage.removeItem("gym_push_endpoint"); } catch (e) {} }
-
-  function postSubscribe(sub) {
-    var token = authToken();
-    var json = sub.toJSON();
-    return fetchTimeout(API_BASE + "/push/subscribe", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
-      body: JSON.stringify({ endpoint: json.endpoint, keys: json.keys })
-    }).then(function (res) {
-      if (!res.ok) throw new Error("subscribe " + res.status);
-      setCachedEndpoint(json.endpoint);
-      return true;
-    });
-  }
-
-  function deleteSubscribe(endpoint) {
-    var token = authToken();
-    if (!token || !endpoint) return Promise.resolve();
-    return fetchTimeout(API_BASE + "/push/subscribe", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
-      body: JSON.stringify({ endpoint: endpoint })
-    }).catch(function () {});
-  }
-
-  function enablePush() {
-    if (!pushSupported()) return Promise.reject(new Error("unsupported"));
-    if (!isAuthed()) { if (window.GymUI) GymUI.promptSignIn(); return Promise.reject(new Error("signin")); }
-    var vapidKey = window.GYM_VAPID_PUBLIC_KEY || "";
-    if (!vapidKey) return Promise.reject(new Error("unsupported"));
-
-    return Notification.requestPermission().then(function (perm) {
-      if (perm !== "granted") throw new Error(perm === "denied" ? "denied" : "dismissed");
-      return navigator.serviceWorker.ready;
-    }).then(function (registration) {
-      return registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidKey)
-      });
-    }).then(postSubscribe);
-  }
-
-  function disablePush() {
-    if (!pushSupported()) return Promise.resolve();
-    return navigator.serviceWorker.ready.then(function (registration) {
-      return registration.pushManager.getSubscription();
-    }).then(function (sub) {
-      if (!sub) { setCachedEndpoint(null); return; }
-      var endpoint = sub.endpoint;
-      return sub.unsubscribe().then(function () {
-        setCachedEndpoint(null);
-        return deleteSubscribe(endpoint);
-      });
-    });
-  }
-
-  // On load: if the live subscription's endpoint differs from what the
-  // backend last saw for this device (e.g. pushsubscriptionchange rotated
-  // it at the browser level), re-POST through the normal authenticated path
-  // — no backend auth carve-out for the service worker.
-  function reconcilePushSubscription() {
-    if (!pushSupported() || !isAuthed()) return;
-    navigator.serviceWorker.ready.then(function (registration) {
-      return registration.pushManager.getSubscription();
-    }).then(function (sub) {
-      if (!sub) return;
-      if (sub.endpoint !== cachedEndpoint()) postSubscribe(sub).catch(function () {});
-    }).catch(function () {});
-  }
-
-  function renderPushToggle() {
-    if (!pushHost) return;
-    if (!pushSupported()) {
-      pushHost.innerHTML =
-        '<div class="more-label">' + s("remindersLabel") + '</div>' +
-        '<p class="cal-more-hint">' + s("remindersUnsupported") + '</p>';
-      return;
-    }
-    if (!isAuthed()) {
-      pushHost.innerHTML =
-        '<div class="more-label">' + s("remindersLabel") + '</div>' +
-        '<p class="cal-more-hint">' + s("remindersSignIn") + '</p>';
-      return;
-    }
-    if (typeof Notification !== "undefined" && Notification.permission === "denied") {
-      pushHost.innerHTML =
-        '<div class="more-label">' + s("remindersLabel") + '</div>' +
-        '<p class="cal-more-hint">' + s("remindersDenied") + '</p>';
-      return;
-    }
-    pushHost.innerHTML =
-      '<div class="more-label">' + s("remindersLabel") + '</div>' +
-      '<button type="button" class="cal-push-btn" id="calPushBtn">' + s("remindersOff") + '</button>' +
-      '<p class="cal-more-hint">' + s("remindersHint") + '</p>';
-    var btn = pushHost.querySelector("#calPushBtn");
-
-    navigator.serviceWorker.ready.then(function (registration) {
-      return registration.pushManager.getSubscription();
-    }).then(function (sub) {
-      setPushBtnState(btn, !!sub);
-    }).catch(function () {});
-
-    btn.onclick = function () {
-      var isOn = btn.classList.contains("on");
-      btn.disabled = true;
-      var action = isOn ? disablePush() : enablePush();
-      action.then(function () {
-        setPushBtnState(btn, !isOn);
-        btn.disabled = false;
-      }).catch(function (e) {
-        btn.disabled = false;
-        if (e && e.message === "denied") renderPushToggle();
-        else if (e && (e.message === "signin" || e.message === "dismissed")) { /* no-op, already handled */ }
-        else if (e && e.message !== "unsupported") alert(s("remindersError"));
-      });
-    };
-  }
-  function setPushBtnState(btn, on) {
-    btn.classList.toggle("on", on);
-    btn.textContent = on ? s("remindersOn") : s("remindersOff");
-  }
-
   // ---------------- mount ----------------
   function mount() {
     stripHost = document.getElementById("calendarStrip");
@@ -587,13 +443,18 @@
     }
 
     trainingDaysHost = document.getElementById("moreTrainingDays");
-    pushHost = document.getElementById("morePush");
+
+    // One-time cleanup: web push was removed (notifyjob no longer sends
+    // push; see notifications.js for the new in-app inbox). Any endpoint a
+    // prior version cached is now meaningless — drop it so it doesn't
+    // linger forever. gym_push_endpoint stays in sync.js's LOCAL_ONLY list
+    // so a stale value elsewhere never syncs onto a device that already
+    // cleared it.
+    try { localStorage.removeItem("gym_push_endpoint"); } catch (e) {}
 
     refreshStrip();
-    renderPushToggle();
     if (isAuthed()) {
       fetchTrainingDays().then(function (days) { trainingDays = days; renderTrainingDaysPicker(); });
-      reconcilePushSubscription();
     } else {
       renderTrainingDaysPicker();
     }
@@ -606,12 +467,10 @@
   // ui.js already use.
   function refresh(langOnly) {
     refreshStrip();
-    renderPushToggle();
     if (langOnly) {
       renderTrainingDaysPicker();
     } else if (isAuthed()) {
       fetchTrainingDays().then(function (days) { trainingDays = days; renderTrainingDaysPicker(); });
-      reconcilePushSubscription();
     } else {
       trainingDays = [];
       renderTrainingDaysPicker();
@@ -622,7 +481,6 @@
 
   window.GymCalendar = {
     onCheckChanged: onCheckChanged,
-    enablePush: enablePush,
     refresh: refresh
   };
 

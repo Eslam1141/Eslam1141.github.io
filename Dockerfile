@@ -8,7 +8,7 @@ USER root
 RUN chmod +x /docker-entrypoint.d/40-render-config.sh
 USER 101
 
-COPY --chown=101:101 index.html styles.css app.js ui.js coach.js chat.js sync.js auth-email.js auth-email.css calendar.js workout-builder.js hero-video.js metallic-button.js service-worker.js manifest.json config.js /usr/share/nginx/html/
+COPY --chown=101:101 index.html styles.css app.js ui.js coach.js chat.js sync.js auth-email.js auth-email.css calendar.js workout-builder.js header.js notifications.js profile.js hero-video.js metallic-button.js service-worker.js manifest.json config.js /usr/share/nginx/html/
 COPY --chown=101:101 icons/ /usr/share/nginx/html/icons/
 COPY --chown=101:101 widgets/ /usr/share/nginx/html/widgets/
 
@@ -24,8 +24,8 @@ COPY --chown=101:101 widgets/ /usr/share/nginx/html/widgets/
 RUN cd /usr/share/nginx/html && \
     HASH=$(cat index.html styles.css app.js ui.js coach.js chat.js sync.js \
         auth-email.js auth-email.css \
-        calendar.js workout-builder.js hero-video.js metallic-button.js config.js manifest.json \
-        icons/logo.svg icons/coach.svg icons/icon-192.png icons/icon-512.png \
+        calendar.js workout-builder.js header.js notifications.js profile.js hero-video.js metallic-button.js config.js manifest.json \
+        icons/logo.svg icons/coach.svg icons/avatar-default.svg icons/icon-192.png icons/icon-512.png \
         icons/icon-maskable-192.png icons/icon-maskable-512.png \
         icons/apple-touch-icon.png | sha256sum | cut -c1-12) && \
     sed "/^const CACHE_NAME/s/__CACHE_HASH__/${HASH}/" service-worker.js > /tmp/service-worker.js.tmp && \

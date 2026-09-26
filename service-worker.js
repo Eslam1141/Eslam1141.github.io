@@ -25,12 +25,16 @@ const ASSETS = [
   "./auth-email.css",
   "./calendar.js",
   "./workout-builder.js",
+  "./header.js",
+  "./notifications.js",
+  "./profile.js",
   "./hero-video.js",
   "./metallic-button.js",
   "./config.js",
   "./manifest.json",
   "./icons/logo.svg",
   "./icons/coach.svg",
+  "./icons/avatar-default.svg",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/icon-maskable-192.png",
@@ -86,46 +90,5 @@ self.addEventListener("fetch", (event) => {
         return networkResponse;
       })
       .catch(() => caches.match(event.request))
-  );
-});
-
-// ---- missed-workout push notifications ----
-self.addEventListener("push", (event) => {
-  let data = {};
-  try { data = event.data ? event.data.json() : {}; } catch (e) {}
-  const title = data.title || "Gym reminder";
-  const options = {
-    body: data.body || "",
-    icon: "./icons/icon-192.png",
-    badge: "./icons/icon-192.png",
-    data: { url: data.url || "./" }
-  };
-  event.waitUntil(self.registration.showNotification(title, options));
-});
-
-self.addEventListener("notificationclick", (event) => {
-  event.notification.close();
-  const url = (event.notification.data && event.notification.data.url) || "./";
-  event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
-      for (const client of list) {
-        if ("focus" in client) return client.focus();
-      }
-      if (self.clients.openWindow) return self.clients.openWindow(url);
-    })
-  );
-});
-
-// Browser-level re-subscribe only (e.g. the push service rotated the
-// subscription). No backend POST here — the service worker has no auth
-// token; the page reconciles the new endpoint with gym-be on next load
-// (see calendar.js reconcilePushSubscription), through the normal
-// authenticated path, same as every other write in this app.
-self.addEventListener("pushsubscriptionchange", (event) => {
-  const oldOptions = event.oldSubscription && event.oldSubscription.options;
-  event.waitUntil(
-    self.registration.pushManager
-      .subscribe(oldOptions || { userVisibleOnly: true })
-      .catch(() => {})
   );
 });

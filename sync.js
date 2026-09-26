@@ -68,8 +68,10 @@
   // key meant an ended session's stale "still running" blob could never be
   // deleted server-side — the next pull (interval/focus/reload) would merge
   // it straight back into localStorage, making "End Workout" look broken.
-  // gym_push_endpoint: the browser's current Web Push subscription endpoint on
-  // THIS device — a per-device fact (calendar.js), not shareable user data.
+  // gym_push_endpoint: web push has been removed (see notifications.js's
+  // in-app inbox), and calendar.js now clears this key on load — but it
+  // stays listed here so a stale value lingering on some other, not-yet-
+  // updated device never syncs onto a device that already cleared it.
   var LOCAL_ONLY = { gym_meta_updatedAt: 1, gym_user_sub: 1, gym_tab: 1, gym_anon: 1, gym_session_active: 1, gym_push_endpoint: 1 };
   function syncable(k) { return k && k.indexOf("gym_") === 0 && !LOCAL_ONLY[k]; }
   var FETCH_TIMEOUT_MS = 8000;
@@ -284,7 +286,15 @@
     return fetch(url, opts).finally(function () { clearTimeout(t); });
   }
 
+  // header.js/notifications.js refresh /me and the inbox on this same
+  // cadence (interval / tab visible / online / sign-in) instead of running
+  // their own timer. Debounced per-write syncs and manual calls don't tick.
+  function emit(name, detail) {
+    try { document.dispatchEvent(new CustomEvent(name, { detail: detail })); } catch (e) {}
+  }
+
   function syncNow(reason) {
+    if (reason !== "debounce" && reason !== "manual" && isSignedIn()) emit("gym:synctick", reason);
     if (syncing || !isSignedIn()) return Promise.resolve(false);
     syncing = true;
     log("[sync] start", reason);
@@ -554,6 +564,9 @@
 
   function renderAuthUI() {
     var signedIn = isSignedIn();
+    // Every auth transition (session restore, sign-in, auth lost, sign-out)
+    // passes through here — header.js listens to show/hide the top bar.
+    emit("gym:authchange", signedIn);
 
     // The onboarding hero's Google button — full-width dark pill with the
     // logo and label (filled_black is the closest Google's own renderer

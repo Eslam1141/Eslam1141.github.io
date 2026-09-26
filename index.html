@@ -94,6 +94,9 @@
   </button>
 </nav>
 
+<!-- Shared top-right header (header.js): streak, notification bell, avatar menu. Signed-in only. -->
+<div id="topBar" hidden></div>
+
 <!-- ===================== PLAN SCREEN ===================== -->
 <div id="screen-plan" class="screen">
   <div class="wrap">
@@ -203,8 +206,6 @@
 
     <div class="more-group" id="moreTrainingDays"></div>
 
-    <div class="more-group" id="morePush"></div>
-
     <div class="install-tip" id="installTip" data-i18n-html="installTip">
       <b>Add this app to your home screen:</b> open your browser menu and choose "Add to Home Screen" so it opens like a regular app.
     </div>
@@ -212,6 +213,12 @@
     <div class="more-ver" id="moreVer"></div>
   </div>
 </div>
+
+<!-- ===================== PROFILE SCREEN ===================== -->
+<!-- Filled at runtime by profile.js (photo, editable stats, streak/progress,
+     sign-out) — reached only via the avatar menu in #topBar (header.js),
+     not a bottom-nav tab. -->
+<div id="screen-profile" class="screen" hidden></div>
 
 <script>
   // Runs synchronously at parse time, before first paint settles — without
@@ -323,5 +330,8 @@
 <script src="auth-email.js" defer></script>
 <script src="calendar.js" defer></script>
 <script src="workout-builder.js" defer></script>
+<script src="header.js" defer></script>
+<script src="notifications.js" defer></script>
+<script src="profile.js" defer></script>
 </body>
 </html>
