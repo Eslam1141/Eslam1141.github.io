@@ -278,6 +278,7 @@
     if (profile) body.profile = profile;
     var planSummary = window.GymCoach && GymCoach.planSummary ? GymCoach.planSummary() : "";
     if (planSummary) body.planSummary = planSummary;
+    if (window.GymCoach && GymCoach.ramadan && GymCoach.ramadan()) body.ramadan = true; // omit when false: backend hash stays unchanged for normal plans
 
     fetchTimeout(ASSIST_BASE + "/chat", {
       method: "POST",
