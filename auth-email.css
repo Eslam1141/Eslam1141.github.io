@@ -53,3 +53,7 @@
 
 [dir="rtl"] .ae-field{ text-align:right; }
 [dir="rtl"] .ae-hint{ text-align:right; }
+/* Email/phone/password/code values are Latin-script: keep them LTR inside
+   the RTL form so "+20..." and "name@x.com" don't get bidi-reordered. */
+[dir="rtl"] .ae-field input{ direction:ltr; text-align:right; }
+[dir="rtl"] .ae-field input.ae-otp-input{ text-align:center; }

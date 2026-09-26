@@ -262,7 +262,7 @@
     var canResend = !!(pending && pending.password && pending.phone);
     var left = cooldownLeft(email);
     return h2Html("aeOtpTitle") +
-      '<p class="ae-sub">' + escHtml(tr("aeOtpSent")) + ' <b>' + escHtml(email) + '</b></p>' +
+      '<p class="ae-sub">' + escHtml(tr("aeOtpSent")) + ' <b><bdi dir="ltr">' + escHtml(email) + '</bdi></b></p>' +
       '<form id="aeOtpForm" novalidate>' +
         (needPw ? '<p class="ae-hint">' + escHtml(tr("aeOtpPwNeeded")) + '</p>' + fieldHtml("aeOtpPassword", "password", "aePassword", { ac: "current-password" }) : "") +
         fieldHtml("aeOtpCode", "text", "aeOtpCode", { ac: "one-time-code", cls: "ae-otp-input", extra: ' inputmode="numeric" pattern="[0-9]*" maxlength="6"' }) +
@@ -351,7 +351,10 @@
         api("login", { email: email, password: password }).then(function (res) {
           setBusy(btn, false);
           if (res.ok && res.data && res.data.token) {
-            GymSync.signInWithToken(res.data.token);
+            // false = token rejected client-side (unparseable, or already
+            // "expired" against a device clock that runs >1h fast) — say so
+            // instead of silently leaving the form as if nothing happened.
+            if (!acceptSession(res.data.token)) setErr("aeLoginErr", "aeErrGeneric");
           } else {
             el("aeLoginErr").className = "ae-err";
             el("aeLoginErr").textContent = errorText(res, "login");
@@ -401,7 +404,7 @@
           setBusy(btn, false);
           if (res.ok && res.data && res.data.token) {
             ssDel(OTP_KEY); pending = null;
-            GymSync.signInWithToken(res.data.token);
+            if (!acceptSession(res.data.token)) setErr("aeOtpErr", "aeErrGeneric");
           } else {
             el("aeOtpErr").className = "ae-err";
             el("aeOtpErr").textContent = errorText(res, "otp");
@@ -462,6 +465,19 @@
         });
       });
     }
+  }
+
+  // Hands a gym-be JWT to sync.js; on success wipes the rendered form so the
+  // typed password doesn't linger in the (now hidden) onboarding DOM.
+  function acceptSession(token) {
+    var ok = !!(window.GymSync && typeof GymSync.signInWithToken === "function" && GymSync.signInWithToken(token));
+    if (ok) {
+      if (tick) { clearInterval(tick); tick = null; }
+      var host = document.getElementById("obStepEmail");
+      if (host) host.innerHTML = "";
+      view = null;
+    }
+    return ok;
   }
 
   function render(o) {
