@@ -4,4 +4,3 @@
  * site working from GitHub Pages / file:// with sync disabled. */
 window.GYM_API_BASE = "";
 window.GOOGLE_CLIENT_ID = "";
-window.GYM_VAPID_PUBLIC_KEY = "";

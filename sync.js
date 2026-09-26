@@ -68,8 +68,10 @@
   // key meant an ended session's stale "still running" blob could never be
   // deleted server-side — the next pull (interval/focus/reload) would merge
   // it straight back into localStorage, making "End Workout" look broken.
-  // gym_push_endpoint: the browser's current Web Push subscription endpoint on
-  // THIS device — a per-device fact (calendar.js), not shareable user data.
+  // gym_push_endpoint: web push has been removed (see notifications.js's
+  // in-app inbox), and calendar.js now clears this key on load — but it
+  // stays listed here so a stale value lingering on some other, not-yet-
+  // updated device never syncs onto a device that already cleared it.
   var LOCAL_ONLY = { gym_meta_updatedAt: 1, gym_user_sub: 1, gym_tab: 1, gym_anon: 1, gym_session_active: 1, gym_push_endpoint: 1 };
   function syncable(k) { return k && k.indexOf("gym_") === 0 && !LOCAL_ONLY[k]; }
   var FETCH_TIMEOUT_MS = 8000;
