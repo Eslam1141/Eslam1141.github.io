@@ -234,9 +234,22 @@
     if (url && isSameOriginOtherPage(url)) window.location.assign(url);
   }
 
+  // Which account the cached inbox belongs to — an account switch must not
+  // show the previous user's notifications, even briefly.
+  var loadedFor = null;
+  function currentAccount() {
+    var p = window.GymSync && typeof GymSync.profile === "function" ? GymSync.profile() : null;
+    return (p && p.email) || null;
+  }
+
+  function resetInbox() {
+    items = []; unreadCount = 0; loadErr = false; loadedFor = null;
+    fetchSeq++; // drop any in-flight response for the previous account
+  }
+
   function fetchNotifications() {
     if (!isAuthed()) {
-      items = []; unreadCount = 0; loadErr = false;
+      resetInbox();
       renderBadge();
       if (panelOpen) renderList();
       return Promise.resolve();
@@ -248,7 +261,8 @@
         return res.json();
       })
       .then(function (doc) {
-        if (seq !== fetchSeq) return;
+        if (seq !== fetchSeq || !isAuthed()) return;
+        loadedFor = currentAccount();
         items = (doc && Array.isArray(doc.items)) ? doc.items : [];
         unreadCount = (doc && typeof doc.unreadCount === "number")
           ? doc.unreadCount
@@ -258,7 +272,7 @@
         if (panelOpen) renderList();
       })
       .catch(function () {
-        if (seq !== fetchSeq) return;
+        if (seq !== fetchSeq || !isAuthed()) return;
         loadErr = true;
         renderBadge();
         if (panelOpen) renderList();
@@ -288,10 +302,15 @@
   // ---------------- wiring ----------------
   function onAuthChange() {
     if (!isAuthed()) {
-      items = []; unreadCount = 0; loadErr = false;
+      resetInbox();
       if (panelOpen) close();
       renderBadge();
       return;
+    }
+    var acct = currentAccount();
+    if (loadedFor && acct && acct !== loadedFor) {
+      resetInbox();
+      if (panelOpen) renderList();
     }
     build();
     renderBadge();

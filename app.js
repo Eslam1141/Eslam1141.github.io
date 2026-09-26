@@ -326,7 +326,7 @@ const T = {
   profSave:["Save","حفظ"],
   profSaving:["Saving…","جارٍ الحفظ…"],
   profSaved:["✓ Saved","✓ تم الحفظ"],
-  profNameErr:["Name must be 1–50 characters.","يجب أن يكون الاسم من 1 إلى 50 حرفاً."],
+  profNameErr:["Name must be 1–50 characters (Arabic letters count as two).","يجب ألا يتجاوز الاسم نحو 25 حرفاً عربياً (أو 50 حرفاً لاتينياً)."],
   profWeightErr:["Weight must be between 20 and 400 kg.","يجب أن يكون الوزن بين 20 و400 كجم."],
   profHeightErr:["Height must be between 50 and 250 cm.","يجب أن يكون الطول بين 50 و250 سم."],
   profSaveErr:["Couldn't save your details. Try again.","تعذّر حفظ بياناتك. حاول مرة أخرى."],

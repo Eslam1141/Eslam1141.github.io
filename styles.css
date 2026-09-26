@@ -1349,7 +1349,8 @@ body:has(#planChooser:not([hidden])) #appNav{ display:none; }
 [dir="rtl"] #topBar{ right:auto; left:12px; }
 #topBar[hidden],
 body.onboarding-open #topBar,
-body:has(#planChooser:not([hidden])) #topBar{ display:none !important; }
+body:has(#planChooser:not([hidden])) #topBar,
+body:has(#videoModal.show) #topBar{ display:none !important; }
 /* keep the centred hero titles clear of the fixed bar on phones */
 @media (max-width:899.98px){
   body.has-topbar header.hero{ padding-top:58px; }

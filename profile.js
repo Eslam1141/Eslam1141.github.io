@@ -23,9 +23,26 @@
   // Mirrors gym-be's validateProfile exactly (internal/api/me.go) so a
   // client-valid submission is never rejected by the server. Returns the
   // first failing field's T key, or null when all three are valid.
+  function utf8Len(s) {
+    var n = 0;
+    for (var i = 0; i < s.length; i++) {
+      var c = s.charCodeAt(i);
+      if (c < 0x80) n += 1;
+      else if (c < 0x800) n += 2;
+      else if (c >= 0xD800 && c <= 0xDBFF && i + 1 < s.length) { n += 4; i++; }
+      else n += 3;
+    }
+    return n;
+  }
+
   function validateProfile(name, weightKg, heightCm) {
     var trimmed = String(name == null ? "" : name).trim();
-    if (trimmed.length < 1 || trimmed.length > 50) return "profNameErr";
+    // gym-be checks len(name) — Go's len() counts UTF-8 BYTES, not
+    // characters — so an Arabic name (2 bytes/letter) over 25 letters is
+    // rejected server-side. Mirror the byte count so the user gets the
+    // specific field error instead of a generic save failure.
+    var bytes = utf8Len(trimmed);
+    if (bytes < 1 || bytes > 50) return "profNameErr";
     var w = Number(weightKg);
     if (!isFinite(w) || w < 20 || w > 400) return "profWeightErr";
     var h = Number(heightCm);
@@ -345,6 +362,8 @@
     saving = true;
     renderSaveBtn();
     var body = { displayName: name.trim(), weightKg: Number(weight), heightCm: Number(height) };
+    var meAtStart = GymHeader.me && GymHeader.me();
+    var savedFor = meAtStart ? meAtStart.id : null;
     GymHeader.api("/me/profile", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -355,6 +374,10 @@
     }).then(function (saved) {
       saving = false;
       nameDirty = weightDirty = heightDirty = false;
+      // Don't merge this save into a different account's cached /me if the
+      // user signed out / switched accounts while the PUT was in flight.
+      var meNow = GymHeader.me && GymHeader.me();
+      if (!isAuthed() || (savedFor && meNow && meNow.id !== savedFor)) { renderSaveBtn(); return; }
       if (window.GymHeader && typeof GymHeader.setMe === "function") GymHeader.setMe(saved || body);
       setFormMsg(str("profSaved"), true);
       renderSaveBtn();
@@ -377,6 +400,9 @@
       GymHeader.onChange(function () { renderData(); });
     }
     document.addEventListener("gym:authchange", function () {
+      // Unsaved edits belong to whoever typed them — never carry them over
+      // a sign-out / account switch into the next account's form.
+      nameDirty = weightDirty = heightDirty = false;
       renderData();
       if (screen && !screen.hidden) refresh();
     });
