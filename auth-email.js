@@ -137,6 +137,10 @@
     return "aeErrGeneric";
   }
 
+  // Localized message for an api() result, in the context of flow `ctx`
+  // (picks the right 401 wording — see errorKey above).
+  function errorText(res, ctx) { return tr(errorKey(res, ctx)); }
+
   // POST {API}/auth/<path>. Never rejects: resolves {ok, status, code,
   // message, data}; status 0 = network failure/timeout.
   function api(path, body) {
@@ -176,10 +180,339 @@
     return Math.max(0, c.until - Date.now());
   }
 
+  function fmtMMSS(ms) {
+    var s = Math.max(0, Math.ceil(ms / 1000)), m = Math.floor(s / 60), r = s % 60;
+    return (m < 10 ? "0" : "") + m + ":" + (r < 10 ? "0" : "") + r;
+  }
+
+  // ---------------- tiny HTML builders ----------------
+  // Every dynamic value that reaches innerHTML goes through one of these —
+  // the only untrusted strings here are the email/phone the visitor just
+  // typed (echoed back into the OTP view / field values).
+  function escAttr(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;"); }
+  function escHtml(s) { return escAttr(s).replace(/>/g, "&gt;"); }
+  function el(id) { return document.getElementById(id); }
+
+  function fieldHtml(id, type, labelKey, o) {
+    o = o || {};
+    var val = o.value ? ' value="' + escAttr(o.value) + '"' : "";
+    var ac = o.ac ? ' autocomplete="' + o.ac + '"' : "";
+    var cls = o.cls ? ' class="' + o.cls + '"' : "";
+    var extra = o.extra || "";
+    var hint = o.hintKey ? '<p class="ae-hint">' + escHtml(tr(o.hintKey)) + '</p>' : "";
+    return '<label class="ae-field"><span data-i18n="' + labelKey + '">' + escHtml(tr(labelKey)) + '</span>' +
+      '<input id="' + id + '" name="' + id + '" type="' + type + '"' + cls + val + ac + extra + ' required></label>' + hint;
+  }
+  function linkHtml(id, key) {
+    return '<button type="button" id="' + id + '" class="ae-link" data-i18n="' + key + '">' + escHtml(tr(key)) + '</button>';
+  }
+  function errHtml(id) { return '<p class="ae-err" id="' + id + '" role="alert" aria-live="polite"></p>'; }
+  function noticeHtml(msgKey) { return msgKey ? '<p class="ae-notice">' + escHtml(tr(msgKey)) + '</p>' : ""; }
+  function h2Html(key) { return '<h2 data-i18n="' + key + '">' + escHtml(tr(key)) + '</h2>'; }
+
+  function setBusy(btn, busy) {
+    if (!btn) return;
+    btn.disabled = !!busy;
+    if (busy) { if (!btn.dataset.aeLabel) btn.dataset.aeLabel = btn.textContent; btn.textContent = tr("aeWorking"); }
+    else if (btn.dataset.aeLabel) { btn.textContent = btn.dataset.aeLabel; delete btn.dataset.aeLabel; }
+  }
+  function setErr(id, key) { var e = el(id); if (e) { e.className = "ae-err"; e.textContent = key ? tr(key) : ""; } }
+
+  // ---------------- views ----------------
+  function loginHtml(o) {
+    o = o || {};
+    return h2Html("aeLoginTitle") + noticeHtml(o.notice) +
+      '<form id="aeLoginForm" novalidate>' +
+        fieldHtml("aeLoginEmail", "email", "aeEmail", { value: o.email, ac: "email" }) +
+        fieldHtml("aeLoginPassword", "password", "aePassword", { ac: "current-password" }) +
+        errHtml("aeLoginErr") +
+        '<button type="submit" id="aeLoginSubmit" class="ae-submit" data-i18n="aeLoginBtn">' + escHtml(tr("aeLoginBtn")) + '</button>' +
+      '</form>' +
+      '<div class="ae-links">' + linkHtml("aeForgotBtn", "aeForgotLink") + linkHtml("aeToSignupBtn", "aeToSignup") + linkHtml("aeBackBtn", "aeBack") + '</div>';
+  }
+
+  function signupHtml(o) {
+    o = o || {};
+    return h2Html("aeSignupTitle") +
+      '<form id="aeSignupForm" novalidate>' +
+        fieldHtml("aeSignupEmail", "email", "aeEmail", { value: o.email, ac: "email" }) +
+        fieldHtml("aeSignupPassword", "password", "aePassword", { ac: "new-password", hintKey: "aePwHint" }) +
+        fieldHtml("aeSignupPhone", "tel", "aePhone", { value: o.phone, ac: "tel", hintKey: "aePhoneHint" }) +
+        errHtml("aeSignupErr") +
+        '<button type="submit" id="aeSignupSubmit" class="ae-submit" data-i18n="aeSignupBtn">' + escHtml(tr("aeSignupBtn")) + '</button>' +
+      '</form>' +
+      '<div class="ae-links">' + linkHtml("aeToLoginBtn", "aeToLogin") + linkHtml("aeBackBtn", "aeBack") + '</div>';
+  }
+
+  function otpHtml(o) {
+    o = o || {};
+    var email = (pending && pending.email) || o.email || "";
+    var needPw = !(pending && pending.password);
+    var canResend = !!(pending && pending.password && pending.phone);
+    var left = cooldownLeft(email);
+    return h2Html("aeOtpTitle") +
+      '<p class="ae-sub">' + escHtml(tr("aeOtpSent")) + ' <b>' + escHtml(email) + '</b></p>' +
+      '<form id="aeOtpForm" novalidate>' +
+        (needPw ? '<p class="ae-hint">' + escHtml(tr("aeOtpPwNeeded")) + '</p>' + fieldHtml("aeOtpPassword", "password", "aePassword", { ac: "current-password" }) : "") +
+        fieldHtml("aeOtpCode", "text", "aeOtpCode", { ac: "one-time-code", cls: "ae-otp-input", extra: ' inputmode="numeric" pattern="[0-9]*" maxlength="6"' }) +
+        '<p class="ae-hint">' + escHtml(tr("aeOtpExpiry")) + '</p>' +
+        errHtml("aeOtpErr") +
+        '<button type="submit" id="aeOtpSubmit" class="ae-submit" data-i18n="aeVerifyBtn">' + escHtml(tr("aeVerifyBtn")) + '</button>' +
+      '</form>' +
+      '<div class="ae-links">' +
+        (canResend
+          ? '<button type="button" id="aeResendBtn" class="ae-link"' + (left > 0 ? " disabled" : "") + '>' + escHtml(left > 0 ? (tr("aeResendIn") + " " + fmtMMSS(left)) : tr("aeResend")) + '</button>'
+          : '<p class="ae-hint">' + escHtml(tr("aeResendNeedsSignup")) + '</p>') +
+        linkHtml("aeChangeEmailBtn", "aeChangeEmail") +
+      '</div>';
+  }
+
+  function forgotHtml(o) {
+    o = o || {};
+    if (o.sent) {
+      return h2Html("aeForgotTitle") + noticeHtml("aeForgotSent") +
+        '<div class="ae-links">' + linkHtml("aeBackToLoginBtn", "aeBackToLogin") + '</div>';
+    }
+    return h2Html("aeForgotTitle") + '<p class="ae-sub" data-i18n="aeForgotSub">' + escHtml(tr("aeForgotSub")) + '</p>' +
+      '<form id="aeForgotForm" novalidate>' +
+        fieldHtml("aeForgotEmail", "email", "aeEmail", { value: o.email, ac: "email" }) +
+        errHtml("aeForgotErr") +
+        '<button type="submit" id="aeForgotSubmit" class="ae-submit" data-i18n="aeSendLink">' + escHtml(tr("aeSendLink")) + '</button>' +
+      '</form>' +
+      '<div class="ae-links">' + linkHtml("aeBackToLoginBtn", "aeBackToLogin") + '</div>';
+  }
+
+  function resetHtml(o) {
+    o = o || {};
+    if (o.done) {
+      return h2Html("aeResetTitle") + noticeHtml("aeResetDone") +
+        '<div class="ae-links">' + linkHtml("aeBackToLoginBtn", "aeBackToLogin") + '</div>';
+    }
+    return h2Html("aeResetTitle") +
+      '<form id="aeResetForm" novalidate>' +
+        fieldHtml("aeResetPassword", "password", "aeNewPassword", { ac: "new-password", hintKey: "aePwHint" }) +
+        fieldHtml("aeResetConfirm", "password", "aeConfirmPassword", { ac: "new-password" }) +
+        errHtml("aeResetErr") +
+        '<button type="submit" id="aeResetSubmit" class="ae-submit" data-i18n="aeResetBtn">' + escHtml(tr("aeResetBtn")) + '</button>' +
+      '</form>' +
+      '<div class="ae-links">' + linkHtml("aeToForgotBtn", "aeForgotLink") + '</div>';
+  }
+
+  // Countdown for the OTP view's resend button — separate from cooldownLeft()
+  // itself so the button's label ticks live instead of only updating on the
+  // next render() call.
+  function startResendTick(email) {
+    if (tick) { clearInterval(tick); tick = null; }
+    tick = setInterval(function () {
+      var btn = el("aeResendBtn");
+      if (!btn) { clearInterval(tick); tick = null; return; }
+      var left = cooldownLeft(email);
+      if (left <= 0) {
+        btn.disabled = false;
+        btn.textContent = tr("aeResend");
+        clearInterval(tick); tick = null;
+      } else {
+        btn.textContent = tr("aeResendIn") + " " + fmtMMSS(left);
+      }
+    }, 1000);
+  }
+
+  function wire(o) {
+    o = o || {};
+    var backBtn = el("aeBackBtn");
+    if (backBtn) backBtn.onclick = function () { if (window.GymUI && typeof GymUI.showObStep === "function") GymUI.showObStep("choices"); };
+    var backToLogin = el("aeBackToLoginBtn");
+    if (backToLogin) backToLogin.onclick = function () { open("login"); };
+    var toForgot = el("aeToForgotBtn");
+    if (toForgot) toForgot.onclick = function () { open("forgot"); };
+
+    if (view === "login") {
+      el("aeForgotBtn").onclick = function () { open("forgot", { email: el("aeLoginEmail").value }); };
+      el("aeToSignupBtn").onclick = function () { open("signup", { email: el("aeLoginEmail").value }); };
+      el("aeLoginForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+        var email = normEmail(el("aeLoginEmail").value), password = el("aeLoginPassword").value;
+        setErr("aeLoginErr", null);
+        if (!validEmail(email)) return setErr("aeLoginErr", "aeErrEmail");
+        if (!password) return setErr("aeLoginErr", "aeErrPwRequired");
+        var btn = el("aeLoginSubmit");
+        setBusy(btn, true);
+        api("login", { email: email, password: password }).then(function (res) {
+          setBusy(btn, false);
+          if (res.ok && res.data && res.data.token) GymSync.signInWithToken(res.data.token);
+          else setErr("aeLoginErr", null), (el("aeLoginErr").textContent = errorText(res, "login"));
+        });
+      });
+    } else if (view === "signup") {
+      el("aeToLoginBtn").onclick = function () { open("login", { email: el("aeSignupEmail").value }); };
+      el("aeSignupForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+        var email = normEmail(el("aeSignupEmail").value);
+        var password = el("aeSignupPassword").value;
+        var phone = normPhone(el("aeSignupPhone").value);
+        setErr("aeSignupErr", null);
+        if (!validEmail(email)) return setErr("aeSignupErr", "aeErrEmail");
+        if (!validPassword(password)) return setErr("aeSignupErr", "aeErrPassword");
+        if (!validPhone(phone)) return setErr("aeSignupErr", "aeErrPhone");
+        if (cooldownLeft(email) > 0) return setErr("aeSignupErr", "aeErrRateLimit");
+        var btn = el("aeSignupSubmit");
+        setBusy(btn, true);
+        api("signup", { email: email, password: password, phone: phone, lang: curLang() }).then(function (res) {
+          setBusy(btn, false);
+          if (res.status === 202) {
+            pending = { email: email, password: password, phone: phone };
+            ssSet(OTP_KEY, { email: email });
+            startCooldown(email);
+            open("otp");
+          } else {
+            el("aeSignupErr").className = "ae-err";
+            el("aeSignupErr").textContent = errorText(res, "signup");
+          }
+        });
+      });
+    } else if (view === "otp") {
+      var email = (pending && pending.email) || (ssGet(OTP_KEY) && ssGet(OTP_KEY).email) || "";
+      el("aeOtpForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+        var code = normCode(el("aeOtpCode").value);
+        var pwField = el("aeOtpPassword");
+        var password = pwField ? pwField.value : (pending && pending.password);
+        setErr("aeOtpErr", null);
+        if (!validOtp(code)) return setErr("aeOtpErr", "aeErrCode");
+        if (!password) return setErr("aeOtpErr", "aeErrPwRequired");
+        var btn = el("aeOtpSubmit");
+        setBusy(btn, true);
+        api("verify-otp", { email: email, code: code, password: password }).then(function (res) {
+          setBusy(btn, false);
+          if (res.ok && res.data && res.data.token) {
+            ssDel(OTP_KEY); pending = null;
+            GymSync.signInWithToken(res.data.token);
+          } else {
+            el("aeOtpErr").className = "ae-err";
+            el("aeOtpErr").textContent = errorText(res, "otp");
+          }
+        });
+      });
+      var resendBtn = el("aeResendBtn");
+      if (resendBtn) {
+        resendBtn.onclick = function () {
+          if (cooldownLeft(email) > 0 || !pending || !pending.password || !pending.phone) return;
+          resendBtn.disabled = true;
+          api("signup", { email: pending.email, password: pending.password, phone: pending.phone, lang: curLang() }).then(function (res) {
+            if (res.status === 202) {
+              startCooldown(email);
+              var errEl = el("aeOtpErr");
+              if (errEl) { errEl.className = "ae-notice"; errEl.textContent = tr("aeCodeResent"); }
+              startResendTick(email);
+            } else {
+              resendBtn.disabled = false;
+              var errEl2 = el("aeOtpErr");
+              if (errEl2) { errEl2.className = "ae-err"; errEl2.textContent = errorText(res, "signup"); }
+            }
+          });
+        };
+        startResendTick(email);
+      }
+      var changeBtn = el("aeChangeEmailBtn");
+      if (changeBtn) changeBtn.onclick = function () { pending = null; ssDel(OTP_KEY); open("login"); };
+    } else if (view === "forgot" && !o.sent) {
+      el("aeForgotForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+        var email = normEmail(el("aeForgotEmail").value);
+        setErr("aeForgotErr", null);
+        if (!validEmail(email)) return setErr("aeForgotErr", "aeErrEmail");
+        if (cooldownLeft(email) > 0) return setErr("aeForgotErr", "aeErrRateLimit");
+        var btn = el("aeForgotSubmit");
+        setBusy(btn, true);
+        api("request-reset", { email: email, lang: curLang() }).then(function (res) {
+          setBusy(btn, false);
+          if (res.status === 202) { startCooldown(email); open("forgot", { sent: true }); }
+          else { el("aeForgotErr").className = "ae-err"; el("aeForgotErr").textContent = errorText(res, "forgot"); }
+        });
+      });
+    } else if (view === "reset" && !o.done) {
+      el("aeResetForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+        var pw = el("aeResetPassword").value, pw2 = el("aeResetConfirm").value;
+        setErr("aeResetErr", null);
+        if (!validPassword(pw)) return setErr("aeResetErr", "aeErrPassword");
+        if (pw !== pw2) return setErr("aeResetErr", "aeErrMismatch");
+        if (!resetToken) return setErr("aeResetErr", "aeErrResetToken");
+        var btn = el("aeResetSubmit");
+        setBusy(btn, true);
+        api("reset-password", { token: resetToken, newPassword: pw }).then(function (res) {
+          setBusy(btn, false);
+          if (res.ok) { resetToken = null; open("reset", { done: true }); }
+          else { el("aeResetErr").className = "ae-err"; el("aeResetErr").textContent = errorText(res, "reset"); }
+        });
+      });
+    }
+  }
+
+  function render(o) {
+    var host = document.getElementById("obStepEmail");
+    if (!host) return;
+    if (tick) { clearInterval(tick); tick = null; }
+    var html;
+    if (view === "signup") html = signupHtml(o);
+    else if (view === "otp") html = otpHtml(o);
+    else if (view === "forgot") html = forgotHtml(o);
+    else if (view === "reset") html = resetHtml(o);
+    else html = loginHtml(o);
+    host.innerHTML = html;
+    wire(o);
+  }
+
+  // Opens the email step of onboarding on this view. Safe to call whether or
+  // not onboarding is currently shown at all (a live session-loss, or a
+  // reset link opened while signed in/anon, both land here with the overlay
+  // hidden) — it brings the overlay up first via GymUI.promptSignIn(), same
+  // as any other "you need to sign in" entry point, then swaps to "email".
+  function open(v, o) {
+    view = v;
+    render(o || {});
+    try {
+      var obEl = document.getElementById("onboarding");
+      if (obEl && obEl.hidden && window.GymUI && typeof GymUI.promptSignIn === "function") GymUI.promptSignIn();
+      if (window.GymUI && typeof GymUI.showObStep === "function") GymUI.showObStep("email");
+    } catch (e) {}
+  }
+
+  // Runs on DOMContentLoaded, AFTER ui.js's own boot() (registered earlier,
+  // during initial HTML parsing — listeners fire in registration order) has
+  // already decided what onboarding shows. That's deliberate: boot() may
+  // itself open onboarding on a plain "choices" step (a returning,
+  // signed-out visitor); this only needs to override which STEP is active,
+  // never whether the overlay is up at all.
+  function initRoute() {
+    try {
+      var qs = new URLSearchParams(location.search);
+      var tok = qs.get("reset_token");
+      if (!tok && location.pathname === "/reset-password") tok = qs.get("token");
+      if (tok) {
+        resetToken = tok;
+        try { history.replaceState(null, "", "/"); } catch (e) {}
+        open("reset");
+        return;
+      }
+    } catch (e) {}
+    try {
+      var method = lsGet("gymauth_method");
+      var signedIn = !!(window.GymSync && typeof GymSync.isSignedIn === "function" && GymSync.isSignedIn());
+      // A device whose last session was local (email/password): GIS can't
+      // silently restore it (sync.js's shouldResolveSilently() already
+      // knows this), so boot() would otherwise leave a returning visitor on
+      // the generic Google/anon choices screen. Route straight to email
+      // login instead, prefilled with the remembered address.
+      if (!signedIn && method === "local") open("login", { email: lsGet("gymauth_email") || "" });
+    } catch (e) {}
+  }
+  document.addEventListener("DOMContentLoaded", initRoute);
+
   window.GymAuthEmail = {
     onSessionExpired: function (email) { open("login", { email: email || lsGet("gymauth_email") || "", notice: "aeExpired" }); },
     open: function (v, o) { open(v, o); },
     _test: { normPhone: normPhone, normCode: normCode, normEmail: normEmail, validEmail: validEmail, validPassword: validPassword,
-             validPhone: validPhone, validOtp: validOtp, errorKey: errorKey, tr: tr, curLang: curLang, STR: STR }
+             validPhone: validPhone, validOtp: validOtp, errorKey: errorKey, errorText: errorText, tr: tr, curLang: curLang, STR: STR }
   };
 })();
