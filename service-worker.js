@@ -21,6 +21,8 @@ const ASSETS = [
   "./coach.js",
   "./chat.js",
   "./sync.js",
+  "./auth-email.js",
+  "./auth-email.css",
   "./calendar.js",
   "./workout-builder.js",
   "./header.js",
@@ -76,7 +78,12 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200) {
+        // Never persist a password-reset URL (/?reset_token=... or
+        // /reset-password?token=...) into Cache Storage: the cache key is the
+        // full URL, so the live reset token would sit on disk until evicted.
+        const holdsSecret = url.searchParams.has("reset_token") ||
+          url.pathname === "/reset-password";
+        if (!holdsSecret && networkResponse && networkResponse.status === 200) {
           const clone = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
         }
