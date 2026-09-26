@@ -156,7 +156,12 @@
     });
     document.getElementById("tbMenuProfile").addEventListener("click", function () {
       setMenuOpen(false);
-      if (window.GymUI && typeof GymUI.navigate === "function") GymUI.navigate("profile");
+      if (window.GymUI && typeof GymUI.navigate === "function") {
+        // profile.js reads this to send "Back" to wherever the user
+        // actually came from instead of always landing on "plan".
+        try { window.__gymPrevTab = (typeof GymUI.currentTab === "function") ? GymUI.currentTab() : "plan"; } catch (e) {}
+        GymUI.navigate("profile");
+      }
     });
     document.getElementById("tbMenuSignOut").addEventListener("click", function () {
       setMenuOpen(false);

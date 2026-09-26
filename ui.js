@@ -26,7 +26,10 @@
   var heroVideo = null;
 
   // ---------------- navigation ----------------
-  var TABS = ["plan", "coach", "more"];
+  // "profile" is reached only via the avatar menu in #topBar (header.js),
+  // never the bottom nav — it has no data-tab button, so it's just another
+  // entry in the screen-swap list (navigate()/screenEl()), not a 4th tab.
+  var TABS = ["plan", "coach", "more", "profile"];
   var curTab = "plan";
 
   function screenEl(tab) { return el("screen-" + tab); }

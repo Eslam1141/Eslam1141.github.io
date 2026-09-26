@@ -209,6 +209,12 @@
   </div>
 </div>
 
+<!-- ===================== PROFILE SCREEN ===================== -->
+<!-- Filled at runtime by profile.js (photo, editable stats, streak/progress,
+     sign-out) — reached only via the avatar menu in #topBar (header.js),
+     not a bottom-nav tab. -->
+<div id="screen-profile" class="screen" hidden></div>
+
 <script>
   // Runs synchronously at parse time, before first paint settles — without
   // this, #screen-plan (the only screen with no `hidden` attribute in the
