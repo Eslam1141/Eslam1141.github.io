@@ -8,9 +8,12 @@
  *
  * Renders into #obStepEmail (a step inside #onboarding's .ob-step-stack);
  * ui.js's showObStep("email") shows it. Strings are registered into app.js's
- * global T table and translated here via data-ae-i18n (re-applied whenever
- * <html lang> changes). Nothing here is ever written under a gym_ key, so none
- * of it syncs. The password is only ever held in memory. */
+ * global T table; every re-render reads them from there via tr()/t(), and
+ * elements marked data-i18n get re-applied for free by app.js's own
+ * applyStaticI18n() whenever the language toggles (it re-queries the DOM
+ * live, so newly-rendered nodes are covered with no extra wiring here).
+ * Nothing here is ever written under a gym_ key, so none of it syncs. The
+ * password is only ever held in memory. */
 (function () {
   "use strict";
 
@@ -83,6 +86,14 @@
       Object.keys(STR).forEach(function (k) { if (!Object.prototype.hasOwnProperty.call(T, k)) T[k] = STR[k]; });
     }
   } catch (e) {}
+  // app.js (loaded earlier, non-deferred) already ran its own one-time
+  // applyStaticI18n() during initial parse — before this deferred script got
+  // a chance to add the keys above to T. Without this, the static
+  // #obEmailBtn's data-i18n="aeContinueEmail" (index.html) would be stuck
+  // showing the literal key instead of its label until the user happens to
+  // toggle the language. Re-running it now (same function, just a second,
+  // idempotent pass over every [data-i18n] node) catches it up immediately.
+  try { if (typeof applyStaticI18n === "function") applyStaticI18n(); } catch (e) {}
 
   function isAr() { return (document.documentElement.getAttribute("lang") || "").toLowerCase().indexOf("ar") === 0; }
   function curLang() { return isAr() ? "ar" : "en"; }
@@ -199,7 +210,7 @@
     var ac = o.ac ? ' autocomplete="' + o.ac + '"' : "";
     var cls = o.cls ? ' class="' + o.cls + '"' : "";
     var extra = o.extra || "";
-    var hint = o.hintKey ? '<p class="ae-hint">' + escHtml(tr(o.hintKey)) + '</p>' : "";
+    var hint = o.hintKey ? '<p class="ae-hint" data-i18n="' + o.hintKey + '">' + escHtml(tr(o.hintKey)) + '</p>' : "";
     return '<label class="ae-field"><span data-i18n="' + labelKey + '">' + escHtml(tr(labelKey)) + '</span>' +
       '<input id="' + id + '" name="' + id + '" type="' + type + '"' + cls + val + ac + extra + ' required></label>' + hint;
   }
@@ -207,7 +218,7 @@
     return '<button type="button" id="' + id + '" class="ae-link" data-i18n="' + key + '">' + escHtml(tr(key)) + '</button>';
   }
   function errHtml(id) { return '<p class="ae-err" id="' + id + '" role="alert" aria-live="polite"></p>'; }
-  function noticeHtml(msgKey) { return msgKey ? '<p class="ae-notice">' + escHtml(tr(msgKey)) + '</p>' : ""; }
+  function noticeHtml(msgKey) { return msgKey ? '<p class="ae-notice" data-i18n="' + msgKey + '">' + escHtml(tr(msgKey)) + '</p>' : ""; }
   function h2Html(key) { return '<h2 data-i18n="' + key + '">' + escHtml(tr(key)) + '</h2>'; }
 
   function setBusy(btn, busy) {
@@ -339,8 +350,12 @@
         setBusy(btn, true);
         api("login", { email: email, password: password }).then(function (res) {
           setBusy(btn, false);
-          if (res.ok && res.data && res.data.token) GymSync.signInWithToken(res.data.token);
-          else setErr("aeLoginErr", null), (el("aeLoginErr").textContent = errorText(res, "login"));
+          if (res.ok && res.data && res.data.token) {
+            GymSync.signInWithToken(res.data.token);
+          } else {
+            el("aeLoginErr").className = "ae-err";
+            el("aeLoginErr").textContent = errorText(res, "login");
+          }
         });
       });
     } else if (view === "signup") {

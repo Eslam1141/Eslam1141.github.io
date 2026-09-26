@@ -17,6 +17,7 @@
 
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="widgets/coach-loading.css">
+<link rel="stylesheet" href="auth-email.css">
 </head>
 <body>
 
@@ -37,6 +38,7 @@
       </div>
       <div id="obStepChoices" class="ob-step ob-step-choices" inert>
         <div id="obGoogleBtn" class="ob-gbtn"></div>
+        <button id="obEmailBtn" class="ob-secondary" data-i18n="aeContinueEmail">Continue with email</button>
         <button id="obContinueBtn" class="ob-secondary" data-i18n="obContinue">Continue without signing in</button>
         <button id="obWhyToggle" class="ob-why-toggle" aria-expanded="false" data-i18n="obWhy">Why sign in?</button>
         <ul id="obWhy" class="ob-why">
@@ -49,6 +51,9 @@
         <div class="coach-spin" aria-hidden="true"></div>
         <p class="ob-sub" role="status" data-i18n="resolvingSession">Resolving your session…</p>
       </div>
+      <!-- Rendered by auth-email.js; empty until GymAuthEmail.open()/ui.js's
+           showObStep("email") first shows this step. -->
+      <div id="obStepEmail" class="ob-step ob-step-email" inert></div>
     </div>
   </div>
 </section>
@@ -315,6 +320,7 @@
 <script src="coach.js" defer></script>
 <script src="chat.js" defer></script>
 <script src="sync.js" defer></script>
+<script src="auth-email.js" defer></script>
 <script src="calendar.js" defer></script>
 <script src="workout-builder.js" defer></script>
 </body>

@@ -166,10 +166,16 @@
     var start = el("obStepStart");
     var choices = el("obStepChoices");
     var resolving = el("obStepResolving");
+    var email = el("obStepEmail");
     if (!start || !choices) return;
     start.inert = step !== "start";
     choices.inert = step !== "choices";
     if (resolving) resolving.inert = step !== "resolving";
+    // "email" step (auth-email.js) carries longer forms than the other
+    // steps, so it gets a bit more width via this class instead of a fixed
+    // #obStepEmail size that would clip on smaller screens.
+    if (email) { email.inert = step !== "email"; }
+    if (ob) ob.classList.toggle("ob-email-mode", step === "email");
   }
 
   function showOnboarding() {
@@ -270,6 +276,7 @@
     completeSignIn: completeSignIn,
     promptSignIn: promptSignIn,
     showResolvingSession: showResolvingSession,
+    showObStep: showObStep,
     navigate: navigate,
     currentTab: function () { return curTab; }
   };
@@ -305,6 +312,12 @@
     }
     var cont = el("obContinueBtn");
     if (cont) cont.addEventListener("click", startAnon);
+    var emailBtn = el("obEmailBtn");
+    if (emailBtn) {
+      emailBtn.addEventListener("click", function () {
+        if (window.GymAuthEmail && typeof GymAuthEmail.open === "function") GymAuthEmail.open("login");
+      });
+    }
     var whyToggle = el("obWhyToggle");
     var why = el("obWhy");
     if (whyToggle && why) {

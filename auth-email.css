@@ -1,0 +1,55 @@
+/* auth-email.css — email/password/OTP onboarding step (#obStepEmail).
+ *
+ * Sits inside #onboarding's .ob-step-stack alongside the start/choices/
+ * resolving steps (styles.css); ui.js's showObStep("email") shows it and
+ * toggles #onboarding.ob-email-mode, which gives the card a bit more width
+ * than the other steps since these forms carry more content. Colors/spacing
+ * reuse the same custom properties and conventions as styles.css's ob-*
+ * rules and coach.js's .coach-err (#ff6b6b) so this reads as one system in
+ * both themes and both languages. */
+
+.ob-step-email{ align-items:stretch; text-align:start; width:100%; }
+.ob-step-email[inert]{ opacity:0; transform:scale(1.04); }
+
+#onboarding.ob-email-mode .ob-inner{ max-width:420px; }
+
+.ob-step-email h2{ margin:0 0 2px; font-size:19px; font-weight:900; text-align:center; }
+
+.ob-step-email form{ display:flex; flex-direction:column; gap:12px; width:100%; }
+
+.ae-field{ display:flex; flex-direction:column; gap:6px; font-size:12.5px; font-weight:700; color:var(--paper-dim); }
+.ae-field input{
+  font-family:inherit; font-size:14.5px; font-weight:600; color:var(--paper);
+  background:var(--panel2); border:1px solid var(--line); border-radius:11px;
+  padding:11px 13px; width:100%; box-sizing:border-box;
+}
+.ae-field input:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--glow); }
+.ae-otp-input{ letter-spacing:6px; font-size:20px; font-weight:800; text-align:center; }
+
+.ae-hint{ margin:0; font-size:11.5px; color:var(--paper-dim); }
+.ae-sub{ margin:0 0 4px; font-size:13px; color:var(--paper-dim); text-align:center; }
+.ae-sub b{ color:var(--paper); }
+
+.ae-err{ margin:0; font-size:12.5px; font-weight:700; color:#ff6b6b; min-height:1px; }
+.ae-err:empty{ display:none; }
+.ae-notice{
+  margin:0; font-size:13px; color:var(--paper); background:var(--panel);
+  border:1px solid var(--line); border-radius:11px; padding:10px 12px; text-align:center;
+}
+
+.ae-submit{
+  border:none; cursor:pointer; font-family:inherit; font-weight:800; font-size:14.5px;
+  padding:13px 20px; border-radius:14px; color:#fff; width:100%;
+  background-image:linear-gradient(135deg, var(--accent), var(--accent-2));
+}
+.ae-submit:disabled{ opacity:.6; cursor:default; }
+
+.ae-links{ display:flex; flex-direction:column; align-items:center; gap:6px; margin-top:2px; }
+.ae-link{
+  background:none; border:none; color:var(--accent); font-family:inherit;
+  font-size:12.5px; font-weight:700; cursor:pointer; text-decoration:underline; padding:4px;
+}
+.ae-link:disabled{ color:var(--paper-dim); text-decoration:none; cursor:default; }
+
+[dir="rtl"] .ae-field{ text-align:right; }
+[dir="rtl"] .ae-hint{ text-align:right; }
