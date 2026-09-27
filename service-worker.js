@@ -32,14 +32,16 @@ const ASSETS = [
   "./metallic-button.js",
   "./config.js",
   "./manifest.json",
-  "./icons/logo.svg",
+  "./icons/logo-rv.svg",
   "./icons/coach.svg",
   "./icons/avatar-default.svg",
-  "./icons/icon-192.png",
-  "./icons/icon-512.png",
-  "./icons/icon-maskable-192.png",
-  "./icons/icon-maskable-512.png",
-  "./icons/apple-touch-icon.png"
+  "./icons/icon-192-rv.png",
+  "./icons/icon-512-rv.png",
+  "./icons/icon-maskable-192-rv.png",
+  "./icons/icon-maskable-512-rv.png",
+  "./icons/apple-touch-icon-rv.png",
+  "./icons/favicon-32-rv.png",
+  "./icons/favicon-16-rv.png"
 ];
 
 self.addEventListener("install", (event) => {
