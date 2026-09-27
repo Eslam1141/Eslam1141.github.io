@@ -362,7 +362,8 @@ const T = {
   noLog:["No log yet","لا يوجد سجل بعد"],
   wtPH:["wt","وزن"], repPH:["rep","عدد"],
   resetChecklist:["Reset today's checklist","إعادة ضبط قائمة اليوم"],
-  resetConfirm:["Reset today's checklist for this workout?","إعادة ضبط قائمة اليوم لهذا التمرين؟"],
+  resetToastMsg:["Today's checklist was reset.","تمت إعادة ضبط قائمة اليوم."],
+  undo:["Undo","تراجع"],
   dayAlreadyDone:["This workout is already complete for today. Reset the checklist if you want to log it again.","اكتمل هذا التمرين لهذا اليوم بالفعل. أعد ضبط القائمة إذا أردت تسجيله مرة أخرى."],
   notesTitle:["Important Notes","ملاحظات مهمة"],
   skip:["Skip","تخطٍّ"],
@@ -660,9 +661,14 @@ function renderExercises(){
       </div>
       <div class="ex-actions">
         <div class="log-box">
-          <input type="number" inputmode="decimal" placeholder="${last?last.w:t('wtPH')}" data-w="${ex.id}" style="width:38px">
-          <span class="unit">kg</span>
-          <input type="number" inputmode="numeric" placeholder="${last?last.r:t('repPH')}" data-r="${ex.id}" style="width:32px">
+          <span class="log-field">
+            <input type="number" inputmode="decimal" placeholder="${last?last.w:t('wtPH')}" data-w="${ex.id}">
+            <span class="unit">kg</span>
+          </span>
+          <span class="log-field">
+            <input type="number" inputmode="numeric" placeholder="${last?last.r:t('repPH')}" data-r="${ex.id}">
+            <span class="unit">${t('reps')}</span>
+          </span>
         </div>
         <button class="btn-sm" data-save="${ex.id}">
           <svg viewBox="0 0 24 24"><path d="M17 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
@@ -869,12 +875,30 @@ window.GymAppRebuild = function(){
   renderAll();
 };
 
+// P1-8: no more blocking native confirm() — reset happens immediately, with
+// an "Undo" toast (shared .gym-toast component, toast.js) instead of asking
+// first. The data at risk is same-day checklist state, not history, so
+// undo-after-the-fact is the right friction level (matches §4.6).
 document.getElementById("resetLink").onclick = ()=>{
-  if(!confirm(t("resetConfirm"))) return;
-  delete checks[sessionKey(activeDay)];
+  const dayKey = sessionKey(activeDay);
+  const prevChecks = checks[dayKey];
+  if(prevChecks === undefined) return; // nothing to reset
+  delete checks[dayKey];
   saveJSON("gym_checks", checks);
   animateCards = true;
   renderAll();
+  if(window.GymToast && typeof window.GymToast.show === "function"){
+    window.GymToast.show({
+      message: t("resetToastMsg"),
+      actionLabel: t("undo"),
+      onAction: ()=>{
+        checks[dayKey] = prevChecks;
+        saveJSON("gym_checks", checks);
+        animateCards = true;
+        renderAll();
+      }
+    });
+  }
 };
 
 // ---------------- EXPANDED VIDEO MODAL (stays on page) ----------------
@@ -1145,6 +1169,11 @@ function applyLang(lang, persist){
   try {
     if(window.GymCalendar && typeof window.GymCalendar.refresh === "function") window.GymCalendar.refresh(true);
   } catch(e){ if(window.console) console.warn("calendar re-render failed", e); }
+  try {
+    // P0-3: keep the Google Sign-In button's own language in sync with the
+    // app's toggle instead of it silently staying on the browser/OS locale.
+    if(window.GymSync && typeof window.GymSync.refreshLocale === "function") window.GymSync.refreshLocale(lang);
+  } catch(e){ if(window.console) console.warn("google sign-in locale refresh failed", e); }
 }
 
 // ---------------- PLAN + STYLE ----------------
