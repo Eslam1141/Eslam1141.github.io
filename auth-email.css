@@ -46,7 +46,7 @@
 
 .ae-links{ display:flex; flex-direction:column; align-items:center; gap:6px; margin-top:2px; }
 .ae-link{
-  background:none; border:none; color:var(--accent); font-family:inherit;
+  background:none; border:none; color:var(--accent-tint); font-family:inherit;
   font-size:12.5px; font-weight:700; cursor:pointer; text-decoration:underline; padding:4px;
 }
 .ae-link:disabled{ color:var(--paper-dim); text-decoration:none; cursor:default; }
