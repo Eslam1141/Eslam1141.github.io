@@ -1245,6 +1245,25 @@ function renderTitle(){
 // Plan chooser is two steps: Male/Female, then Gym/In-House — picking a
 // plan used to jump straight to the workout, skipping the workout-type
 // choice entirely (it silently kept whatever style was already set).
+//
+// User report ("sometimes I see the old landing page with the Male/Female
+// choose"): this #planChooser IS still part of the current app (not a
+// stale cached copy of an old index.html — see service-worker.js, which
+// is already network-first with a build-time content-hash CACHE_NAME, so
+// there's no literal version to bump here; a genuinely stale offline
+// fallback is possible but narrow). It's a required step — DAYS depends
+// on activePlan/activeStyle — and only ever triggers from two places, both
+// gated on `!isAnonMode() && !activePlan`: right after onboarding finishes
+// (ui.js completeSignIn() -> GymAppRebuild(), below) and on a fresh page
+// load for an already-onboarded, signed-in visitor who never picked one
+// (init block further down). Anon visitors never see it (line below:
+// `isAnonMode() || activePlan`). The "old landing page" impression was
+// purely visual: it used a flat solid background, unrelated to the
+// current onboarding hero's styling, so re-appearing (e.g. right after an
+// anon session converts to a real Google sign-in mid-visit) read as
+// reverting to a different, older screen. Fixed in styles.css by giving
+// #planChooser the same gradient backdrop as #onboarding so it presents
+// as the next step of the one onboarding flow instead of a separate one.
 document.querySelectorAll("[data-choose]").forEach(b=>{
   b.onclick = ()=>{
     activePlan = b.dataset.choose;
