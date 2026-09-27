@@ -9,6 +9,14 @@
      (6.9:1 on --panel2); raw --accent there is only 2.9:1. */
   --accent:#0B7A75; --accent-hover:#096662; --accent-pressed:#07534F;
   --accent-tint:#3CC2B8; --accent-2:#047857; --accent-3:#2BB3A3;
+  /* Fixed brand-mark palette (logo/wordmark reference only — not UI surface tokens).
+     Matches icons/logo-rv*.svg exactly; same across the male/female persona accent
+     since the mark's identity colors don't change with the workout-plan theme.
+     Deliberately NOT named --paper/--rust: those already mean "light UI text color"
+     and "legacy accent alias" above and are getting their own rename in a later PR
+     (see docs/ux/2026-09-28-app-audit.md #4) — reusing them here would collide. */
+  --brand-teal:#0B7A75; --brand-teal-tint:#3CC2B8; --brand-ink:#14161B;
+  --brand-surface-paper:#F3F0E8;
   --radius:14px; --radius-lg:20px;
   --dur-fast:.14s; --dur-med:.28s; --ease:cubic-bezier(.22,.61,.36,1);
   --elev-1:0 2px 10px rgba(0,0,0,.28);
