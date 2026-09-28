@@ -188,7 +188,10 @@
     var pc = el("planChooser"); if (pc) pc.hidden = true;
     document.body.style.overflow = "hidden";
     window.scrollTo(0, 0);
-    showObStep("start");
+    // Choices (Google / email / continue-anon) are visible on the very
+    // first screen instead of gated behind a "Start Changing Yourself" tap
+    // — one fewer step between a new visitor and signing in.
+    showObStep("choices");
     if (heroVideo) { heroVideo.start(); heroVideo.play(); }
   }
   function hideOnboarding() {
