@@ -78,6 +78,29 @@ header.hero .sub{ color:var(--paper-dim); font-size:var(--text-sm); }
 .sp-group .plan-toggle, .more-group .plan-toggle{ margin-top:0; max-width:none; }
 .more-ver{ font-size:var(--text-xs); color:var(--paper-dim); text-align:center; margin-top:8px; }
 
+.premium-card{
+  background:linear-gradient(160deg, color-mix(in srgb, var(--accent) 16%, var(--panel)), var(--panel));
+  border:1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
+  border-radius:var(--radius); padding:16px;
+}
+.premium-card-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+.premium-card-title{ font-weight:800; font-size:var(--text-md); color:var(--paper); }
+.premium-badge{
+  font-size:var(--text-xs); font-weight:700; color:var(--accent-tint);
+  background:color-mix(in srgb, var(--accent) 20%, transparent);
+  border:1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius:999px; padding:3px 10px; white-space:nowrap;
+}
+.premium-perks{ margin:12px 0 0; padding-inline-start:18px; }
+.premium-perks li{ color:var(--paper-dim); font-size:var(--text-sm); margin-bottom:6px; line-height:1.5; }
+.premium-cta{
+  display:block; width:100%; margin-top:14px; padding:11px 16px;
+  min-height:44px; border-radius:10px; border:1px solid var(--line);
+  background:var(--panel2); color:var(--paper-dim); font-family:inherit;
+  font-weight:700; font-size:var(--text-sm); cursor:not-allowed;
+}
+.premium-cta:disabled{ opacity:.75; }
+
 .days-list{ display:flex; flex-direction:column; gap:8px; }
 .days-list button{
   text-align:start; padding:12px 14px; border-radius:10px; cursor:pointer;

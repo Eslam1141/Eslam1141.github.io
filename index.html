@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0">
-<title>Athlex</title>
+<title>RepVane</title>
 
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/svg+xml" href="icons/logo-rv.svg">
@@ -15,7 +15,7 @@
 <meta name="theme-color" content="#0d1117">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Athlex">
+<meta name="apple-mobile-web-app-title" content="RepVane">
 <meta name="mobile-web-app-capable" content="yes">
 
 <link rel="stylesheet" href="styles.css">
@@ -105,7 +105,7 @@
   <div class="wrap">
     <header class="hero">
       <img class="hero-logo" src="icons/logo-rv.svg" alt="" width="46" height="46">
-      <h1 id="appTitleEl">Athlex</h1>
+      <h1 id="appTitleEl">RepVane</h1>
       <div class="sub" id="todayLabel"></div>
     </header>
   </div>
@@ -215,6 +215,22 @@
     <div class="more-group" id="moreAccount"></div>
 
     <div class="more-group" id="moreTrainingDays"></div>
+
+    <div class="more-group more-premium">
+      <div class="more-label" data-i18n="premiumLabel">Premium</div>
+      <div class="premium-card">
+        <div class="premium-card-head">
+          <span class="premium-card-title" data-i18n="premiumTitle">RepVane Premium</span>
+          <span class="premium-badge" data-i18n="premiumSub">Coming soon</span>
+        </div>
+        <ul class="premium-perks">
+          <li data-i18n="premiumPerk1">Higher AI-coach limits</li>
+          <li data-i18n="premiumPerk2">Ramadan mode adjustments</li>
+          <li data-i18n="premiumPerk3">Priority support</li>
+        </ul>
+        <button type="button" class="premium-cta" disabled aria-disabled="true" data-i18n="premiumComingSoon">Coming soon</button>
+      </div>
+    </div>
 
     <div class="install-tip" id="installTip" data-i18n-html="installTip">
       <b>Add this app to your home screen:</b> open your browser menu and choose "Add to Home Screen" so it opens like a regular app.

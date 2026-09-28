@@ -1,6 +1,6 @@
 {
-  "name": "Athlex",
-  "short_name": "Athlex",
+  "name": "RepVane",
+  "short_name": "RepVane",
   "description": "Workout plans with weight tracking, rest timer and form videos",
   "start_url": "./index.html",
   "scope": "./",

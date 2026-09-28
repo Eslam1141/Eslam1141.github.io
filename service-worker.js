@@ -2,7 +2,7 @@
 // a sha256 of the actual ASSETS file contents below, so CACHE_NAME changes
 // automatically whenever a precached asset's content changes — and stays
 // identical across rebuilds when nothing changed, so browsers don't see
-// needless churn. This replaces the old hand-maintained "athlex-vNN" bumps
+// needless churn. This replaces the old hand-maintained "repvane-vNN" bumps
 // (a recurring source of "stale content after deploy" bugs when someone
 // forgot to bump the literal). The activate handler below already deletes
 // any cache key that isn't the current CACHE_NAME, so a changed hash cleans
@@ -12,7 +12,7 @@
 // unprocessed (e.g. local testing via `python -m http.server`, no Docker
 // build), CACHE_NAME is just this fixed string — still syntactically valid
 // and fully functional, just not content-addressed.
-const CACHE_NAME = "athlex-__CACHE_HASH__";
+const CACHE_NAME = "repvane-__CACHE_HASH__";
 const ASSETS = [
   "./index.html",
   "./styles.css",

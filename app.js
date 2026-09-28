@@ -275,9 +275,9 @@ window.GymExerciseVideo = function(name){
   return hit ? EX_VID[hit] : "";
 };
 const T = {
-  appTitle:["Athlex","Athlex"],
-  obTitle:["Your workout, everywhere","تمرينك في كل مكان"],
-  obSub:["Plans, a rest timer, form videos and progress that follows you across devices.","خطط، مؤقّت راحة، فيديوهات أداء، وتقدّم يتابعك عبر أجهزتك."],
+  appTitle:["RepVane","RepVane"],
+  obTitle:["Your AI coach, everywhere","مدرّبك الذكي في كل مكان"],
+  obSub:["Plans, an AI coach that reads your InBody, a rest timer, form videos and progress that follows you across devices.","خطط، مدرّب ذكي يقرأ نتائج InBody، مؤقّت راحة، فيديوهات أداء، وتقدّم يتابعك عبر أجهزتك."],
   obStart:["Start Changing Yourself","ابدأ بتغيير نفسك"],
   obContinue:["Continue without signing in","المتابعة بدون تسجيل الدخول"],
   obWhy:["Why sign in?","لماذا تسجّل الدخول؟"],
@@ -374,6 +374,13 @@ const T = {
   planLabel:["Plan","الخطة"],
   programLabel:["Program","البرنامج"],
   langLabel:["Language","اللغة"],
+  premiumLabel:["Premium","بريميوم"],
+  premiumTitle:["RepVane Premium","RepVane بريميوم"],
+  premiumSub:["Coming soon","قريباً"],
+  premiumPerk1:["Higher AI-coach limits","حدود أعلى لمحادثات المدرّب الذكي"],
+  premiumPerk2:["Ramadan mode adjustments","تعديلات وضع رمضان"],
+  premiumPerk3:["Priority support","دعم ذو أولوية"],
+  premiumComingSoon:["Coming soon","قريباً"],
   daysLabel:["Days","الأيام"],
   navPlan:["Plan","الخطة"],
   navCoach:["Coach","المدرّب"],

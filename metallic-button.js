@@ -484,7 +484,7 @@
   }
 
   // Reads a CSS custom property (e.g. "--accent") off <html>, so the shader
-  // can pick up Athlex's own brand color instead of a generic default, and
+  // can pick up RepVane's own brand color instead of a generic default, and
   // stays in sync when the male/female plan theme (which repoints these
   // variables via [data-plan]) is switched at runtime.
   function readThemeColor(varName, fallback) {
