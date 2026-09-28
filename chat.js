@@ -116,7 +116,7 @@
   var tipTimer = null;
   var tipHideTimer = null;
 
-  var fab, fabTip, chat, backdrop, closeBtn, msgsEl, form, input, sendBtn, iconHost, titleEl;
+  var fab, fabTip, chat, backdrop, closeBtn, msgsEl, announceEl, form, input, sendBtn, iconHost, titleEl;
 
   function els() {
     fab = document.getElementById("coachFab");
@@ -125,12 +125,56 @@
     backdrop = document.getElementById("coachChatBackdrop");
     closeBtn = document.getElementById("coachChatClose");
     msgsEl = document.getElementById("coachChatMsgs");
+    announceEl = document.getElementById("coachChatAnnounce");
     form = document.getElementById("coachChatForm");
     input = document.getElementById("coachChatInput");
     sendBtn = document.getElementById("coachChatSend");
     iconHost = document.getElementById("coachChatIcon");
     titleEl = document.getElementById("coachChatTitle");
     return !!(fab && chat && form && input);
+  }
+
+  function refocusInput() {
+    try { input.focus({ preventScroll: true }); } catch (e) {}
+  }
+
+  function prefersReducedMotion() {
+    try { return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { return false; }
+  }
+
+  // Client-side typewriter for assistant replies (the backend returns the
+  // full reply in one shot, it doesn't stream). Reveals `fullText` into
+  // `el` a chunk at a time; speed adapts to length so a long reply doesn't
+  // take forever. A click/tap on the bubble (or reduced-motion) jumps
+  // straight to the full text. The screen-reader announcement is written
+  // once, up front, into a separate aria-live region — NOT per character —
+  // so assistive tech reads the reply once instead of once per glyph.
+  function typeWriterReply(el, fullText) {
+    if (announceEl) announceEl.textContent = fullText;
+    if (prefersReducedMotion() || !fullText) {
+      el.textContent = fullText;
+      return;
+    }
+    var len = fullText.length;
+    var totalMs = Math.min(1800, Math.max(300, len * 10)); // adaptive: fast for long replies, still visible for short ones
+    var charsPerTick = Math.max(1, Math.ceil(len / (totalMs / 24))); // ~24ms ticks
+    var i = 0;
+    var timer = null;
+    var finish = function () {
+      if (timer == null) return;
+      clearInterval(timer);
+      timer = null;
+      el.textContent = fullText;
+      el.removeEventListener("click", finish);
+    };
+    el.classList.add("coach-chat-msg-typing-tap");
+    el.addEventListener("click", finish);
+    timer = setInterval(function () {
+      i += charsPerTick;
+      if (i >= len) { finish(); return; }
+      el.textContent = fullText.slice(0, i);
+      scrollToBottom();
+    }, 24);
   }
 
   // ---------------- timer-aware visibility ----------------
@@ -298,7 +342,7 @@
           if (!isNaN(d.getTime())) text = fmt(s("quota"), { t: d.toLocaleString(lang() === "ar" ? "ar-EG" : "en-US") });
         }
         msgsEl.appendChild(systemBubble(text));
-        scrollToBottom(); setSending(false);
+        scrollToBottom(); setSending(false); refocusInput();
         return null;
       }
       return res.json().then(function (b) { return { status: res.status, body: b }; })
@@ -308,13 +352,16 @@
       setSending(false);
       if (r.status === 200 && r.body && r.body.reply) {
         pushHistory("assistant", r.body.reply);
-        msgsEl.appendChild(bubble("assistant", r.body.reply));
+        var replyEl = bubble("assistant", "");
+        msgsEl.appendChild(replyEl);
+        typeWriterReply(replyEl, r.body.reply);
         scrollToBottom();
       } else {
         if (window.console) console.warn("[chat] failed", r.status, r.body);
         msgsEl.appendChild(systemBubble(s("err"), { retry: function () { sendMessage(text); } }));
         scrollToBottom();
       }
+      refocusInput();
     }).catch(function (err) {
       var typing = document.getElementById("coachChatTyping");
       if (typing) typing.remove();
@@ -322,6 +369,7 @@
       setSending(false);
       msgsEl.appendChild(systemBubble(s("err"), { retry: function () { sendMessage(text); } }));
       scrollToBottom();
+      refocusInput();
     });
   }
 
