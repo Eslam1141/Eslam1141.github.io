@@ -9,6 +9,29 @@
 
   var API_BASE = (window.GYM_API_BASE || "/api/v1").replace(/\/+$/, "");
   var CLIENT_ID = window.GOOGLE_CLIENT_ID || "";
+  // P0-3: Google Identity Services picks its button/One-Tap language from
+  // the `hl` query param on the gsi/client script URL (there's no per-call
+  // override — `renderButton()`'s GsiButtonConfiguration has no language
+  // field), not from this page's own lang/dir. gisLang tracks which `hl`
+  // the currently-loaded script was requested with, so a later language
+  // toggle only pays for a script reload when it actually needs one.
+  var gisLang = null;
+  function appLang() {
+    try { return document.documentElement.lang === "ar" ? "ar" : "en"; } catch (e) { return "en"; }
+  }
+
+  // P1-7: this box's own strings, hardcoded English with no data-i18n hook
+  // for applyStaticI18n() to reach (it's built via innerHTML at render time,
+  // not present in index.html's markup) — "Sign in to back up progress
+  // across devices." was the one the audit spotted in AR, but its siblings
+  // here (Sync/Signed in as/Sign out) had the exact same gap.
+  var STR = {
+    syncLabel:  { en: "Sync",              ar: "المزامنة" },
+    signedInAs: { en: "Signed in as",      ar: "تم تسجيل الدخول باسم" },
+    signOut:    { en: "Sign out",          ar: "تسجيل الخروج" },
+    syncHint:   { en: "Sign in to back up progress across devices.", ar: "سجّل الدخول لحفظ تقدمك عبر الأجهزة." }
+  };
+  function s(key) { return STR[key][appLang()]; }
   // _debug.onCredential lets a caller hand sync.js an arbitrary, unverified
   // credential string and have it trusted as a real signed-in identity (real
   // sign-in only ever gets here via a signature Google's own SDK already
@@ -583,16 +606,16 @@
     if (!box) return;
     if (signedIn) {
       box.innerHTML =
-        '<div class="sp-label">Sync</div>' +
-        '<div class="sync-signed">Signed in as <b></b></div>' +
-        '<button id="gymSyncOut">Sign out</button>';
+        '<div class="sp-label">' + s("syncLabel") + '</div>' +
+        '<div class="sync-signed">' + s("signedInAs") + ' <b></b></div>' +
+        '<button id="gymSyncOut">' + s("signOut") + '</button>';
       box.querySelector(".sync-signed b").textContent = (profile && profile.email) || "";
       box.querySelector("#gymSyncOut").onclick = signOut;
     } else {
       box.innerHTML =
-        '<div class="sp-label">Sync</div>' +
+        '<div class="sp-label">' + s("syncLabel") + '</div>' +
         '<div id="gymSyncBtn"></div>' +
-        '<p class="sync-hint">Sign in to back up progress across devices.</p>';
+        '<p class="sync-hint">' + s("syncHint") + '</p>';
       renderGoogleButton(box.querySelector("#gymSyncBtn"),
         { theme: "outline", size: "medium", type: "standard" });
     }
@@ -707,7 +730,9 @@
     }
 
     var s = document.createElement("script");
-    s.src = "https://accounts.google.com/gsi/client";
+    s.id = "gymGsiScript";
+    gisLang = appLang();
+    s.src = "https://accounts.google.com/gsi/client?hl=" + gisLang;
     s.async = true; s.defer = true;
     s.onload = function () {
       try {
@@ -716,6 +741,7 @@
           callback: onCredential,
           auto_select: true,
           use_fedcm_for_prompt: true,
+          hl: gisLang, // harmless if GIS ignores it; the script's own ?hl= above is what actually governs the UI language
           // A definitive failure of a button-triggered flow (popup closed,
           // FedCM aborted, third-party sign-in blocked, ...) — onCredential
           // never fires for these. Also fires routinely for ordinary
@@ -757,6 +783,44 @@
     document.head.appendChild(s);
   }
 
+  // P0-3: called from app.js's applyLang() on every language toggle (the
+  // same spot that already re-triggers GymCoach/GymCalendar). If the new
+  // language matches what the loaded GIS script was requested with, the
+  // rendered button is already correct — just re-render it (cheap,
+  // idempotent, keeps signed-in/out markup in sync too). Otherwise there is
+  // no supported runtime way to change an already-initialized GIS client's
+  // language, so reload the script with the new ?hl= and re-initialize.
+  function refreshLocale(lang) {
+    if (!CLIENT_ID) return; // no GIS ever loaded, nothing to refresh
+    lang = lang === "ar" ? "ar" : "en";
+    if (lang === gisLang) { renderAuthUI(); return; }
+    gisLang = lang;
+    try {
+      var old = document.getElementById("gymGsiScript");
+      if (old && old.parentNode) old.parentNode.removeChild(old);
+    } catch (e) {}
+    try { window.google = undefined; } catch (e) {}
+    var s = document.createElement("script");
+    s.id = "gymGsiScript";
+    s.src = "https://accounts.google.com/gsi/client?hl=" + lang;
+    s.async = true; s.defer = true;
+    s.onload = function () {
+      try {
+        google.accounts.id.initialize({
+          client_id: CLIENT_ID,
+          callback: onCredential,
+          auto_select: false, // a language toggle shouldn't itself re-trigger a One Tap prompt
+          use_fedcm_for_prompt: true,
+          hl: lang,
+          error_callback: function () { abandonPendingSignIn(); }
+        });
+        renderAuthUI();
+      } catch (e) { log("[sync] GIS re-init after locale change failed", e && e.message); }
+    };
+    s.onerror = function () { log("[sync] GIS script failed to reload for locale change"); };
+    document.head.appendChild(s);
+  }
+
   window.GymSync = {
     onLocalWrite: onLocalWrite,
     syncNow: function (r) { return syncNow(r || "manual"); },
@@ -787,6 +851,10 @@
     // still be fresh enough to interrupt this same anon session with the
     // resolving overlay on a later reload within PENDING_MAX_AGE_MS.
     clearSignInPending: clearSignInPending,
+    // P0-3: re-renders (and, if needed, reloads) the Google Sign-In button
+    // so it follows the app's own EN/AR toggle instead of the browser/OS
+    // locale. Safe to call even when Google isn't configured (no-op).
+    refreshLocale: refreshLocale,
     _debug: {
       gymKeys: gymKeys, readMeta: readMeta, buildEntries: buildEntries,
       loadCachedSession: loadCachedSession, clearCachedSession: clearCachedSession,

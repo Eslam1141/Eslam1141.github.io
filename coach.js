@@ -1224,7 +1224,11 @@
   function renderHistory() {
     var token = authToken();
     if (!token) { if (window.GymUI) GymUI.promptSignIn(); return; }
-    mount(h("div", { class: "coach-loading" }, h("div", { class: "coach-spin" })));
+    // P-13 (skeleton loading, audit §4.6): list-shaped shimmer instead of a
+    // bare spinner — matches the plan-card rows this list resolves into.
+    var skelRows = [];
+    for (var i = 0; i < 3; i++) skelRows.push(h("div", { class: "skeleton", style: "height:72px;margin-bottom:10px", "aria-hidden": "true" }));
+    mount(h("div", { class: "coach-hist" }, h("div", { "aria-hidden": "true" }, skelRows)));
     fetchTimeout(ASSIST_BASE + "/history?limit=20", { headers: { "Authorization": "Bearer " + token } })
       .then(function (r) { return r.json(); }).then(function (doc) {
         var items = (doc && doc.items) || [];

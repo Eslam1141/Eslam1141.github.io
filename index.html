@@ -151,7 +151,14 @@
       </ol>
     </div>
 
-    <div id="exList"></div>
+    <!-- P-13 skeleton loading (audit §4.6): static shimmer placeholder so a
+         throttled/first load shows shimmer instead of blank space before
+         app.js's renderExercises() replaces this via exList.innerHTML="". -->
+    <div id="exList">
+      <div class="skeleton" style="height:132px;margin-bottom:12px" aria-hidden="true"></div>
+      <div class="skeleton" style="height:132px;margin-bottom:12px" aria-hidden="true"></div>
+      <div class="skeleton" style="height:132px;margin-bottom:12px" aria-hidden="true"></div>
+    </div>
 
     <div class="reset-link" id="resetLink" data-i18n="resetChecklist">Reset today's checklist</div>
 
@@ -319,6 +326,7 @@
 <script src="hero-video.js"></script>
 <script src="metallic-button.js"></script>
 <script src="ui.js"></script>
+<script src="toast.js"></script>
 <script src="app.js"></script>
 <!-- html2canvas: powers coach.js's "Save Image" export of the result card;
      coach.js checks `typeof html2canvas` and falls back to window.print()
