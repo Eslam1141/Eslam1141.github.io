@@ -721,6 +721,26 @@ body:not([data-tab="coach"]) #coachFabTip{ display:none; }
   overflow-y:auto; overflow-x:clip;
 }
 #onboarding[hidden]{ display:none; }
+
+/* --- beams-bg.js: shared canvas-backdrop host (onboarding + coach teaser) ---
+   .beams-bg-host is applied by beams-bg.js itself on mount; the host just
+   needs to be a positioned element so the canvas (inserted as its first
+   child) can sit absolutely behind everything else in it. */
+.beams-bg-host{ position:relative; }
+.beams-bg-canvas{
+  position:absolute; inset:0; width:100%; height:100%;
+  /* -1, not 0: guarantees it paints behind the host's OWN static (non-
+     positioned) children too — a negative z-index descendant is painted
+     before both the in-flow content step and the z-index:0/auto step, so
+     this works whether or not the host's other children are positioned
+     (.coach-teaser's are not; #onboarding's siblings are). */
+  z-index:-1; pointer-events:none; filter:blur(15px); border-radius:inherit;
+}
+@media (prefers-reduced-motion: reduce){
+  /* The JS already freezes the animation loop; drop the blur too so the
+     static frame doesn't cost a blur-filter repaint on every scroll/resize. */
+  .beams-bg-canvas{ filter:none; }
+}
 .ob-video{
   position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
   opacity:0; transition:opacity .8s ease; z-index:0; pointer-events:none;
