@@ -11,54 +11,55 @@ const DAYS_PREVIEW = [
     {id:"pv_plank", en:"Plank (core)", sets:3, reps:"30-45s", rest:45, vid:"fWW5d1ZFhk4", shape:"core_upper", tier:"medium"},
   ]},
 ];
-// 4-day split: Chest+Triceps / Back+Biceps / rest / repeat with different
-// moves. Each day: 3 moves for the paired push/pull muscle, 2 for the other,
-// 2 leg moves and 1 core move — the "B" days reuse the same pairing with a
-// different exercise selection so the week doesn't repeat a single move.
-// One exception: the catalog only has 5 unique chest-exercise videos (needs
-// 6 for a fully-distinct A/B split), so Cable Chest Fly is the one move
-// repeated between Chest & Triceps A and B — everything else across all 4
-// days is unique.
+// Upper/Lower A+B split (rewritten 2026-09-28 from a "user findings" pass —
+// the previous 4-day version paired Chest+Triceps / Back+Biceps and tacked
+// 2 leg moves onto EVERY day, so legs got hit 4x/week with no dedicated leg
+// day while shoulders got no direct work at all. This version: compound
+// lift first on every day, every major muscle group (chest, back, shoulders,
+// arms, quads, hamstrings, glutes, calves) trained ~2x/week via a different
+// exercise/angle each time (e.g. flat bench Upper A vs incline Upper B, back
+// squat Lower A vs hack squat Lower B), push/pull kept 1:1 on both upper
+// days, and no muscle is trained on every single day. Every exercise here
+// already exists elsewhere in the catalog (has a real vid + an AR_EX/AR_DAY
+// translation already) — nothing new to translate or source video for.
 const DAYS_MALE = [
-  { id:"ct_a", label:"Chest & Triceps A", muscles:"Chest, Triceps, Legs, Core", exercises:[
-    {id:"cta_bench", en:"Barbell Bench Press", sets:4, reps:"6-8", rest:150, vid:"0cXAp6WhSj4", shape:"chest_mid", tier:"hard"},
-    {id:"cta_incline", en:"Incline Dumbbell Press", sets:3, reps:"8-10", rest:120, vid:"8fXfwG4ftaQ", shape:"chest_upper", tier:"medium"},
-    {id:"cta_fly", en:"Cable Chest Fly", sets:3, reps:"12-15", rest:60, vid:"I-Ue34qLxc4", shape:"chest_mid", tier:"easy"},
-    {id:"cta_ohext", en:"Overhead Cable Triceps Extension", sets:3, reps:"10-15", rest:60, vid:"tPIWaCKWFF8", shape:"triceps_long", tier:"medium"},
-    {id:"cta_pushdown", en:"Cable Rope Pushdown", sets:3, reps:"12-15", rest:45, vid:"7OF77JMEXhM", shape:"triceps_lateral", tier:"easy"},
-    {id:"cta_squat", en:"Barbell Back Squat", sets:4, reps:"6-8", rest:150, vid:"tNUq6b5t11Q", shape:"quads", tier:"hard"},
-    {id:"cta_legpress", en:"Leg Press", sets:3, reps:"10-12", rest:120, vid:"nDh_BlnLCGc", shape:"quads", tier:"easy"},
-    {id:"cta_core", en:"Hanging Leg Raise (core)", sets:3, reps:"10-15", rest:45, vid:"0wSUjj5j1xo", shape:"core_lower", tier:"hard"},
+  { id:"m_upperA", label:"Upper A", muscles:"Chest, Back, Delts, Arms", exercises:[
+    {id:"mua_bench", en:"Barbell Bench Press", sets:4, reps:"6-8", rest:150, vid:"0cXAp6WhSj4", shape:"chest_mid", tier:"hard"},
+    {id:"mua_pulldown", en:"Lat Pulldown / Pull-up", sets:4, reps:"8-10", rest:120, vid:"bNmvKpJSWKM", shape:"back_lats", tier:"medium"},
+    {id:"mua_ohp", en:"Seated Dumbbell Shoulder Press", sets:3, reps:"10-12", rest:75, vid:"k6tzKisR3NY", shape:"shoulder_front", tier:"medium"},
+    {id:"mua_row", en:"Chest-Supported Row", sets:4, reps:"8-10", rest:90, vid:"uhwcRYpkjvc", shape:"back_mid", tier:"medium"},
+    {id:"mua_lateral", en:"Dumbbell Lateral Raise", sets:3, reps:"15-20", rest:30, vid:"Kl3LEzQ5Zqs", shape:"shoulder_side", tier:"easy"},
+    {id:"mua_facepull", en:"Band Face Pull", sets:3, reps:"15-20", rest:30, vid:"C45c3fR4o28", shape:"shoulder_rear", tier:"easy"},
+    {id:"mua_curl", en:"Barbell Curl", sets:3, reps:"10-12", rest:60, vid:"9_ijHhcwlkM", shape:"biceps_short", tier:"medium"},
+    {id:"mua_pushdown", en:"Cable Rope Pushdown", sets:3, reps:"12-15", rest:45, vid:"7OF77JMEXhM", shape:"triceps_lateral", tier:"easy"},
   ]},
-  { id:"bb_a", label:"Back & Biceps A", muscles:"Back, Biceps, Legs, Core", exercises:[
-    {id:"bba_lat", en:"Lat Pulldown / Pull-up", sets:4, reps:"8-10", rest:120, vid:"bNmvKpJSWKM", shape:"back_lats", tier:"medium"},
-    {id:"bba_csrow", en:"Chest-Supported Row", sets:4, reps:"8-10", rest:90, vid:"uhwcRYpkjvc", shape:"back_mid", tier:"medium"},
-    {id:"bba_cablerow", en:"Seated Cable Row", sets:3, reps:"10-12", rest:75, vid:"8QuMq1GMMng", shape:"back_mid", tier:"easy"},
-    {id:"bba_curl", en:"Barbell Curl", sets:3, reps:"10-12", rest:60, vid:"9_ijHhcwlkM", shape:"biceps_short", tier:"medium"},
-    {id:"bba_inclcurl", en:"Incline Dumbbell Curl", sets:3, reps:"10-12", rest:45, vid:"XhIsIcjIbCw", shape:"biceps_long", tier:"medium"},
-    {id:"bba_rdl", en:"Barbell Romanian Deadlift", sets:3, reps:"8-10", rest:90, vid:"zdip4iexlxg", shape:"hamstrings", shape2:"back_lower", tier:"hard"},
-    {id:"bba_legcurl", en:"Lying Leg Curl", sets:3, reps:"12-15", rest:60, vid:"bgfHeL6eR9Q", shape:"hamstrings", tier:"easy"},
-    {id:"bba_core", en:"Pallof Press (core)", sets:3, reps:"12/side", rest:45, vid:"P1H4IzD9rbQ", shape:"core_obliques", tier:"medium"},
+  { id:"m_lowerA", label:"Lower A", muscles:"Quads, Glutes, Hamstrings, Abs", exercises:[
+    {id:"mla_squat", en:"Barbell Back Squat", sets:4, reps:"6-8", rest:150, vid:"tNUq6b5t11Q", shape:"quads", tier:"hard"},
+    {id:"mla_rdl", en:"Barbell Romanian Deadlift", sets:3, reps:"8-10", rest:90, vid:"zdip4iexlxg", shape:"hamstrings", shape2:"back_lower", tier:"hard"},
+    {id:"mla_legpress", en:"Leg Press", sets:3, reps:"10-12", rest:120, vid:"nDh_BlnLCGc", shape:"quads", tier:"easy"},
+    {id:"mla_legcurl", en:"Lying Leg Curl", sets:3, reps:"12-15", rest:60, vid:"bgfHeL6eR9Q", shape:"hamstrings", tier:"easy"},
+    {id:"mla_bridge", en:"Dumbbell Glute Bridge", sets:3, reps:"15-20", rest:45, vid:"12m6GW59LvQ", shape:"glutes", tier:"easy"},
+    {id:"mla_calf", en:"Standing Calf Raise", sets:3, reps:"15-20", rest:30, vid:"B30JglFGx8Y", shape:"calves", tier:"easy"},
+    {id:"mla_core", en:"Hanging Leg Raise (core)", sets:3, reps:"10-15", rest:45, vid:"0wSUjj5j1xo", shape:"core_lower", tier:"hard"},
   ]},
-  { id:"ct_b", label:"Chest & Triceps B", muscles:"Chest, Triceps, Legs, Core", exercises:[
-    {id:"ctb_dbbench", en:"Dumbbell Bench Press", sets:3, reps:"8-10", rest:90, vid:"Gf65Yy0-wGI", shape:"chest_mid", tier:"medium"},
-    {id:"ctb_pushup", en:"Push-ups", sets:4, reps:"12-20", rest:60, vid:"wD1M-f69Yy8", shape:"chest_mid", tier:"easy"},
-    {id:"ctb_fly", en:"Cable Chest Fly", sets:3, reps:"12-15", rest:60, vid:"I-Ue34qLxc4", shape:"chest_mid", tier:"easy"},
-    {id:"ctb_dips", en:"Bench Dips", sets:3, reps:"12-18", rest:45, vid:"ekgvqS_4Ee4", shape:"triceps_lateral", tier:"easy"},
-    {id:"ctb_super", en:"Biceps + Triceps Superset", sets:3, reps:"12-15", rest:60, vid:"8UIbEovL-xU", shape:"triceps_lateral", tier:"medium"},
-    {id:"ctb_hack", en:"Hack Squat", sets:4, reps:"8-10", rest:120, vid:"g9i05umL5vc", shape:"quads", tier:"medium"},
-    {id:"ctb_legext", en:"Leg Extension", sets:3, reps:"15-20", rest:60, vid:"iQ92TuvBqRo", shape:"quads", tier:"easy"},
-    {id:"ctb_core", en:"Weighted Cable Crunch (core)", sets:3, reps:"12-15", rest:45, vid:"Bvhz7Rfnrr4", shape:"core_upper", tier:"medium"},
+  { id:"m_upperB", label:"Upper B", muscles:"Chest, Back, Delts, Arms", exercises:[
+    {id:"mub_incline", en:"Incline Dumbbell Press", sets:3, reps:"8-10", rest:120, vid:"8fXfwG4ftaQ", shape:"chest_upper", tier:"medium"},
+    {id:"mub_pulldown", en:"Lat Pulldown / Pull-up", sets:4, reps:"8-10", rest:120, vid:"bNmvKpJSWKM", shape:"back_lats", tier:"medium"},
+    {id:"mub_arnold", en:"Arnold Press", sets:3, reps:"12-15", rest:45, vid:"AjB-UXErljM", shape:"shoulder_front", tier:"medium"},
+    {id:"mub_row", en:"Chest-Supported Dumbbell Row", sets:3, reps:"12-15", rest:45, vid:"09wri23R4SU", shape:"back_mid", tier:"easy"},
+    {id:"mub_lateral", en:"Dumbbell Lateral Raise", sets:3, reps:"15-20", rest:30, vid:"Kl3LEzQ5Zqs", shape:"shoulder_side", tier:"easy"},
+    {id:"mub_pullapart", en:"Band Pull-Apart", sets:3, reps:"15-20", rest:30, vid:"qi2y-eI_kuI", shape:"shoulder_rear", tier:"easy"},
+    {id:"mub_hammer", en:"Hammer Curl", sets:3, reps:"12-15", rest:30, vid:"K9LiwcGuqA0", shape:"biceps_short", tier:"medium"},
+    {id:"mub_dips", en:"Bench Dips", sets:3, reps:"12-18", rest:45, vid:"ekgvqS_4Ee4", shape:"triceps_lateral", tier:"easy"},
   ]},
-  { id:"bb_b", label:"Back & Biceps B", muscles:"Back, Biceps, Legs, Core", exercises:[
-    {id:"bbb_tbar", en:"T-Bar Row", sets:3, reps:"8-10", rest:90, vid:"1iQSSqin3ro", shape:"back_mid", tier:"hard"},
-    {id:"bbb_onearm", en:"One-Arm Dumbbell Row", sets:3, reps:"12-15/arm", rest:45, vid:"H8jf3DwlIlo", shape:"back_mid", tier:"medium"},
-    {id:"bbb_csdbrow", en:"Chest-Supported Dumbbell Row", sets:3, reps:"12-15", rest:45, vid:"09wri23R4SU", shape:"back_mid", tier:"easy"},
-    {id:"bbb_hammer", en:"Hammer Curl", sets:3, reps:"12-15", rest:30, vid:"K9LiwcGuqA0", shape:"biceps_short", tier:"medium"},
-    {id:"bbb_super", en:"Biceps Curl + Triceps Extension (superset)", sets:3, reps:"12-15", rest:60, vid:"8UIbEovL-xU", shape:"biceps_short", tier:"medium"},
-    {id:"bbb_bss", en:"Bulgarian Split Squat", sets:3, reps:"10-12/leg", rest:75, vid:"uODWo4YqbT8", shape:"quads", tier:"hard"},
-    {id:"bbb_seatcurl", en:"Seated Leg Curl", sets:3, reps:"12-15", rest:60, vid:"xdbEG3xGLI8", shape:"hamstrings", tier:"easy"},
-    {id:"bbb_core", en:"Plank (core)", sets:3, reps:"30-45s", rest:30, vid:"fWW5d1ZFhk4", shape:"core_obliques", tier:"easy"},
+  { id:"m_lowerB", label:"Lower B", muscles:"Quads, Hamstrings, Calves", exercises:[
+    {id:"mlb_hack", en:"Hack Squat", sets:4, reps:"8-10", rest:120, vid:"g9i05umL5vc", shape:"quads", tier:"medium"},
+    {id:"mlb_sldl", en:"Single-Leg Dumbbell RDL", sets:3, reps:"10-12/leg", rest:45, vid:"kQf5g0y0mO4", shape:"hamstrings", tier:"hard"},
+    {id:"mlb_legext", en:"Leg Extension", sets:3, reps:"15-20", rest:60, vid:"iQ92TuvBqRo", shape:"quads", tier:"easy"},
+    {id:"mlb_seatcurl", en:"Seated Leg Curl", sets:3, reps:"12-15", rest:60, vid:"xdbEG3xGLI8", shape:"hamstrings", tier:"easy"},
+    {id:"mlb_kickback", en:"Band Glute Kickback", sets:3, reps:"15-20/leg", rest:30, vid:"aw9WClmz5jw", shape:"glutes", tier:"easy"},
+    {id:"mlb_calf", en:"Seated Calf Raise (Dumbbell)", sets:3, reps:"15-20", rest:30, vid:"NrHJPauB01I", shape:"calves", tier:"easy"},
+    {id:"mlb_core", en:"Pallof Press (core)", sets:3, reps:"12/side", rest:45, vid:"P1H4IzD9rbQ", shape:"core_obliques", tier:"medium"},
   ]},
 ];
 
@@ -1245,6 +1246,25 @@ function renderTitle(){
 // Plan chooser is two steps: Male/Female, then Gym/In-House — picking a
 // plan used to jump straight to the workout, skipping the workout-type
 // choice entirely (it silently kept whatever style was already set).
+//
+// User report ("sometimes I see the old landing page with the Male/Female
+// choose"): this #planChooser IS still part of the current app (not a
+// stale cached copy of an old index.html — see service-worker.js, which
+// is already network-first with a build-time content-hash CACHE_NAME, so
+// there's no literal version to bump here; a genuinely stale offline
+// fallback is possible but narrow). It's a required step — DAYS depends
+// on activePlan/activeStyle — and only ever triggers from two places, both
+// gated on `!isAnonMode() && !activePlan`: right after onboarding finishes
+// (ui.js completeSignIn() -> GymAppRebuild(), below) and on a fresh page
+// load for an already-onboarded, signed-in visitor who never picked one
+// (init block further down). Anon visitors never see it (line below:
+// `isAnonMode() || activePlan`). The "old landing page" impression was
+// purely visual: it used a flat solid background, unrelated to the
+// current onboarding hero's styling, so re-appearing (e.g. right after an
+// anon session converts to a real Google sign-in mid-visit) read as
+// reverting to a different, older screen. Fixed in styles.css by giving
+// #planChooser the same gradient backdrop as #onboarding so it presents
+// as the next step of the one onboarding flow instead of a separate one.
 document.querySelectorAll("[data-choose]").forEach(b=>{
   b.onclick = ()=>{
     activePlan = b.dataset.choose;
