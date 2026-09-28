@@ -34,13 +34,14 @@
 
   function hide() {
     if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
-    if (root) root.classList.remove("show");
+    if (root) { root.classList.remove("show"); root.inert = true; }
   }
 
   function show(opts) {
     opts = opts || {};
     var el = ensureRoot();
     if (hideTimer) clearTimeout(hideTimer);
+    el.inert = false;
     el.innerHTML = "";
 
     var msg = document.createElement("span");
