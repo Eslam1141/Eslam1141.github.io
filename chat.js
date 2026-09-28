@@ -134,7 +134,18 @@
     return !!(fab && chat && form && input);
   }
 
-  function refocusInput() {
+  // Only steals focus back when the chat is still open AND the input was
+  // the thing focused when the request that led here was sent — otherwise
+  // this fires after the user has already closed the chat, tapped away, or
+  // scrolled elsewhere, and yanking focus back to the input is jarring.
+  // Also skipped entirely on coarse-pointer (touch) devices: programmatic
+  // focus() there pops the on-screen keyboard back up mid-conversation,
+  // which is worse than just leaving focus where the user left it.
+  function isCoarsePointer() {
+    try { return window.matchMedia && window.matchMedia("(pointer: coarse)").matches; } catch (e) { return false; }
+  }
+  function refocusInput(wasFocused) {
+    if (!open || !wasFocused || isCoarsePointer()) return;
     try { input.focus({ preventScroll: true }); } catch (e) {}
   }
 
@@ -149,7 +160,15 @@
   // straight to the full text. The screen-reader announcement is written
   // once, up front, into a separate aria-live region — NOT per character —
   // so assistive tech reads the reply once instead of once per glyph.
+  // Tracks the in-progress typewriter's own finish()/cancel function (there
+  // is ever at most one running — a new reply or a chat close must stop the
+  // previous one) so closeChat() and the next sendMessage() can cut it off
+  // instead of leaving its setInterval ticking pointlessly in the
+  // background (harmless-but-wasteful while closed, and a visible
+  // double-type glitch if it's still running into the next reply).
+  var activeTypewriterCancel = null;
   function typeWriterReply(el, fullText) {
+    if (activeTypewriterCancel) { activeTypewriterCancel(); activeTypewriterCancel = null; }
     if (announceEl) announceEl.textContent = fullText;
     if (prefersReducedMotion() || !fullText) {
       el.textContent = fullText;
@@ -166,9 +185,11 @@
       timer = null;
       el.textContent = fullText;
       el.removeEventListener("click", finish);
+      if (activeTypewriterCancel === finish) activeTypewriterCancel = null;
     };
     el.classList.add("coach-chat-msg-typing-tap");
     el.addEventListener("click", finish);
+    activeTypewriterCancel = finish;
     timer = setInterval(function () {
       i += charsPerTick;
       if (i >= len) { finish(); return; }
@@ -293,6 +314,7 @@
   }
   function closeChat() {
     open = false;
+    if (activeTypewriterCancel) { activeTypewriterCancel(); activeTypewriterCancel = null; }
     chat.classList.remove("show");
     fab.setAttribute("aria-expanded", "false");
     setTimeout(function () { if (!open) chat.hidden = true; }, 220);
@@ -308,6 +330,8 @@
   function sendMessage(text) {
     var token = authToken();
     if (!token) { if (window.GymUI) GymUI.promptSignIn(); return; }
+    if (activeTypewriterCancel) { activeTypewriterCancel(); activeTypewriterCancel = null; } // this new send supersedes any still-typing previous reply
+    var hadFocus = document.activeElement === input; // captured before setSending(true) below disables (and blurs) it
     pushHistory("user", text);
     msgsEl.querySelector(".coach-chat-empty") && (msgsEl.innerHTML = "");
     msgsEl.appendChild(bubble("user", text));
@@ -342,7 +366,7 @@
           if (!isNaN(d.getTime())) text = fmt(s("quota"), { t: d.toLocaleString(lang() === "ar" ? "ar-EG" : "en-US") });
         }
         msgsEl.appendChild(systemBubble(text));
-        scrollToBottom(); setSending(false); refocusInput();
+        scrollToBottom(); setSending(false); refocusInput(hadFocus);
         return null;
       }
       return res.json().then(function (b) { return { status: res.status, body: b }; })
@@ -361,7 +385,7 @@
         msgsEl.appendChild(systemBubble(s("err"), { retry: function () { sendMessage(text); } }));
         scrollToBottom();
       }
-      refocusInput();
+      refocusInput(hadFocus);
     }).catch(function (err) {
       var typing = document.getElementById("coachChatTyping");
       if (typing) typing.remove();
@@ -369,7 +393,7 @@
       setSending(false);
       msgsEl.appendChild(systemBubble(s("err"), { retry: function () { sendMessage(text); } }));
       scrollToBottom();
-      refocusInput();
+      refocusInput(hadFocus);
     });
   }
 
