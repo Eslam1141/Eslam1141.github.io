@@ -61,7 +61,7 @@
     wbFilterEasyOnly: ["Easy only", "السهل فقط"],
     wbNoEasyForArea: ["No easy alternative here — switch to “All exercises”", "لا يوجد بديل سهل هنا — بدّل إلى “كل التمارين”"],
     wbExercisesShort: ["exercises", "تمارين"],
-    wbDropHere: ["Drop or tap exercises to add them here", "اسحب أو اضغط على التمارين لإضافتها هنا"]
+    wbDropRejected: ["Can't add — this day already has an exercise for that muscle area", "تعذّرت الإضافة — هذا اليوم يحتوي بالفعل على تمرين لهذه المنطقة العضلية"]
   };
   function s(k) {
     var e = STR[k];
@@ -137,8 +137,11 @@
 
   // ---------------- plan state + one-per-shape-per-day constraint ----------------
   var plan = null; // { days: [{ name, exercises: [exerciseObj, ...] }] } while the builder is open
-  var selectedDayIndex = 0; // which day tap-to-add places into; clamped in daysEl() whenever a day is removed
+  var selectedDayIndex = 0; // which day tap-to-add places into; clamped at the top of screenEl() whenever a day is removed
   var saveFailedMsg = false; // true after a Save click failed (3 saved-plan slots full); cleared on open()/successful save
+  var dropRejectDayIndex = -1; // day index whose drop was just rejected by canPlace(); -1 = none. Drives a brief inline
+  // message so a failed drag-drop (duplicate muscle area for that day) isn't silent — auto-clears after DROP_REJECT_MS.
+  var DROP_REJECT_MS = 1800;
 
   function newPlan() {
     return { days: [{ name: "Day 1", exercises: [] }] };
@@ -173,6 +176,28 @@
 
   function removeExercise(dayIndex, exIndex) {
     plan.days[dayIndex].exercises.splice(exIndex, 1);
+  }
+
+  // Shared by both drop targets (dayEl()'s own card and stickyDayEl()'s
+  // compact bar). A rejected drop (canPlace() says no — that muscle area is
+  // already used on this day) used to be silent, which reads as "the drag
+  // just didn't work"; now it flashes an inline message under that day for
+  // DROP_REJECT_MS.
+  function handleDrop(dayIndex, e) {
+    e.preventDefault();
+    var name = e.dataTransfer.getData("text/plain");
+    var ex = EXERCISES.filter(function (x) { return x.en === name; })[0];
+    if (!ex) return;
+    if (placeExercise(dayIndex, ex)) {
+      dropRejectDayIndex = -1;
+      rerender();
+    } else {
+      dropRejectDayIndex = dayIndex;
+      rerender();
+      setTimeout(function () {
+        if (dropRejectDayIndex === dayIndex) { dropRejectDayIndex = -1; rerender(); }
+      }, DROP_REJECT_MS);
+    }
   }
 
   // ---------------- palette UI (grouped by muscle group, one section per shape) ----------------
@@ -262,16 +287,12 @@
       class: "wb-day" + (isSelected ? " wb-day-selected" : ""),
       on: {
         dragover: function (e) { e.preventDefault(); },
-        drop: function (e) {
-          e.preventDefault();
-          var name = e.dataTransfer.getData("text/plain");
-          var ex = EXERCISES.filter(function (x) { return x.en === name; })[0];
-          if (ex && placeExercise(dayIndex, ex)) rerender();
-        }
+        drop: function (e) { handleDrop(dayIndex, e); }
       }
     },
       head,
       h.apply(null, ["div", { class: "wb-day-list" }].concat(exList)),
+      dropRejectDayIndex === dayIndex ? h("p", { class: "coach-err", role: "alert" }, s("wbDropRejected")) : null,
       plan.days.length > 1 ? h("button", {
         type: "button", class: "wb-remove-day", on: { click: function () { plan.days.splice(dayIndex, 1); rerender(); } }
       }, s("wbRemoveDay")) : null);
@@ -290,12 +311,7 @@
       class: "wb-sticky-day",
       on: {
         dragover: function (e) { e.preventDefault(); },
-        drop: function (e) {
-          e.preventDefault();
-          var name = e.dataTransfer.getData("text/plain");
-          var ex = EXERCISES.filter(function (x) { return x.en === name; })[0];
-          if (ex && placeExercise(selectedDayIndex, ex)) rerender();
-        }
+        drop: function (e) { handleDrop(selectedDayIndex, e); }
       }
     },
       h("span", { class: "wb-sticky-day-name" }, day.name),
@@ -303,11 +319,6 @@
   }
 
   function daysEl() {
-    // Clamp selectedDayIndex whenever a day has been removed since the last
-    // render (e.g. the remove-day button spliced the selected or a later
-    // day out) so it never points past the end of plan.days.
-    if (selectedDayIndex >= plan.days.length) selectedDayIndex = plan.days.length - 1;
-    if (selectedDayIndex < 0) selectedDayIndex = 0;
     var dayEls = plan.days.map(function (d, i) { return dayEl(d, i); });
     var addBtn = h("button", {
       type: "button", class: "wb-add-day",
@@ -333,6 +344,15 @@
   }
 
   function screenEl() {
+    // Clamp selectedDayIndex first, before anything below reads
+    // plan.days[selectedDayIndex] — stickyDayEl() runs before daysEl() in
+    // the children array below, so a clamp living only inside daysEl() (as
+    // this used to be) left stickyDayEl() reading a stale/out-of-range
+    // index for one render whenever a day was removed (e.g. the sticky bar
+    // would blank out even though a valid day still exists at the clamped
+    // index).
+    if (selectedDayIndex >= plan.days.length) selectedDayIndex = plan.days.length - 1;
+    if (selectedDayIndex < 0) selectedDayIndex = 0;
     var hasAnyExercise = plan.days.some(function (d) { return d.exercises.length > 0; });
     var children = [
       h("button", {
@@ -366,6 +386,7 @@
     plan = newPlan();
     selectedDayIndex = 0;
     saveFailedMsg = false;
+    dropRejectDayIndex = -1;
     mount(screenEl(), true);
   }
 
