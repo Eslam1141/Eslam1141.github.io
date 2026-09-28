@@ -781,7 +781,12 @@ body.onboarding-open #coachFabTip{ display:none !important; }
     radial-gradient(220px 150px at 80% 20%, var(--accent-2), transparent 70%);
   filter:blur(28px); pointer-events:none; opacity:.55;
 }
-.ob-inner > *{ position:relative; z-index:1; }
+/* :not(.ob-fx) matters: without it this tied .ob-fx's own `position:absolute`
+   (line above) at equal specificity, and being declared later this rule won
+   — silently turning the decorative glow into a normal-flow box that added
+   ~300px of dead height to .ob-inner (the exact cause of the landing screen
+   needing to scroll on short viewports). */
+.ob-inner > *:not(.ob-fx){ position:relative; z-index:1; }
 .ob-logo{ width:88px; height:88px; border-radius:22px; box-shadow:0 12px 34px rgba(0,0,0,.45); }
 .ob-title{ margin:4px 0 0; font-size:var(--text-xl); font-weight:900; line-height:1.25; }
 .ob-sub{ margin:0; color:var(--paper-dim); font-size:var(--text-base); max-width:32ch; }
