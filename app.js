@@ -11,54 +11,55 @@ const DAYS_PREVIEW = [
     {id:"pv_plank", en:"Plank (core)", sets:3, reps:"30-45s", rest:45, vid:"fWW5d1ZFhk4", shape:"core_upper", tier:"medium"},
   ]},
 ];
-// 4-day split: Chest+Triceps / Back+Biceps / rest / repeat with different
-// moves. Each day: 3 moves for the paired push/pull muscle, 2 for the other,
-// 2 leg moves and 1 core move — the "B" days reuse the same pairing with a
-// different exercise selection so the week doesn't repeat a single move.
-// One exception: the catalog only has 5 unique chest-exercise videos (needs
-// 6 for a fully-distinct A/B split), so Cable Chest Fly is the one move
-// repeated between Chest & Triceps A and B — everything else across all 4
-// days is unique.
+// Upper/Lower A+B split (rewritten 2026-09-28 from a "user findings" pass —
+// the previous 4-day version paired Chest+Triceps / Back+Biceps and tacked
+// 2 leg moves onto EVERY day, so legs got hit 4x/week with no dedicated leg
+// day while shoulders got no direct work at all. This version: compound
+// lift first on every day, every major muscle group (chest, back, shoulders,
+// arms, quads, hamstrings, glutes, calves) trained ~2x/week via a different
+// exercise/angle each time (e.g. flat bench Upper A vs incline Upper B, back
+// squat Lower A vs hack squat Lower B), push/pull kept 1:1 on both upper
+// days, and no muscle is trained on every single day. Every exercise here
+// already exists elsewhere in the catalog (has a real vid + an AR_EX/AR_DAY
+// translation already) — nothing new to translate or source video for.
 const DAYS_MALE = [
-  { id:"ct_a", label:"Chest & Triceps A", muscles:"Chest, Triceps, Legs, Core", exercises:[
-    {id:"cta_bench", en:"Barbell Bench Press", sets:4, reps:"6-8", rest:150, vid:"0cXAp6WhSj4", shape:"chest_mid", tier:"hard"},
-    {id:"cta_incline", en:"Incline Dumbbell Press", sets:3, reps:"8-10", rest:120, vid:"8fXfwG4ftaQ", shape:"chest_upper", tier:"medium"},
-    {id:"cta_fly", en:"Cable Chest Fly", sets:3, reps:"12-15", rest:60, vid:"I-Ue34qLxc4", shape:"chest_mid", tier:"easy"},
-    {id:"cta_ohext", en:"Overhead Cable Triceps Extension", sets:3, reps:"10-15", rest:60, vid:"tPIWaCKWFF8", shape:"triceps_long", tier:"medium"},
-    {id:"cta_pushdown", en:"Cable Rope Pushdown", sets:3, reps:"12-15", rest:45, vid:"7OF77JMEXhM", shape:"triceps_lateral", tier:"easy"},
-    {id:"cta_squat", en:"Barbell Back Squat", sets:4, reps:"6-8", rest:150, vid:"tNUq6b5t11Q", shape:"quads", tier:"hard"},
-    {id:"cta_legpress", en:"Leg Press", sets:3, reps:"10-12", rest:120, vid:"nDh_BlnLCGc", shape:"quads", tier:"easy"},
-    {id:"cta_core", en:"Hanging Leg Raise (core)", sets:3, reps:"10-15", rest:45, vid:"0wSUjj5j1xo", shape:"core_lower", tier:"hard"},
+  { id:"m_upperA", label:"Upper A", muscles:"Chest, Back, Delts, Arms", exercises:[
+    {id:"mua_bench", en:"Barbell Bench Press", sets:4, reps:"6-8", rest:150, vid:"0cXAp6WhSj4", shape:"chest_mid", tier:"hard"},
+    {id:"mua_pulldown", en:"Lat Pulldown / Pull-up", sets:4, reps:"8-10", rest:120, vid:"bNmvKpJSWKM", shape:"back_lats", tier:"medium"},
+    {id:"mua_ohp", en:"Seated Dumbbell Shoulder Press", sets:3, reps:"10-12", rest:75, vid:"k6tzKisR3NY", shape:"shoulder_front", tier:"medium"},
+    {id:"mua_row", en:"Chest-Supported Row", sets:4, reps:"8-10", rest:90, vid:"uhwcRYpkjvc", shape:"back_mid", tier:"medium"},
+    {id:"mua_lateral", en:"Dumbbell Lateral Raise", sets:3, reps:"15-20", rest:30, vid:"Kl3LEzQ5Zqs", shape:"shoulder_side", tier:"easy"},
+    {id:"mua_facepull", en:"Band Face Pull", sets:3, reps:"15-20", rest:30, vid:"C45c3fR4o28", shape:"shoulder_rear", tier:"easy"},
+    {id:"mua_curl", en:"Barbell Curl", sets:3, reps:"10-12", rest:60, vid:"9_ijHhcwlkM", shape:"biceps_short", tier:"medium"},
+    {id:"mua_pushdown", en:"Cable Rope Pushdown", sets:3, reps:"12-15", rest:45, vid:"7OF77JMEXhM", shape:"triceps_lateral", tier:"easy"},
   ]},
-  { id:"bb_a", label:"Back & Biceps A", muscles:"Back, Biceps, Legs, Core", exercises:[
-    {id:"bba_lat", en:"Lat Pulldown / Pull-up", sets:4, reps:"8-10", rest:120, vid:"bNmvKpJSWKM", shape:"back_lats", tier:"medium"},
-    {id:"bba_csrow", en:"Chest-Supported Row", sets:4, reps:"8-10", rest:90, vid:"uhwcRYpkjvc", shape:"back_mid", tier:"medium"},
-    {id:"bba_cablerow", en:"Seated Cable Row", sets:3, reps:"10-12", rest:75, vid:"8QuMq1GMMng", shape:"back_mid", tier:"easy"},
-    {id:"bba_curl", en:"Barbell Curl", sets:3, reps:"10-12", rest:60, vid:"9_ijHhcwlkM", shape:"biceps_short", tier:"medium"},
-    {id:"bba_inclcurl", en:"Incline Dumbbell Curl", sets:3, reps:"10-12", rest:45, vid:"XhIsIcjIbCw", shape:"biceps_long", tier:"medium"},
-    {id:"bba_rdl", en:"Barbell Romanian Deadlift", sets:3, reps:"8-10", rest:90, vid:"zdip4iexlxg", shape:"hamstrings", shape2:"back_lower", tier:"hard"},
-    {id:"bba_legcurl", en:"Lying Leg Curl", sets:3, reps:"12-15", rest:60, vid:"bgfHeL6eR9Q", shape:"hamstrings", tier:"easy"},
-    {id:"bba_core", en:"Pallof Press (core)", sets:3, reps:"12/side", rest:45, vid:"P1H4IzD9rbQ", shape:"core_obliques", tier:"medium"},
+  { id:"m_lowerA", label:"Lower A", muscles:"Quads, Glutes, Hamstrings, Abs", exercises:[
+    {id:"mla_squat", en:"Barbell Back Squat", sets:4, reps:"6-8", rest:150, vid:"tNUq6b5t11Q", shape:"quads", tier:"hard"},
+    {id:"mla_rdl", en:"Barbell Romanian Deadlift", sets:3, reps:"8-10", rest:90, vid:"zdip4iexlxg", shape:"hamstrings", shape2:"back_lower", tier:"hard"},
+    {id:"mla_legpress", en:"Leg Press", sets:3, reps:"10-12", rest:120, vid:"nDh_BlnLCGc", shape:"quads", tier:"easy"},
+    {id:"mla_legcurl", en:"Lying Leg Curl", sets:3, reps:"12-15", rest:60, vid:"bgfHeL6eR9Q", shape:"hamstrings", tier:"easy"},
+    {id:"mla_bridge", en:"Dumbbell Glute Bridge", sets:3, reps:"15-20", rest:45, vid:"12m6GW59LvQ", shape:"glutes", tier:"easy"},
+    {id:"mla_calf", en:"Standing Calf Raise", sets:3, reps:"15-20", rest:30, vid:"B30JglFGx8Y", shape:"calves", tier:"easy"},
+    {id:"mla_core", en:"Hanging Leg Raise (core)", sets:3, reps:"10-15", rest:45, vid:"0wSUjj5j1xo", shape:"core_lower", tier:"hard"},
   ]},
-  { id:"ct_b", label:"Chest & Triceps B", muscles:"Chest, Triceps, Legs, Core", exercises:[
-    {id:"ctb_dbbench", en:"Dumbbell Bench Press", sets:3, reps:"8-10", rest:90, vid:"Gf65Yy0-wGI", shape:"chest_mid", tier:"medium"},
-    {id:"ctb_pushup", en:"Push-ups", sets:4, reps:"12-20", rest:60, vid:"wD1M-f69Yy8", shape:"chest_mid", tier:"easy"},
-    {id:"ctb_fly", en:"Cable Chest Fly", sets:3, reps:"12-15", rest:60, vid:"I-Ue34qLxc4", shape:"chest_mid", tier:"easy"},
-    {id:"ctb_dips", en:"Bench Dips", sets:3, reps:"12-18", rest:45, vid:"ekgvqS_4Ee4", shape:"triceps_lateral", tier:"easy"},
-    {id:"ctb_super", en:"Biceps + Triceps Superset", sets:3, reps:"12-15", rest:60, vid:"8UIbEovL-xU", shape:"triceps_lateral", tier:"medium"},
-    {id:"ctb_hack", en:"Hack Squat", sets:4, reps:"8-10", rest:120, vid:"g9i05umL5vc", shape:"quads", tier:"medium"},
-    {id:"ctb_legext", en:"Leg Extension", sets:3, reps:"15-20", rest:60, vid:"iQ92TuvBqRo", shape:"quads", tier:"easy"},
-    {id:"ctb_core", en:"Weighted Cable Crunch (core)", sets:3, reps:"12-15", rest:45, vid:"Bvhz7Rfnrr4", shape:"core_upper", tier:"medium"},
+  { id:"m_upperB", label:"Upper B", muscles:"Chest, Back, Delts, Arms", exercises:[
+    {id:"mub_incline", en:"Incline Dumbbell Press", sets:3, reps:"8-10", rest:120, vid:"8fXfwG4ftaQ", shape:"chest_upper", tier:"medium"},
+    {id:"mub_pulldown", en:"Lat Pulldown / Pull-up", sets:4, reps:"8-10", rest:120, vid:"bNmvKpJSWKM", shape:"back_lats", tier:"medium"},
+    {id:"mub_arnold", en:"Arnold Press", sets:3, reps:"12-15", rest:45, vid:"AjB-UXErljM", shape:"shoulder_front", tier:"medium"},
+    {id:"mub_row", en:"Chest-Supported Dumbbell Row", sets:3, reps:"12-15", rest:45, vid:"09wri23R4SU", shape:"back_mid", tier:"easy"},
+    {id:"mub_lateral", en:"Dumbbell Lateral Raise", sets:3, reps:"15-20", rest:30, vid:"Kl3LEzQ5Zqs", shape:"shoulder_side", tier:"easy"},
+    {id:"mub_pullapart", en:"Band Pull-Apart", sets:3, reps:"15-20", rest:30, vid:"qi2y-eI_kuI", shape:"shoulder_rear", tier:"easy"},
+    {id:"mub_hammer", en:"Hammer Curl", sets:3, reps:"12-15", rest:30, vid:"K9LiwcGuqA0", shape:"biceps_short", tier:"medium"},
+    {id:"mub_dips", en:"Bench Dips", sets:3, reps:"12-18", rest:45, vid:"ekgvqS_4Ee4", shape:"triceps_lateral", tier:"easy"},
   ]},
-  { id:"bb_b", label:"Back & Biceps B", muscles:"Back, Biceps, Legs, Core", exercises:[
-    {id:"bbb_tbar", en:"T-Bar Row", sets:3, reps:"8-10", rest:90, vid:"1iQSSqin3ro", shape:"back_mid", tier:"hard"},
-    {id:"bbb_onearm", en:"One-Arm Dumbbell Row", sets:3, reps:"12-15/arm", rest:45, vid:"H8jf3DwlIlo", shape:"back_mid", tier:"medium"},
-    {id:"bbb_csdbrow", en:"Chest-Supported Dumbbell Row", sets:3, reps:"12-15", rest:45, vid:"09wri23R4SU", shape:"back_mid", tier:"easy"},
-    {id:"bbb_hammer", en:"Hammer Curl", sets:3, reps:"12-15", rest:30, vid:"K9LiwcGuqA0", shape:"biceps_short", tier:"medium"},
-    {id:"bbb_super", en:"Biceps Curl + Triceps Extension (superset)", sets:3, reps:"12-15", rest:60, vid:"8UIbEovL-xU", shape:"biceps_short", tier:"medium"},
-    {id:"bbb_bss", en:"Bulgarian Split Squat", sets:3, reps:"10-12/leg", rest:75, vid:"uODWo4YqbT8", shape:"quads", tier:"hard"},
-    {id:"bbb_seatcurl", en:"Seated Leg Curl", sets:3, reps:"12-15", rest:60, vid:"xdbEG3xGLI8", shape:"hamstrings", tier:"easy"},
-    {id:"bbb_core", en:"Plank (core)", sets:3, reps:"30-45s", rest:30, vid:"fWW5d1ZFhk4", shape:"core_obliques", tier:"easy"},
+  { id:"m_lowerB", label:"Lower B", muscles:"Quads, Hamstrings, Calves", exercises:[
+    {id:"mlb_hack", en:"Hack Squat", sets:4, reps:"8-10", rest:120, vid:"g9i05umL5vc", shape:"quads", tier:"medium"},
+    {id:"mlb_sldl", en:"Single-Leg Dumbbell RDL", sets:3, reps:"10-12/leg", rest:45, vid:"kQf5g0y0mO4", shape:"hamstrings", tier:"hard"},
+    {id:"mlb_legext", en:"Leg Extension", sets:3, reps:"15-20", rest:60, vid:"iQ92TuvBqRo", shape:"quads", tier:"easy"},
+    {id:"mlb_seatcurl", en:"Seated Leg Curl", sets:3, reps:"12-15", rest:60, vid:"xdbEG3xGLI8", shape:"hamstrings", tier:"easy"},
+    {id:"mlb_kickback", en:"Band Glute Kickback", sets:3, reps:"15-20/leg", rest:30, vid:"aw9WClmz5jw", shape:"glutes", tier:"easy"},
+    {id:"mlb_calf", en:"Seated Calf Raise (Dumbbell)", sets:3, reps:"15-20", rest:30, vid:"NrHJPauB01I", shape:"calves", tier:"easy"},
+    {id:"mlb_core", en:"Pallof Press (core)", sets:3, reps:"12/side", rest:45, vid:"P1H4IzD9rbQ", shape:"core_obliques", tier:"medium"},
   ]},
 ];
 
@@ -362,7 +363,8 @@ const T = {
   noLog:["No log yet","لا يوجد سجل بعد"],
   wtPH:["wt","وزن"], repPH:["rep","عدد"],
   resetChecklist:["Reset today's checklist","إعادة ضبط قائمة اليوم"],
-  resetConfirm:["Reset today's checklist for this workout?","إعادة ضبط قائمة اليوم لهذا التمرين؟"],
+  resetToastMsg:["Today's checklist was reset.","تمت إعادة ضبط قائمة اليوم."],
+  undo:["Undo","تراجع"],
   dayAlreadyDone:["This workout is already complete for today. Reset the checklist if you want to log it again.","اكتمل هذا التمرين لهذا اليوم بالفعل. أعد ضبط القائمة إذا أردت تسجيله مرة أخرى."],
   notesTitle:["Important Notes","ملاحظات مهمة"],
   skip:["Skip","تخطٍّ"],
@@ -460,6 +462,155 @@ const NOTES = {
     "البيانات محفوظة على هذا الجهاز فقط. اعملي نسخة احتياطية كل أسبوع أو اثنين."
   ]}
 };
+
+// ---------------- ONE-SHOT MIGRATION: PR#44 male-plan id rewrite ----------------
+// PR #44 (2026-09-28, commit 1bba5a6) replaced the old Chest&Triceps/
+// Back&Biceps A/B split with an Upper/Lower A/B split and gave every
+// DAYS_MALE day and exercise a brand-new id (e.g. ct_a -> m_upperA,
+// cta_bench -> mua_bench). That orphaned any existing male-plan user's
+// history in gym_checks/gym_weights/gym_sessions (all keyed by those ids)
+// plus the remembered active-day tab — nothing in the new DAYS_MALE matches
+// the old ids anymore. This is a one-shot, idempotent rewrite guarded by
+// FLAG below: for every old id that has a same-exercise counterpart in the
+// new split (matched by exact `en` name + `vid`), its data is merged onto
+// the new id, never overwriting data already sitting under the new id. Old
+// ids with no counterpart (the rewrite genuinely dropped that exact move —
+// e.g. cta_fly/Cable Chest Fly) are left exactly where they are — nothing
+// is deleted, so a future reviewer can still find it.
+(function migrateMaleIdsV2(){
+  var FLAG = "gym_migr_male_v2";
+  try {
+    if (localStorage.getItem(FLAG) === "1") return;
+
+    var DAY_MAP = { ct_a: "m_upperA", bb_a: "m_lowerA", ct_b: "m_upperB", bb_b: "m_lowerB" };
+    var EX_MAP = {
+      // ct_a (Chest & Triceps A) ->
+      cta_bench: "mua_bench", cta_pushdown: "mua_pushdown", cta_squat: "mla_squat",
+      cta_legpress: "mla_legpress", cta_core: "mla_core", cta_incline: "mub_incline",
+      // cta_fly (Cable Chest Fly), cta_ohext (Overhead Cable Triceps Ext.): no counterpart, left in place.
+      // bb_a (Back & Biceps A) ->
+      bba_lat: "mua_pulldown", bba_csrow: "mua_row", bba_curl: "mua_curl",
+      bba_rdl: "mla_rdl", bba_legcurl: "mla_legcurl", bba_core: "mlb_core",
+      // bba_cablerow (Seated Cable Row), bba_inclcurl (Incline DB Curl): no counterpart.
+      // ct_b (Chest & Triceps B) ->
+      ctb_dips: "mub_dips", ctb_hack: "mlb_hack", ctb_legext: "mlb_legext",
+      // ctb_dbbench, ctb_pushup, ctb_fly, ctb_super, ctb_core: no counterpart.
+      // bb_b (Back & Biceps B) ->
+      bbb_csdbrow: "mub_row", bbb_hammer: "mub_hammer", bbb_seatcurl: "mlb_seatcurl"
+      // bbb_tbar, bbb_onearm, bbb_super, bbb_bss, bbb_core: no counterpart.
+    };
+    // Which new day each mapped exercise id now lives under — built from
+    // DAYS_MALE itself (defined above) so this can never drift out of sync
+    // with the map above.
+    var EX_TO_NEW_DAY = {};
+    DAYS_MALE.forEach(function(d){ d.exercises.forEach(function(ex){ EX_TO_NEW_DAY[ex.id] = d.id; }); });
+
+    var touched = {}; // gym_* key -> true, so we know which sync meta timestamps to bump below
+
+    function readRaw(key){ try { return JSON.parse(localStorage.getItem(key)) || {}; } catch(e){ return {}; } }
+    function writeRaw(key, val){ localStorage.setItem(key, JSON.stringify(val)); touched[key] = true; }
+    function mergeDateArray(oldArr, newArr){
+      // Union two [{date,...}] arrays by date, keeping the existing
+      // (new-id) entry on a same-date conflict — never overwrite new-id data.
+      var byDate = {}; newArr.forEach(function(e){ if (e && e.date) byDate[e.date] = true; });
+      var added = false;
+      oldArr.forEach(function(e){
+        if (!e || !e.date || byDate[e.date]) return;
+        newArr.push(e); byDate[e.date] = true; added = true;
+      });
+      return added;
+    }
+
+    // ---- gym_weights: { exId: [ {date,...}, ... ] }, keyed by exercise only ----
+    var weights = readRaw("gym_weights");
+    var weightsChanged = false;
+    Object.keys(EX_MAP).forEach(function(oldEx){
+      var arr = weights[oldEx];
+      if (!arr || !arr.length) return;
+      var newEx = EX_MAP[oldEx];
+      var existing = weights[newEx] || [];
+      if (mergeDateArray(arr, existing)) { weights[newEx] = existing; weightsChanged = true; }
+    });
+    if (weightsChanged) writeRaw("gym_weights", weights);
+
+    // ---- gym_sessions: { dayId: [ {date, durationSec}, ... ] } ----
+    var sessions = readRaw("gym_sessions");
+    var sessionsChanged = false;
+    Object.keys(DAY_MAP).forEach(function(oldDay){
+      var arr = sessions[oldDay];
+      if (!arr || !arr.length) return;
+      var newDay = DAY_MAP[oldDay];
+      var existing = sessions[newDay] || [];
+      if (mergeDateArray(arr, existing)) { sessions[newDay] = existing; sessionsChanged = true; }
+    });
+    if (sessionsChanged) writeRaw("gym_sessions", sessions);
+
+    // ---- gym_checks: { "YYYY-MM-DD_dayId": { exId: bool } } ----
+    // Note: an exercise's new day isn't always the same rotation slot as its
+    // old day (e.g. cta_incline lived on ct_a but Incline DB Press is now on
+    // m_upperB) — EX_TO_NEW_DAY (derived from the real DAYS_MALE data) is
+    // the source of truth for where each migrated check lands, not DAY_MAP.
+    var checks = readRaw("gym_checks");
+    var checksChanged = false;
+    Object.keys(checks).forEach(function(key){
+      if (key.length < 12 || key.charAt(10) !== "_") return; // not a "YYYY-MM-DD_dayId" key
+      var date = key.slice(0, 10);
+      var dayChecks = checks[key];
+      Object.keys(dayChecks).forEach(function(exId){
+        var newEx = EX_MAP[exId];
+        var newDay = newEx && EX_TO_NEW_DAY[newEx];
+        if (!newDay) return;
+        var newKey = date + "_" + newDay;
+        checks[newKey] = checks[newKey] || {};
+        if (checks[newKey][newEx] === undefined) { // never overwrite existing new-id data
+          checks[newKey][newEx] = dayChecks[exId];
+          checksChanged = true;
+        }
+      });
+    });
+    if (checksChanged) writeRaw("gym_checks", checks);
+
+    // ---- remembered active-day tab (raw dayId string; only the "gym" style used DAYS_MALE) ----
+    (function(){
+      var key = "gym_active_day_male_gym";
+      var v = localStorage.getItem(key);
+      if (v && DAY_MAP[v]) { localStorage.setItem(key, DAY_MAP[v]); touched[key] = true; }
+    })();
+    // ---- pending day-rotation marker (device-local, not gym_-prefixed, never synced) ----
+    try {
+      var last = JSON.parse(localStorage.getItem("gymday_last_completed"));
+      if (last && last.dayId && DAY_MAP[last.dayId]) {
+        last.dayId = DAY_MAP[last.dayId];
+        localStorage.setItem("gymday_last_completed", JSON.stringify(last));
+      }
+    } catch(e){}
+
+    // Sync-safe: bump gym_meta_updatedAt for every key rewritten above so
+    // that when sync.js (loaded later, deferred) does its first pull, this
+    // fresh local migration wins the last-write-wins comparison against any
+    // stale, still-old-id-keyed snapshot already sitting on the server —
+    // and so the *next* push sends the migrated data. sync.js isn't loaded
+    // yet at this point in the page, so window.GymSync.onLocalWrite() isn't
+    // callable — write the same META_KEY blob directly, in the exact shape
+    // sync.js's own readMeta()/writeMeta() use (key -> epoch-ms timestamp).
+    var syncKeys = Object.keys(touched).filter(function(k){ return k.indexOf("gym_") === 0 && k !== "gym_meta_updatedAt"; });
+    if (syncKeys.length) {
+      try {
+        var meta = JSON.parse(localStorage.getItem("gym_meta_updatedAt")) || {};
+        var now = Date.now();
+        syncKeys.forEach(function(k){ meta[k] = now; });
+        localStorage.setItem("gym_meta_updatedAt", JSON.stringify(meta));
+      } catch(e){}
+    }
+
+    localStorage.setItem(FLAG, "1");
+  } catch(e) {
+    // A bad/unexpected blob must never break boot — leave data exactly as
+    // found and let normal fallbacks (e.g. "day id not in DAYS -> DAYS[0]")
+    // handle it, same as before this migration existed.
+    try { if (window.console) console.error("[migrateMaleIdsV2] skipped:", e); } catch(e2){}
+  }
+})();
 
 // ---------------- PLAN + STYLE + LANG STATE ----------------
 let activePlan  = localStorage.getItem("gym_plan");                 // "male" | "female" | null (first run)
@@ -660,9 +811,14 @@ function renderExercises(){
       </div>
       <div class="ex-actions">
         <div class="log-box">
-          <input type="number" inputmode="decimal" placeholder="${last?last.w:t('wtPH')}" data-w="${ex.id}" style="width:38px">
-          <span class="unit">kg</span>
-          <input type="number" inputmode="numeric" placeholder="${last?last.r:t('repPH')}" data-r="${ex.id}" style="width:32px">
+          <span class="log-field">
+            <input type="number" inputmode="decimal" placeholder="${last?last.w:t('wtPH')}" data-w="${ex.id}">
+            <span class="unit">kg</span>
+          </span>
+          <span class="log-field">
+            <input type="number" inputmode="numeric" placeholder="${last?last.r:t('repPH')}" data-r="${ex.id}">
+            <span class="unit">${t('reps')}</span>
+          </span>
         </div>
         <button class="btn-sm" data-save="${ex.id}">
           <svg viewBox="0 0 24 24"><path d="M17 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
@@ -869,12 +1025,30 @@ window.GymAppRebuild = function(){
   renderAll();
 };
 
+// P1-8: no more blocking native confirm() — reset happens immediately, with
+// an "Undo" toast (shared .gym-toast component, toast.js) instead of asking
+// first. The data at risk is same-day checklist state, not history, so
+// undo-after-the-fact is the right friction level (matches §4.6).
 document.getElementById("resetLink").onclick = ()=>{
-  if(!confirm(t("resetConfirm"))) return;
-  delete checks[sessionKey(activeDay)];
+  const dayKey = sessionKey(activeDay);
+  const prevChecks = checks[dayKey];
+  if(prevChecks === undefined) return; // nothing to reset
+  delete checks[dayKey];
   saveJSON("gym_checks", checks);
   animateCards = true;
   renderAll();
+  if(window.GymToast && typeof window.GymToast.show === "function"){
+    window.GymToast.show({
+      message: t("resetToastMsg"),
+      actionLabel: t("undo"),
+      onAction: ()=>{
+        checks[dayKey] = prevChecks;
+        saveJSON("gym_checks", checks);
+        animateCards = true;
+        renderAll();
+      }
+    });
+  }
 };
 
 // ---------------- EXPANDED VIDEO MODAL (stays on page) ----------------
@@ -1145,6 +1319,11 @@ function applyLang(lang, persist){
   try {
     if(window.GymCalendar && typeof window.GymCalendar.refresh === "function") window.GymCalendar.refresh(true);
   } catch(e){ if(window.console) console.warn("calendar re-render failed", e); }
+  try {
+    // P0-3: keep the Google Sign-In button's own language in sync with the
+    // app's toggle instead of it silently staying on the browser/OS locale.
+    if(window.GymSync && typeof window.GymSync.refreshLocale === "function") window.GymSync.refreshLocale(lang);
+  } catch(e){ if(window.console) console.warn("google sign-in locale refresh failed", e); }
 }
 
 // ---------------- PLAN + STYLE ----------------
@@ -1245,6 +1424,25 @@ function renderTitle(){
 // Plan chooser is two steps: Male/Female, then Gym/In-House — picking a
 // plan used to jump straight to the workout, skipping the workout-type
 // choice entirely (it silently kept whatever style was already set).
+//
+// User report ("sometimes I see the old landing page with the Male/Female
+// choose"): this #planChooser IS still part of the current app (not a
+// stale cached copy of an old index.html — see service-worker.js, which
+// is already network-first with a build-time content-hash CACHE_NAME, so
+// there's no literal version to bump here; a genuinely stale offline
+// fallback is possible but narrow). It's a required step — DAYS depends
+// on activePlan/activeStyle — and only ever triggers from two places, both
+// gated on `!isAnonMode() && !activePlan`: right after onboarding finishes
+// (ui.js completeSignIn() -> GymAppRebuild(), below) and on a fresh page
+// load for an already-onboarded, signed-in visitor who never picked one
+// (init block further down). Anon visitors never see it (line below:
+// `isAnonMode() || activePlan`). The "old landing page" impression was
+// purely visual: it used a flat solid background, unrelated to the
+// current onboarding hero's styling, so re-appearing (e.g. right after an
+// anon session converts to a real Google sign-in mid-visit) read as
+// reverting to a different, older screen. Fixed in styles.css by giving
+// #planChooser the same gradient backdrop as #onboarding so it presents
+// as the next step of the one onboarding flow instead of a separate one.
 document.querySelectorAll("[data-choose]").forEach(b=>{
   b.onclick = ()=>{
     activePlan = b.dataset.choose;

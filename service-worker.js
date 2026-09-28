@@ -30,6 +30,7 @@ const ASSETS = [
   "./profile.js",
   "./hero-video.js",
   "./metallic-button.js",
+  "./toast.js",
   "./config.js",
   "./manifest.json",
   "./icons/logo-rv.svg",
