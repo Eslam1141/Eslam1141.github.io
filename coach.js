@@ -521,18 +521,23 @@
     return svg;
   }
 
+  var teaserBeams = null; // RepVaneBeams controller for the current teaser card
+
   function renderTeaser() {
+    if (teaserBeams) { teaserBeams.destroy(); teaserBeams = null; }
     var bullets = h("ul", { class: "coach-bullets" },
       h("li", {}, s("teaseB1")), h("li", {}, s("teaseB2")), h("li", {}, s("teaseB3")));
     var btn = h("button", {
       class: "coach-primary", type: "button",
       on: { click: function () { if (window.GymUI) GymUI.promptSignIn(); } }
     }, s("signIn"));
-    mount(h("div", { class: "coach-teaser card-fx" },
+    var card = h("div", { class: "coach-teaser card-fx" },
       mascot(112),
       h("h2", {}, s("teaseTitle")),
       h("p", { class: "coach-tease-body" }, s("teaseBody")),
-      bullets, btn));
+      bullets, btn);
+    mount(card);
+    if (window.RepVaneBeams) teaserBeams = RepVaneBeams.mount(card, { intensity: "subtle" });
   }
 
   // ---------------- form ----------------
@@ -1259,6 +1264,10 @@
   // ---------------- entry ----------------
   function refresh() {
     if (!document.getElementById("coachBody")) return;
+    // Any refresh replaces #coachBody's content (see mount()); a teaser
+    // beams instance from a prior render would otherwise keep animating
+    // (rAF, ResizeObserver) against a canvas already detached from the DOM.
+    if (teaserBeams) { teaserBeams.destroy(); teaserBeams = null; }
     var authed = window.GymUI && GymUI.isAuthed && GymUI.isAuthed();
     if (!authed) { renderTeaser(); return; }
     var last = loadJSON(LAST_KEY, null);
