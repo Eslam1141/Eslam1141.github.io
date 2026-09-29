@@ -24,7 +24,11 @@ COPY --chown=101:101 widgets/ /usr/share/nginx/html/widgets/
 RUN cd /usr/share/nginx/html && \
     HASH=$(cat index.html styles.css app.js ui.js coach.js chat.js food.js sync.js \
         auth-email.js auth-email.css \
-        calendar.js workout-builder.js header.js notifications.js profile.js hero-video.js metallic-button.js toast.js beams-bg.js config.js manifest.json \n        icons/logo-dv.svg icons/coach.svg icons/avatar-default.svg icons/icon-192-dv.png icons/icon-512-dv.png \n        icons/icon-maskable-192-dv.png icons/icon-maskable-512-dv.png \n        icons/apple-touch-icon-dv.png icons/favicon-32-dv.png icons/favicon-16-dv.png | sha256sum | cut -c1-12) && \n    sed "/^const CACHE_NAME/s/__CACHE_HASH__/${HASH}/" service-worker.js > /tmp/service-worker.js.tmp && \
+        calendar.js workout-builder.js header.js notifications.js profile.js hero-video.js metallic-button.js toast.js beams-bg.js config.js manifest.json \
+        icons/logo-dv.svg icons/coach.svg icons/avatar-default.svg icons/icon-192-dv.png icons/icon-512-dv.png \
+        icons/icon-maskable-192-dv.png icons/icon-maskable-512-dv.png \
+        icons/apple-touch-icon-dv.png icons/favicon-32-dv.png icons/favicon-16-dv.png | sha256sum | cut -c1-12) && \
+    sed "/^const CACHE_NAME/s/__CACHE_HASH__/${HASH}/" service-worker.js > /tmp/service-worker.js.tmp && \
     cat /tmp/service-worker.js.tmp > service-worker.js && \
     rm /tmp/service-worker.js.tmp
 
