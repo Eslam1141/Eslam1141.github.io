@@ -722,7 +722,7 @@ body:not([data-tab="coach"]) #coachFabTip{ display:none; }
 }
 #onboarding[hidden]{ display:none; }
 
-/* --- beams-bg.js: shared canvas-backdrop host (onboarding + coach teaser) ---
+/* --- beams-bg.js: shared canvas-backdrop host (in-app #bgfx + coach teaser) ---
    .beams-bg-host is applied by beams-bg.js itself on mount; the host just
    needs to be a positioned element so the canvas (inserted as its first
    child) can sit absolutely behind everything else in it. */
