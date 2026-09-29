@@ -819,7 +819,7 @@
       runAssessment(buildRequest(st), false);
     });
 
-    mount(h("div", {}, form));
+    mount(h("div", {}, window.GymCheckin ? GymCheckin.renderCard() : null, form));
     refreshValidity();          // dim submit + show hints on first paint
   }
 
@@ -1010,6 +1010,7 @@
           h("div", { class: "coach-res-model" }, r.model || ""),
           h("h2", {}, s("resTargets"))))
     ];
+    if (window.GymCheckin) sections.push(GymCheckin.renderCard());
     // stats (BMI/BMR/TDEE/macros) only make sense when a diet plan was generated;
     // also guards against a "both" response that came back missing dietPlan.
     if (r.want !== "workout" && r.dietPlan) sections.push(stats);
@@ -1275,7 +1276,7 @@
     else renderForm();
   }
 
-  window.GymCoach = { refresh: refresh, currentProfile: currentProfile, newAssessment: renderForm, planSummary: planSummary, ramadan: ramadanMode };
+  window.GymCoach = { refresh: refresh, currentProfile: currentProfile, newAssessment: renderForm, planSummary: planSummary, ramadan: ramadanMode, showResult: renderResult };
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", function () {
