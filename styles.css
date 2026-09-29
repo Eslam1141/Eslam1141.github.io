@@ -1093,6 +1093,24 @@ body:has(#planChooser:not([hidden])) #appNav{ display:none; }
 .coach-form-header-row .coach-field{ flex:1; min-width:0; }
 .card-fx{ box-shadow:var(--elev-1); }
 
+/* ---- Weekly check-in card (Batch B4) — lives inside #coachBody, see
+   checkin.js. Reuses .coach-primary/.coach-secondary/.coach-state/.seg/
+   .coach-form for everything except this card's own compact layout. ---- */
+.checkin-card{
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius-lg);
+  padding:16px 18px; margin:0 0 20px;
+}
+.checkin-card-head{ display:flex; align-items:center; gap:8px; margin:0 0 6px; }
+.checkin-card-head h3{ margin:0; font-size:var(--text-md); font-weight:900; }
+.checkin-card-body{ margin:0 0 12px; font-size:var(--text-sm); color:var(--paper-dim); }
+.checkin-badge{
+  font-size:var(--text-xs); font-weight:800; padding:3px 9px; border-radius:999px;
+  background:var(--green-soft); color:var(--green); white-space:nowrap;
+}
+.checkin-card-facts{ display:flex; flex-wrap:wrap; gap:8px 18px; }
+.checkin-card-fact{ font-size:var(--text-sm); color:var(--paper); font-weight:700; }
+.checkin-form-title{ margin:0 0 4px; font-size:var(--text-lg); font-weight:900; }
+
 /* ---- Coach: teaser ---- */
 .coach-teaser{
   text-align:center; padding:26px 20px 24px; margin:8px 0 20px;
