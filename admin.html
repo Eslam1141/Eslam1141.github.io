@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>RepVane Admin</title>
+  <link rel="icon" href="icons/favicon-32-dv.png">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="admin.css">
+  <script src="config.js"></script>
+</head>
+<body class="adm">
+  <header class="adm-top">
+    <a class="adm-back" id="admBack" href="/"></a>
+    <h1 id="admTitle"></h1>
+    <span class="adm-who" id="admWho"></span>
+  </header>
+  <nav class="adm-tabs" role="tablist" id="admTabs" hidden>
+    <button role="tab" data-tab="overview" id="tabOverview"></button>
+    <button role="tab" data-tab="users" id="tabUsers"></button>
+    <button role="tab" data-tab="activity" id="tabActivity"></button>
+  </nav>
+  <main id="admMain" aria-live="polite"></main>
+  <div class="adm-panel-backdrop" id="admPanelBackdrop" hidden></div>
+  <aside class="adm-panel" id="admPanel" role="dialog" aria-modal="true" aria-labelledby="admPanelTitle" hidden></aside>
+  <script src="admin.js" defer></script>
+</body>
+</html>
