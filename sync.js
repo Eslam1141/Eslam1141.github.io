@@ -335,6 +335,17 @@
       .then(function (doc) {
         if (!doc) return false;
         var changed = applyMerged(doc.entries);
+        // A device still running an older app.js (pre male-plan-id rewrite)
+        // can push old-id gym_checks/gym_weights/gym_sessions data at any
+        // time — applyMerged() above may have just pulled exactly that onto
+        // this device. Re-run the migration on whatever just landed so it
+        // never sits here un-migrated (data-driven: a no-op when nothing
+        // old-id-shaped came down). If it changed anything, schedule a
+        // follow-up push so the migrated data reaches the server too,
+        // rather than waiting on this device's next unrelated write.
+        var migrated = false;
+        try { migrated = !!(window.GymMigrations && window.GymMigrations.maleV2 && window.GymMigrations.maleV2()); } catch (e) {}
+        if (migrated) { changed = true; scheduleDebouncedSync(); }
         if (changed && typeof window.GymApplyExternalUpdate === "function") {
           window.GymApplyExternalUpdate();
         } else if (changed) {
