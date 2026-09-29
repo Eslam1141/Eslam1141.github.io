@@ -9,13 +9,19 @@
 
   var API_BASE = (window.GYM_API_BASE || "/api/v1").replace(/\/+$/, "");
   var CLIENT_ID = window.GOOGLE_CLIENT_ID || "";
-  // P0-3: Google Identity Services picks its button/One-Tap language from
-  // the `hl` query param on the gsi/client script URL (there's no per-call
-  // override — `renderButton()`'s GsiButtonConfiguration has no language
-  // field), not from this page's own lang/dir. gisLang tracks which `hl`
-  // the currently-loaded script was requested with, so a later language
-  // toggle only pays for a script reload when it actually needs one.
+  // P0-3: the One Tap/FedCM prompt's language comes from the `hl` the
+  // gsi/client script was first loaded with (initAuth() below) and isn't
+  // changeable per-call, but a rendered button's language is — via
+  // GsiButtonConfiguration.locale, passed fresh on every renderButton() call
+  // in renderGoogleButton(). gisLang holds the language later toggles should
+  // use for that per-button locale; it starts at the script's own initial
+  // `hl` and refreshLocale() below just updates it and re-renders.
   var gisLang = null;
+  // Last signedIn value gym:authchange was emitted with, so a renderAuthUI()
+  // call that doesn't actually change auth state (e.g. a language toggle)
+  // doesn't re-fire the event and trigger listeners' (header.js, etc.)
+  // unconditional re-fetches for no reason.
+  var lastAuthEmit = null;
   function appLang() {
     try { return document.documentElement.lang === "ar" ? "ar" : "en"; } catch (e) { return "en"; }
   }
@@ -568,7 +574,18 @@
     if (!target || !(window.google && google.accounts && google.accounts.id)) return;
     try {
       target.innerHTML = "";
-      google.accounts.id.renderButton(target, opts);
+      // GsiButtonConfiguration supports its own `locale`, independent of the
+      // ?hl= the gsi/client script was originally loaded with — this is what
+      // lets refreshLocale() below just re-render instead of reloading the
+      // script. Every render gets the current gisLang so a language toggle
+      // never leaves a stale-language button up.
+      var buttonOpts = opts;
+      if (gisLang) {
+        buttonOpts = {};
+        for (var k in opts) { if (Object.prototype.hasOwnProperty.call(opts, k)) buttonOpts[k] = opts[k]; }
+        buttonOpts.locale = gisLang;
+      }
+      google.accounts.id.renderButton(target, buttonOpts);
       // GIS renders the actual button inside a cross-origin iframe, so
       // there's no real "onclick" of ours to hook before the popup/FedCM
       // prompt opens. A capturing pointerdown on this wrapping container
@@ -588,8 +605,15 @@
   function renderAuthUI() {
     var signedIn = isSignedIn();
     // Every auth transition (session restore, sign-in, auth lost, sign-out)
-    // passes through here — header.js listens to show/hide the top bar.
-    emit("gym:authchange", signedIn);
+    // passes through here — header.js listens to show/hide the top bar. But
+    // renderAuthUI() is also called for reasons that aren't an auth
+    // transition (e.g. refreshLocale() on a language toggle), so only emit
+    // when signedIn actually changed — listeners like header.js's
+    // onAuthChange() unconditionally refetch on every event.
+    if (signedIn !== lastAuthEmit) {
+      lastAuthEmit = signedIn;
+      emit("gym:authchange", signedIn);
+    }
 
     // The onboarding hero's Google button — full-width dark pill with the
     // logo and label (filled_black is the closest Google's own renderer
@@ -784,41 +808,16 @@
   }
 
   // P0-3: called from app.js's applyLang() on every language toggle (the
-  // same spot that already re-triggers GymCoach/GymCalendar). If the new
-  // language matches what the loaded GIS script was requested with, the
-  // rendered button is already correct — just re-render it (cheap,
-  // idempotent, keeps signed-in/out markup in sync too). Otherwise there is
-  // no supported runtime way to change an already-initialized GIS client's
-  // language, so reload the script with the new ?hl= and re-initialize.
+  // same spot that already re-triggers GymCoach/GymCalendar). GIS buttons
+  // take a per-render `locale` (GsiButtonConfiguration.locale), so a toggle
+  // just updates gisLang and re-renders through renderAuthUI() ->
+  // renderGoogleButton() — no script reload, no throwing away and
+  // re-running google.accounts.id.initialize() (which used to risk a
+  // double-init if a toggle landed before the first load finished).
   function refreshLocale(lang) {
     if (!CLIENT_ID) return; // no GIS ever loaded, nothing to refresh
-    lang = lang === "ar" ? "ar" : "en";
-    if (lang === gisLang) { renderAuthUI(); return; }
-    gisLang = lang;
-    try {
-      var old = document.getElementById("gymGsiScript");
-      if (old && old.parentNode) old.parentNode.removeChild(old);
-    } catch (e) {}
-    try { window.google = undefined; } catch (e) {}
-    var s = document.createElement("script");
-    s.id = "gymGsiScript";
-    s.src = "https://accounts.google.com/gsi/client?hl=" + lang;
-    s.async = true; s.defer = true;
-    s.onload = function () {
-      try {
-        google.accounts.id.initialize({
-          client_id: CLIENT_ID,
-          callback: onCredential,
-          auto_select: false, // a language toggle shouldn't itself re-trigger a One Tap prompt
-          use_fedcm_for_prompt: true,
-          hl: lang,
-          error_callback: function () { abandonPendingSignIn(); }
-        });
-        renderAuthUI();
-      } catch (e) { log("[sync] GIS re-init after locale change failed", e && e.message); }
-    };
-    s.onerror = function () { log("[sync] GIS script failed to reload for locale change"); };
-    document.head.appendChild(s);
+    gisLang = lang === "ar" ? "ar" : "en";
+    renderAuthUI();
   }
 
   window.GymSync = {
@@ -851,9 +850,9 @@
     // still be fresh enough to interrupt this same anon session with the
     // resolving overlay on a later reload within PENDING_MAX_AGE_MS.
     clearSignInPending: clearSignInPending,
-    // P0-3: re-renders (and, if needed, reloads) the Google Sign-In button
-    // so it follows the app's own EN/AR toggle instead of the browser/OS
-    // locale. Safe to call even when Google isn't configured (no-op).
+    // P0-3: re-renders the Google Sign-In button(s) with the app's own
+    // EN/AR toggle as the locale, instead of the browser/OS locale. Safe to
+    // call even when Google isn't configured (no-op).
     refreshLocale: refreshLocale,
     _debug: {
       gymKeys: gymKeys, readMeta: readMeta, buildEntries: buildEntries,

@@ -1049,7 +1049,12 @@ document.getElementById("resetLink").onclick = ()=>{
       message: t("resetToastMsg"),
       actionLabel: t("undo"),
       onAction: ()=>{
-        checks[dayKey] = prevChecks;
+        // Merge, don't replace: any exercise the user re-checked during the
+        // undo window (checks[dayKey] was rebuilt fresh after the delete
+        // above) would otherwise be silently clobbered by the stale
+        // pre-reset snapshot. Post-reset entries win per-exercise since
+        // they're the more recent user action.
+        checks[dayKey] = Object.assign({}, prevChecks, checks[dayKey]);
         saveJSON("gym_checks", checks);
         animateCards = true;
         renderAll();
