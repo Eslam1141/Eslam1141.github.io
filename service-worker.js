@@ -32,6 +32,7 @@ const ASSETS = [
   "./hero-video.js",
   "./metallic-button.js",
   "./toast.js",
+  "./beams-bg.js",
   "./config.js",
   "./manifest.json",
   "./icons/logo-rv.svg",

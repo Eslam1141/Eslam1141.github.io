@@ -74,6 +74,18 @@
 
   // ---------------- completion data ----------------
   // Map<"YYYY-MM-DD", {complete:boolean, dayId:string}>
+  //
+  // The male-plan id migration (app.js's GymMigrations.maleV2) can leave a
+  // single old-plan day's checks split across up to three new-plan dayIds
+  // sharing the same date key prefix (an exercise's new day isn't always
+  // its old day's slot). Each split key is only ever a *subset* of the
+  // original day's checks, so more than one "YYYY-MM-DD_dayId" key can
+  // legitimately exist for the same date. This map holds exactly one entry
+  // per date (never double-counted — a date is a single calendar cell), and
+  // among the candidates for a date it keeps the one with the most
+  // exercises actually done (the best representative of what was trained
+  // that day), preferring a genuinely complete one on a tie. It never
+  // synthesizes a false "complete" for a split bucket that isn't.
   function computeLocalCompletion(from, to) {
     var map = {};
     var checks;
@@ -85,12 +97,13 @@
       var dayId = key.slice(11);
       var exercises = dayExercises(dayId);
       if (!exercises.length) return;
-      var dayChecks = checks[key] || {};
+      var dayChecks = checks[key];
+      if (!dayChecks || typeof dayChecks !== "object") return;
       var done = exercises.filter(function (ex) { return !!dayChecks[ex.id]; }).length;
       var complete = done === exercises.length;
       var existing = map[date];
-      if (!existing || (complete && !existing.complete)) {
-        map[date] = { complete: complete, dayId: dayId };
+      if (!existing || done > existing.done || (done === existing.done && complete && !existing.complete)) {
+        map[date] = { complete: complete, dayId: dayId, done: done };
       }
     });
     return map;

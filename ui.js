@@ -24,6 +24,7 @@
 
   var ob = null;
   var heroVideo = null;
+  var obBeams = null; // RepVaneBeams controller for the onboarding backdrop
 
   // ---------------- navigation ----------------
   // "profile" is reached only via the avatar menu in #topBar (header.js),
@@ -196,12 +197,14 @@
     // — one fewer step between a new visitor and signing in.
     showObStep("choices");
     if (heroVideo) { heroVideo.start(); heroVideo.play(); }
+    if (!obBeams && window.RepVaneBeams) obBeams = RepVaneBeams.mount(ob, { intensity: "subtle" });
   }
   function hideOnboarding() {
     if (ob) ob.hidden = true;
     document.body.classList.remove("onboarding-open");
     document.body.style.overflow = "";
     if (heroVideo) heroVideo.pause();
+    if (obBeams) { obBeams.destroy(); obBeams = null; }
   }
 
   function rebuild() {
