@@ -180,11 +180,50 @@
     addingFood: null,
     addFieldError: null,
     saveError: null,
-    saving: false
+    saving: false,
+    draftGrams: null,
+    draftMealType: null
   };
   var lastLoadedDate = null;
+  var lastUserSub = null;
+  var lastKnownToday = todayStr(0);
   var searchTimer = null;
   var searchSeq = 0;
+  var stateEpoch = 0; // bumped by resetUserState() so in-flight requests from a
+                       // previous user (sign-out/switch) can't land after we've
+                       // already moved on to the next one
+
+  // Per-user cache key. gym_user_sub is sync.js's device-local record of the
+  // signed-in account's JWT `sub`; it's cleared on sign-out (sync.js:554) and
+  // rewritten on sign-in. We don't rely on sync.js's own account-switch reload
+  // (acceptToken() only reloads when a DIFFERENT sub was already stored — a
+  // sign-out that clears it first, followed by a different Google account,
+  // leaves storedSub null and skips that reload entirely), so food.js tracks
+  // the sub itself and wipes anything cached in memory whenever it changes,
+  // including to/from signed-out.
+  function currentUserSub() {
+    try { return localStorage.getItem("gym_user_sub") || null; } catch (e) { return null; }
+  }
+  function resetUserState() {
+    state.meals = [];
+    state.loadingMeals = false;
+    state.mealsError = false;
+    state.deletingId = null;
+    state.deleteError = false;
+    state.query = "";
+    state.results = [];
+    state.searching = false;
+    state.searchError = false;
+    state.addingFood = null;
+    state.addFieldError = null;
+    state.saveError = null;
+    state.saving = false;
+    state.draftGrams = null;
+    state.draftMealType = null;
+    lastLoadedDate = null;
+    searchSeq++; // invalidate any in-flight search started by the previous user
+    stateEpoch++; // invalidate any in-flight load/search/add started by the previous user
+  }
 
   function foodName(f) {
     var en = f.nameEn || "", ar = f.nameAr || "";
@@ -232,6 +271,7 @@
   // ---------------- network actions ----------------
   function loadMeals() {
     var myDate = state.date;
+    var myEpoch = stateEpoch;
     lastLoadedDate = myDate;
     state.loadingMeals = true;
     state.mealsError = false;
@@ -250,13 +290,14 @@
       if (!res.ok) throw new Error("meals GET " + res.status);
       return res.json();
     }).then(function (body) {
-      if (myDate !== state.date) return; // a later loadMeals() for a different date already superseded this
+      // a later loadMeals() for a different date/user already superseded this
+      if (myEpoch !== stateEpoch || myDate !== state.date) return;
       state.loadingMeals = false;
       if (!body) return;
       state.meals = Array.isArray(body.meals) ? body.meals : [];
       paintTotals(); paintMeals();
     }).catch(function () {
-      if (myDate !== state.date) return;
+      if (myEpoch !== stateEpoch || myDate !== state.date) return;
       state.loadingMeals = false;
       state.mealsError = true;
       state.meals = [];
@@ -310,27 +351,35 @@
     state.addingFood = food;
     state.addFieldError = null;
     state.saveError = null;
+    state.draftGrams = String((food.serving && food.serving.grams) ? Math.round(food.serving.grams) : 100);
+    state.draftMealType = guessMealType();
     paintSearch();
+    var gramsEl = document.getElementById("foodGramsInput");
+    if (gramsEl) gramsEl.focus();
   }
   function cancelAdd() {
     state.addingFood = null;
     state.addFieldError = null;
     state.saveError = null;
+    state.saving = false;
+    state.draftGrams = null;
+    state.draftMealType = null;
     paintSearch();
+    var input = document.getElementById("foodSearchInput");
+    if (input) input.focus();
   }
 
   function confirmAdd() {
     var food = state.addingFood;
     if (!food || state.saving) return;
-    var gramsEl = document.getElementById("foodGramsInput");
-    var mealTypeEl = document.getElementById("foodMealTypeSelect");
-    var grams = gramsEl ? parseFloat(gramsEl.value) : NaN;
+    var grams = parseFloat(state.draftGrams);
     if (!(grams >= 1 && grams <= 3000)) {
       state.addFieldError = s("gramsError");
       paintSearch();
       return;
     }
-    var mealType = mealTypeEl ? mealTypeEl.value : MEAL_TYPES[0];
+    var mealType = state.draftMealType || MEAL_TYPES[0];
+    var myEpoch = stateEpoch;
     state.saving = true;
     state.addFieldError = null;
     state.saveError = null;
@@ -347,16 +396,26 @@
       if (!res.ok) return Promise.reject({ invalid: false });
       return res.json();
     }).then(function (meal) {
-      if (!meal) return;
+      if (myEpoch !== stateEpoch) return; // superseded by a sign-out/user switch
       state.saving = false;
-      state.meals.push(meal);
+      if (!meal) { paintSearch(); return; }
+      // Only splice into the currently-displayed day: the user may have
+      // navigated to a different date while this POST was in flight.
+      if (meal.date === state.date) {
+        state.meals.push(meal);
+        paintTotals(); paintMeals();
+      }
       state.addingFood = null;
+      state.draftGrams = null;
+      state.draftMealType = null;
       state.query = "";
       state.results = [];
       var input = document.getElementById("foodSearchInput");
       if (input) input.value = "";
-      paintTotals(); paintMeals(); paintSearch();
+      paintSearch();
+      if (input) input.focus();
     }).catch(function (err) {
+      if (myEpoch !== stateEpoch) return;
       state.saving = false;
       state.saveError = (err && err.invalid) ? s("addInvalid") : s("addError");
       paintSearch();
@@ -385,11 +444,21 @@
       if (i !== -1) state.meals.splice(i, 1);
       state.deletingId = null;
       paintTotals(); paintMeals();
+      focusMealsHost(); // the deleted row's button (and its focus) is gone
     }).catch(function (err) {
       state.deletingId = null;
       if (!(err && err.silent)) state.deleteError = true;
       paintMeals();
+      focusMealsHost();
     });
+  }
+  function focusMealsHost() {
+    // Only reclaim focus if it was actually dropped (innerHTML clearing the
+    // removed button resets it to <body>) — don't steal it if the user has
+    // since focused something else.
+    if (document.activeElement && document.activeElement !== document.body) return;
+    var host = document.getElementById("foodMealsHost");
+    if (host) host.focus();
   }
 
   function shiftDate(delta) {
@@ -401,6 +470,10 @@
     state.results = [];
     state.addingFood = null;
     state.searchError = false;
+    state.deleteError = false;
+    state.saving = false;
+    state.draftGrams = null;
+    state.draftMealType = null;
     render();
     loadMeals();
   }
@@ -451,7 +524,7 @@
         h("div", { class: "food-meal-name" }, foodName(m)),
         h("div", { class: "food-meal-meta" }, meta)),
       h("button", {
-        type: "button", class: "food-del-btn", "aria-label": s("deleteMeal"),
+        type: "button", class: "food-del-btn", "aria-label": s("deleteMeal") + " " + foodName(m),
         disabled: state.deletingId === m.id,
         on: { click: function () { deleteMeal(m.id); } }
       }, trashIcon()));
@@ -468,13 +541,13 @@
       return;
     }
     if (state.mealsError) {
-      host.appendChild(h("div", { class: "food-error" },
+      host.appendChild(h("div", { class: "food-error", role: "status", "aria-live": "polite" },
         h("span", {}, s("mealsError")),
         h("button", { type: "button", class: "coach-link", on: { click: loadMeals } }, s("retry"))));
       return;
     }
     if (state.deleteError) {
-      host.appendChild(h("div", { class: "food-error" }, s("deleteError")));
+      host.appendChild(h("div", { class: "food-error", role: "status", "aria-live": "polite" }, s("deleteError")));
     }
     if (!state.meals.length) {
       host.appendChild(h("div", { class: "food-empty" }, s("emptyDay")));
@@ -504,23 +577,31 @@
 
   function addPanel() {
     var food = state.addingFood;
-    var defaultGrams = (food.serving && food.serving.grams) ? Math.round(food.serving.grams) : 100;
-    var mealSelect = h("select", { id: "foodMealTypeSelect", class: "" },
+    // Render from the draft in state, not fresh defaults — otherwise every
+    // repaint (a validation error, a failed save) would silently discard
+    // whatever grams/meal-type the user had already entered.
+    var mealSelect = h("select", {
+      id: "foodMealTypeSelect", class: "",
+      on: { change: function (e) { state.draftMealType = e.target.value; } }
+    },
       MEAL_TYPES.map(function (mt) {
-        return h("option", { value: mt, selected: mt === guessMealType() ? "selected" : false }, s(mt));
+        return h("option", { value: mt, selected: mt === state.draftMealType ? "selected" : false }, s(mt));
       }));
     var kids = [
       h("div", { class: "food-add-name" }, foodName(food)),
       h("div", { class: "coach-row" },
         h("div", { class: "coach-field" },
           h("label", { class: "coach-field-l", for: "foodGramsInput" }, s("gramsLabel")),
-          h("input", { id: "foodGramsInput", type: "number", min: "1", max: "3000", step: "1", value: String(defaultGrams) })),
+          h("input", {
+            id: "foodGramsInput", type: "number", min: "1", max: "3000", step: "1", value: String(state.draftGrams),
+            on: { input: function (e) { state.draftGrams = e.target.value; } }
+          })),
         h("div", { class: "coach-field" },
           h("label", { class: "coach-field-l", for: "foodMealTypeSelect" }, s("mealTypeLabel")),
           mealSelect))
     ];
-    if (state.addFieldError) kids.push(h("div", { class: "coach-err" }, state.addFieldError));
-    if (state.saveError) kids.push(h("div", { class: "coach-err" }, state.saveError));
+    if (state.addFieldError) kids.push(h("div", { class: "coach-err", role: "status", "aria-live": "polite" }, state.addFieldError));
+    if (state.saveError) kids.push(h("div", { class: "coach-err", role: "status", "aria-live": "polite" }, state.saveError));
     kids.push(h("div", { class: "coach-row food-add-actions" },
       h("button", { type: "button", class: "coach-secondary", on: { click: cancelAdd } }, s("cancel")),
       h("button", {
@@ -536,11 +617,11 @@
     host.innerHTML = "";
     if (state.addingFood) { host.appendChild(addPanel()); return; }
     if (state.searching) {
-      host.appendChild(h("div", { class: "food-search-hint" }, s("searching")));
+      host.appendChild(h("div", { class: "food-search-hint", role: "status", "aria-live": "polite" }, s("searching")));
       return;
     }
     if (state.searchError) {
-      host.appendChild(h("div", { class: "food-error" },
+      host.appendChild(h("div", { class: "food-error", role: "status", "aria-live": "polite" },
         h("span", {}, s("searchError")),
         h("button", {
           type: "button", class: "coach-link",
@@ -554,7 +635,7 @@
       return;
     }
     if (!state.results.length) {
-      host.appendChild(h("div", { class: "food-search-hint" }, s("noResults")));
+      host.appendChild(h("div", { class: "food-search-hint", role: "status", "aria-live": "polite" }, s("noResults")));
       return;
     }
     host.appendChild(h("div", { class: "food-result-list" }, state.results.map(resultRow)));
@@ -598,11 +679,11 @@
           h("label", { class: "coach-field-l", for: "foodSearchInput" }, s("searchLabel")),
           h("input", {
             id: "foodSearchInput", type: "search", inputmode: "search", autocomplete: "off",
-            placeholder: s("searchPlaceholder"), value: state.query,
+            placeholder: s("searchPlaceholder"), value: state.query, maxlength: "64",
             on: { input: onSearchInput }
           })),
         h("div", { id: "foodSearchResultsHost" })),
-      h("div", { id: "foodMealsHost" }));
+      h("div", { id: "foodMealsHost", tabindex: "-1" }));
     mount(shell);
     paintTotals();
     paintSearch();
@@ -613,7 +694,24 @@
   function refresh() {
     if (!document.getElementById("foodBody")) return;
     var authed = window.GymUI && GymUI.isAuthed && GymUI.isAuthed();
+    var sub = authed ? currentUserSub() : null;
+    if (sub !== lastUserSub) {
+      // Sign-out or an account switch: sync.js's own reload-on-switch only
+      // fires when a DIFFERENT sub was already stored (acceptToken() in
+      // sync.js), so a sign-out (which clears gym_user_sub first) followed by
+      // a different account never triggers it — wipe our own per-user cache
+      // here so the next paint can't show one user's meals to another.
+      resetUserState();
+      lastUserSub = sub;
+    }
     if (!authed) { renderTeaser(); return; }
+    // If the tab was left open across midnight, "today" (and any date the
+    // user hadn't navigated away from) should move forward with it.
+    var freshToday = todayStr(0);
+    if (freshToday !== lastKnownToday) {
+      if (state.date === lastKnownToday) { state.date = freshToday; lastLoadedDate = null; }
+      lastKnownToday = freshToday;
+    }
     var needsLoad = (lastLoadedDate !== state.date);
     if (needsLoad) { state.loadingMeals = true; state.meals = []; }
     render();

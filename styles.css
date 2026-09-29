@@ -1685,6 +1685,7 @@ body:has(#videoModal.show) #topBar{ display:none !important; }
 /* ---- Food screen (food.js) ---- */
 .food-screen{ display:flex; flex-direction:column; gap:14px; }
 .food-date-switch{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+[dir="rtl"] .food-date-btn svg{ transform:scaleX(-1); }
 .food-date-label{ flex:1; text-align:center; font-weight:800; font-size:var(--text-base); color:var(--paper); }
 .food-totals{ padding:14px; border-radius:var(--radius); background:var(--panel); border:1px solid var(--line); display:flex; flex-direction:column; gap:10px; }
 .food-progress{ display:flex; flex-direction:column; gap:5px; }
