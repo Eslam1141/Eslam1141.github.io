@@ -11,10 +11,10 @@
   "dir": "ltr",
   "lang": "en",
   "icons": [
-    { "src": "icons/logo-rv.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
-    { "src": "icons/icon-192-rv.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-512-rv.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-maskable-192-rv.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
-    { "src": "icons/icon-maskable-512-rv.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "icons/logo-dv.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icons/icon-192-dv.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512-dv.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-192-dv.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon-maskable-512-dv.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

@@ -35,16 +35,16 @@ const ASSETS = [
   "./beams-bg.js",
   "./config.js",
   "./manifest.json",
-  "./icons/logo-rv.svg",
+  "./icons/logo-dv.svg",
   "./icons/coach.svg",
   "./icons/avatar-default.svg",
-  "./icons/icon-192-rv.png",
-  "./icons/icon-512-rv.png",
-  "./icons/icon-maskable-192-rv.png",
-  "./icons/icon-maskable-512-rv.png",
-  "./icons/apple-touch-icon-rv.png",
-  "./icons/favicon-32-rv.png",
-  "./icons/favicon-16-rv.png"
+  "./icons/icon-192-dv.png",
+  "./icons/icon-512-dv.png",
+  "./icons/icon-maskable-192-dv.png",
+  "./icons/icon-maskable-512-dv.png",
+  "./icons/apple-touch-icon-dv.png",
+  "./icons/favicon-32-dv.png",
+  "./icons/favicon-16-dv.png"
 ];
 
 self.addEventListener("install", (event) => {
