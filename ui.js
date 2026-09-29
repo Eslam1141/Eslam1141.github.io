@@ -24,7 +24,16 @@
 
   var ob = null;
   var heroVideo = null;
-  var obBeams = null; // RepVaneBeams controller for the onboarding backdrop
+  // RepVaneBeams controller for the in-app backdrop (#bgfx). Runs only while the
+  // app itself is showing: the onboarding/landing screen has its own hero video.
+  var appBeams = null;
+  function startAppBeams() {
+    var host = el("bgfx");
+    if (!appBeams && host && window.RepVaneBeams) appBeams = RepVaneBeams.mount(host, { intensity: "subtle" });
+  }
+  function stopAppBeams() {
+    if (appBeams) { appBeams.destroy(); appBeams = null; }
+  }
 
   // ---------------- navigation ----------------
   // "profile" is reached only via the avatar menu in #topBar (header.js),
@@ -197,14 +206,14 @@
     // — one fewer step between a new visitor and signing in.
     showObStep("choices");
     if (heroVideo) { heroVideo.start(); heroVideo.play(); }
-    if (!obBeams && window.RepVaneBeams) obBeams = RepVaneBeams.mount(ob, { intensity: "subtle" });
+    stopAppBeams();
   }
   function hideOnboarding() {
     if (ob) ob.hidden = true;
     document.body.classList.remove("onboarding-open");
     document.body.style.overflow = "";
     if (heroVideo) heroVideo.pause();
-    if (obBeams) { obBeams.destroy(); obBeams = null; }
+    startAppBeams();
   }
 
   function rebuild() {
@@ -368,6 +377,9 @@
     } else {
       promptSignIn(); // returning, signed-out, no active choice: straight to login
     }
+    // Signed-in / anon boot never goes through hideOnboarding(), so start the
+    // in-app backdrop here when the app (not the landing screen) is showing.
+    if (ob && ob.hidden) startAppBeams();
   }
 
   if (document.readyState === "loading") {
