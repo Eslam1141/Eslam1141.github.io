@@ -384,10 +384,13 @@ const T = {
   daysLabel:["Days","الأيام"],
   navPlan:["Plan","الخطة"],
   navCoach:["Coach","المدرّب"],
+  navFood:["Food","الطعام"],
   navMore:["More","المزيد"],
   coachTitle:["AI Coach","المدرّب الذكي"],
   coachSub:["A diet & training plan built from your numbers","خطة تغذية وتمرين مبنية على أرقامك"],
-  styleCoach:["Coach plan","خطة المدرّب"]
+  styleCoach:["Coach plan","خطة المدرّب"],
+  foodTitle:["Food","الطعام"],
+  foodSub:["Log your meals and see today's totals","سجّل وجباتك وشاهد إجمالي اليوم"]
 };
 const NOTES = {
   male_gym:{ en:[
@@ -1326,6 +1329,9 @@ function applyLang(lang, persist){
   try {
     if(window.GymCalendar && typeof window.GymCalendar.refresh === "function") window.GymCalendar.refresh(true);
   } catch(e){ if(window.console) console.warn("calendar re-render failed", e); }
+  try {
+    if(window.GymFood && typeof window.GymFood.refresh === "function") window.GymFood.refresh();
+  } catch(e){ if(window.console) console.warn("food re-render failed", e); }
   try {
     // P0-3: keep the Google Sign-In button's own language in sync with the
     // app's toggle instead of it silently staying on the browser/OS locale.

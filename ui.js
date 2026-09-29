@@ -29,7 +29,7 @@
   // "profile" is reached only via the avatar menu in #topBar (header.js),
   // never the bottom nav — it has no data-tab button, so it's just another
   // entry in the screen-swap list (navigate()/screenEl()), not a 4th tab.
-  var TABS = ["plan", "coach", "more", "profile"];
+  var TABS = ["plan", "coach", "food", "more", "profile"];
   var curTab = "plan";
 
   function screenEl(tab) { return el("screen-" + tab); }
@@ -152,6 +152,9 @@
     if (tab === "coach" && window.GymCoach && typeof GymCoach.refresh === "function") {
       try { GymCoach.refresh(); } catch (e) { if (window.console) console.warn("coach refresh failed", e); }
     }
+    if (tab === "food" && window.GymFood && typeof GymFood.refresh === "function") {
+      try { GymFood.refresh(); } catch (e) { if (window.console) console.warn("food refresh failed", e); }
+    }
   }
 
   function wireNav() {
@@ -210,6 +213,8 @@
     catch (e) { if (window.console) console.warn("coach refresh failed", e); }
     try { if (window.GymCalendar && typeof GymCalendar.refresh === "function") GymCalendar.refresh(); }
     catch (e) { if (window.console) console.warn("calendar refresh failed", e); }
+    try { if (window.GymFood && typeof GymFood.refresh === "function") GymFood.refresh(); }
+    catch (e) { if (window.console) console.warn("food refresh failed", e); }
   }
 
   function startAnon() {
