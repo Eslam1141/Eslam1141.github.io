@@ -32,7 +32,43 @@
     provTitle: ["Sign-in methods", "طرق تسجيل الدخول"],
     pGoogle: ["Google", "Google"],
     pPassword: ["Email & password", "البريد وكلمة المرور"],
-    pBoth: ["Both", "كلاهما"]
+    pBoth: ["Both", "كلاهما"],
+    search: ["Search by email or name", "ابحث بالبريد أو الاسم"],
+    sortNew: ["Newest first", "الأحدث أولًا"],
+    sortSeen: ["Recently active", "النشطون مؤخرًا"],
+    colJoined: ["Joined", "انضم"],
+    colSeen: ["Last active", "آخر نشاط"],
+    colMethod: ["Sign-in", "الدخول"],
+    blocked: ["Blocked", "محظور"],
+    admin: ["Admin", "مسؤول"],
+    none: ["No users found.", "لا يوجد مستخدمون."],
+    prev: ["Previous", "السابق"],
+    next: ["Next", "التالي"],
+    pageOf: ["Page {p} of {n} · {t} users", "صفحة {p} من {n} · {t} مستخدم"],
+    close: ["Close", "إغلاق"],
+    kvEmail: ["Email", "البريد"], kvId: ["User ID", "معرّف المستخدم"], kvVerified: ["Email verified", "البريد موثّق"],
+    kvStreak: ["Streak", "السلسلة"], kvDays: ["Days trained", "أيام التمرين"], kvWorkouts: ["Workouts logged", "التمارين المسجلة"],
+    kvMeals: ["Meals logged", "الوجبات المسجلة"], kvBlockedAt: ["Blocked since", "محظور منذ"],
+    yes: ["Yes", "نعم"], no: ["No", "لا"],
+    editTitle: ["Edit profile", "تعديل الملف"],
+    fName: ["Display name", "الاسم الظاهر"], fWeight: ["Weight (kg)", "الوزن (كجم)"], fHeight: ["Height (cm)", "الطول (سم)"],
+    fVerified: ["Email verified", "البريد موثّق"],
+    save: ["Save", "حفظ"], saved: ["Saved.", "تم الحفظ."],
+    reset: ["Send password reset", "إرسال إعادة تعيين كلمة المرور"], resetSent: ["Reset email sent.", "تم إرسال بريد إعادة التعيين."],
+    block: ["Block", "حظر"], unblock: ["Unblock", "إلغاء الحظر"],
+    blockConfirm: ["Block {e}? They will be signed out everywhere.", "حظر {e}؟ سيتم تسجيل خروجه من كل مكان."],
+    del: ["Delete account", "حذف الحساب"],
+    delTitle: ["Delete this account permanently?", "حذف هذا الحساب نهائيًا؟"],
+    delBody: ["This deletes the account and all its data (workouts, meals, photos, AI coach history). It cannot be undone. Type the user's email to confirm:", "سيؤدي هذا إلى حذف الحساب وكل بياناته (التمارين، الوجبات، الصور، سجل المدرب الذكي). لا يمكن التراجع. اكتب بريد المستخدم للتأكيد:"],
+    delGo: ["Delete permanently", "حذف نهائي"], cancel: ["Cancel", "إلغاء"],
+    deleted: ["Account deleted.", "تم حذف الحساب."],
+    eCannotAdmin: ["Admin accounts can't be changed here.", "لا يمكن تعديل حسابات المسؤولين من هنا."],
+    eNoPassword: ["This account signs in with Google only.", "هذا الحساب يسجّل الدخول عبر Google فقط."],
+    eMismatch: ["The email doesn't match.", "البريد غير مطابق."],
+    eAssistant: ["Couldn't delete AI coach data, so nothing was deleted. Try again later.", "تعذر حذف بيانات المدرب الذكي، لذلك لم يُحذف شيء. حاول لاحقًا."],
+    eUnavailable: ["This action isn't configured on the server yet.", "هذا الإجراء غير مُعدّ على الخادم بعد."],
+    eNotFound: ["User not found.", "المستخدم غير موجود."],
+    eGeneric: ["Something went wrong. Try again.", "حدث خطأ. حاول مرة أخرى."]
   };
   function s(key, params) {
     var v = STR[key] ? STR[key][AR ? 1 : 0] : key;
@@ -189,7 +225,207 @@
     return svg;
   }
 
-  // Task 4 adds views.users; Task 5 adds views.activity.
+  // ---- users: shared helpers ----
+  function errText(r) {
+    switch (r.code) {
+      case "cannot_modify_admin": return s("eCannotAdmin");
+      case "no_password": return s("eNoPassword");
+      case "confirm_mismatch": return s("eMismatch");
+      case "assistant_delete_failed": return s("eAssistant");
+      case "delete_unavailable": case "reset_unavailable": return s("eUnavailable");
+      case "not_found": return s("eNotFound");
+      case "invalid_request": return r.message || s("eGeneric");
+      default: return s("eGeneric");
+    }
+  }
+  function provLabel(p) { return s(p === "google" ? "pGoogle" : p === "both" ? "pBoth" : "pPassword"); }
+  var DEFAULT_AV = "icons/avatar-default.svg";
+  function avatar(u, big) {
+    var img = el("img", { class: "adm-av", alt: "", width: big ? 64 : 36, height: big ? 64 : 36, referrerpolicy: "no-referrer", loading: "lazy" });
+    img.src = u.picture || DEFAULT_AV;
+    img.addEventListener("error", function () { if (img.src.indexOf(DEFAULT_AV) < 0) img.src = DEFAULT_AV; });
+    return img;
+  }
+
+  // ---- users: list view ----
+  state.users = { q: "", sort: "created", page: 1 };
+  var searchTimer = null;
+  views.users = function () {
+    var u = state.users;
+    main.textContent = "";
+    var input = el("input", { type: "search", placeholder: s("search"), "aria-label": s("search"), maxlength: "100", value: u.q });
+    input.addEventListener("input", function () {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(function () { u.q = input.value.trim(); u.page = 1; loadList(); }, 300);
+    });
+    var sel = el("select", { "aria-label": s("sortNew") }, [
+      el("option", { value: "created", text: s("sortNew") }), el("option", { value: "lastSeen", text: s("sortSeen") })
+    ]);
+    sel.value = u.sort;
+    sel.addEventListener("change", function () { u.sort = sel.value; u.page = 1; loadList(); });
+    main.appendChild(el("div", { class: "adm-tools" }, [input, sel]));
+    var host = el("div", { id: "admListHost" });
+    main.appendChild(host);
+    loadList();
+  };
+  var listSeq = 0;
+  function loadList() {
+    var u = state.users, seq = ++listSeq;
+    var host = document.getElementById("admListHost");
+    if (!host) return;
+    var qs = "?page=" + u.page + "&pageSize=25&sort=" + encodeURIComponent(u.sort) + (u.q ? "&q=" + encodeURIComponent(u.q) : "");
+    api("/users" + qs).then(function (r) {
+      if (seq !== listSeq) return; // a newer search superseded this one
+      if (authFailed(r)) return;
+      host.textContent = "";
+      if (!r.ok) { host.appendChild(el("p", { class: "adm-err", role: "alert", text: s("loadErr") })); return; }
+      var d = r.data;
+      if (!d.users.length) { host.appendChild(el("p", { class: "adm-msg", text: s("none") })); return; }
+      host.appendChild(el("div", { class: "adm-list" }, d.users.map(function (x) {
+        return el("button", { type: "button", class: "adm-row", onclick: function () { openUser(x.id); } }, [
+          avatar(x),
+          el("span", null, [el("div", { class: "adm-email", text: x.email }), el("div", { class: "adm-sub", text: x.displayName || x.name || "" })]),
+          el("span", { class: "adm-sub adm-col-hide", text: s("colJoined") + ": " + fmtDate(x.createdAt) }),
+          el("span", { class: "adm-sub adm-col-hide", text: s("colSeen") + ": " + fmtDate(x.lastSeenAt) }),
+          el("span", { class: "adm-sub adm-col-hide", text: provLabel(x.provider) }),
+          x.blocked ? el("span", { class: "adm-badge blocked", text: s("blocked") }) : el("span")
+        ]);
+      })));
+      var pages = Math.max(1, Math.ceil(d.total / d.pageSize));
+      host.appendChild(el("div", { class: "adm-pager" }, [
+        el("button", { class: "adm-btn", text: s("prev"), disabled: u.page <= 1, onclick: function () { u.page--; loadList(); } }),
+        el("span", { class: "adm-sub", text: s("pageOf", { p: u.page, n: pages, t: fmtNum(d.total) }) }),
+        el("button", { class: "adm-btn", text: s("next"), disabled: u.page >= pages, onclick: function () { u.page++; loadList(); } })
+      ]));
+    });
+  }
+
+  // ---- users: detail panel + actions ----
+  var panel, backdrop, lastFocus;
+  function closePanel() {
+    panel.hidden = true; backdrop.hidden = true; panel.textContent = "";
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  function openUser(id) {
+    panel = document.getElementById("admPanel"); backdrop = document.getElementById("admPanelBackdrop");
+    lastFocus = document.activeElement;
+    panel.hidden = false; backdrop.hidden = false;
+    backdrop.onclick = closePanel;
+    panel.textContent = "";
+    panel.appendChild(el("p", { class: "adm-msg", text: s("loading") }));
+    api("/users/" + encodeURIComponent(id)).then(function (r) {
+      if (authFailed(r)) { closePanel(); return; }
+      if (!r.ok) { panel.textContent = ""; panel.appendChild(el("p", { class: "adm-err", text: errText(r) })); panel.appendChild(el("button", { class: "adm-btn", text: s("close"), onclick: closePanel })); return; }
+      drawUser(r.data);
+    });
+  }
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && panel && !panel.hidden) closePanel(); });
+
+  function drawUser(u) {
+    panel.textContent = "";
+    var status = el("p", { class: "adm-err", role: "status", "aria-live": "polite" });
+    function done(r, okText) {
+      if (authFailed(r)) { closePanel(); return false; }
+      if (!r.ok) { status.className = "adm-err"; status.textContent = errText(r); return false; }
+      status.className = "adm-ok"; status.textContent = okText || "";
+      return true;
+    }
+    var img = avatar(u, true);
+    if (u.hasPhoto) {
+      api("/users/" + encodeURIComponent(u.id) + "/photo").then(function (r) {
+        if (r.ok && r.blob) r.blob.blob().then(function (b) { img.src = URL.createObjectURL(b); });
+      });
+    }
+    var badges = el("div", null, [
+      u.isAdmin ? el("span", { class: "adm-badge", text: s("admin") }) : null,
+      u.blocked ? el("span", { class: "adm-badge blocked", text: s("blocked") }) : null,
+      el("span", { class: "adm-badge", text: provLabel(u.provider) })
+    ]);
+    var kv = el("dl", { class: "adm-kv" });
+    [["kvEmail", u.email], ["kvId", u.id], ["colJoined", fmtDate(u.createdAt)], ["colSeen", fmtDate(u.lastSeenAt)],
+     ["kvVerified", s(u.emailVerified ? "yes" : "no")], ["kvStreak", fmtNum(u.currentStreak)], ["kvDays", fmtNum(u.totalDaysTrained)],
+     ["kvWorkouts", fmtNum(u.workouts)], ["kvMeals", fmtNum(u.meals)], u.blocked ? ["kvBlockedAt", fmtDate(u.blockedAt)] : null
+    ].forEach(function (p) { if (p) { kv.appendChild(el("dt", { text: s(p[0]) })); kv.appendChild(el("dd", { text: p[1] })); } });
+
+    var fName = el("input", { type: "text", maxlength: "50", value: u.displayName || u.name || "" });
+    var fW = el("input", { type: "number", min: "20", max: "400", step: "0.1", value: u.weightKg || "" });
+    var fH = el("input", { type: "number", min: "50", max: "250", step: "0.1", value: u.heightCm || "" });
+    var fV = el("input", { type: "checkbox" }); fV.checked = !!u.emailVerified;
+    var form = el("form", { class: "adm-form" }, [
+      el("h3", { text: s("editTitle") }),
+      el("label", null, [s("fName"), fName]), el("label", null, [s("fWeight"), fW]), el("label", null, [s("fHeight"), fH]),
+      u.provider !== "google" && !u.isAdmin ? el("label", null, [fV, " ", s("fVerified")]) : null,
+      el("button", { class: "adm-btn primary", type: "submit", text: s("save") })
+    ]);
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var body = {};
+      if (fName.value.trim() !== (u.displayName || u.name || "")) body.displayName = fName.value.trim();
+      if (fW.value !== "" && Number(fW.value) !== u.weightKg) body.weightKg = Number(fW.value);
+      if (fH.value !== "" && Number(fH.value) !== u.heightCm) body.heightCm = Number(fH.value);
+      if (fV.isConnected && fV.checked !== !!u.emailVerified) body.emailVerified = fV.checked;
+      if (!Object.keys(body).length) { status.className = "adm-ok"; status.textContent = s("saved"); return; }
+      api("/users/" + encodeURIComponent(u.id), { method: "PATCH", body: body }).then(function (r) {
+        if (done(r, s("saved"))) { drawUser(r.data); loadList(); }
+      });
+    });
+
+    var actions = el("div", { class: "adm-actions" });
+    if (u.hasPassword) actions.appendChild(el("button", { class: "adm-btn", text: s("reset"), onclick: function () {
+      api("/users/" + encodeURIComponent(u.id) + "/reset-password", { method: "POST", body: { lang: LANG } }).then(function (r) { done(r, s("resetSent")); });
+    } }));
+    if (!u.isAdmin) {
+      actions.appendChild(el("button", { class: "adm-btn", text: s(u.blocked ? "unblock" : "block"), onclick: function () {
+        if (!u.blocked && !window.confirm(s("blockConfirm", { e: u.email }))) return;
+        api("/users/" + encodeURIComponent(u.id) + "/" + (u.blocked ? "unblock" : "block"), { method: "POST" }).then(function (r) {
+          if (done(r)) { drawUser(r.data); loadList(); }
+        });
+      } }));
+      actions.appendChild(el("button", { class: "adm-btn danger", text: s("del"), onclick: function () { deleteDialog(u, status); } }));
+    }
+
+    panel.appendChild(el("button", { class: "adm-btn", text: s("close"), onclick: closePanel, style: "float:inline-end" }));
+    panel.appendChild(img);
+    panel.appendChild(el("h2", { id: "admPanelTitle", text: u.displayName || u.name || u.email }));
+    panel.appendChild(badges);
+    panel.appendChild(kv);
+    panel.appendChild(form);
+    panel.appendChild(actions);
+    panel.appendChild(status);
+    panel.querySelector("button").focus();
+  }
+
+  function deleteDialog(u, status) {
+    var input = el("input", { type: "email", autocomplete: "off", "aria-label": s("kvEmail") });
+    var go = el("button", { class: "adm-btn danger", text: s("delGo"), disabled: true });
+    var err = el("p", { class: "adm-err", role: "alert" });
+    var box = el("div", { class: "adm-section", role: "alertdialog", "aria-labelledby": "admDelTitle" }, [
+      el("h2", { id: "admDelTitle", text: s("delTitle") }),
+      el("p", { text: s("delBody") }),
+      el("p", null, [el("b", { text: u.email })]),
+      input, err,
+      el("div", { class: "adm-actions" }, [go, el("button", { class: "adm-btn", text: s("cancel"), onclick: function () { box.remove(); } })])
+    ]);
+    input.addEventListener("input", function () {
+      go.disabled = input.value.trim().toLowerCase() !== String(u.email || "").trim().toLowerCase();
+    });
+    go.addEventListener("click", function () {
+      go.disabled = true;
+      api("/users/" + encodeURIComponent(u.id), { method: "DELETE", body: { confirmEmail: input.value.trim() } }).then(function (r) {
+        if (authFailed(r)) { closePanel(); return; }
+        if (!r.ok) { err.textContent = errText(r); go.disabled = false; return; }
+        closePanel();
+        loadList();
+        var note = el("p", { class: "adm-ok", role: "status", text: s("deleted") });
+        main.insertBefore(note, main.firstChild);
+        setTimeout(function () { note.remove(); }, 5000);
+      });
+    });
+    panel.appendChild(box);
+    input.focus();
+  }
+
+  // Task 5 adds views.activity.
   window.__admin = { api: api, s: s, addStrings: addStrings, el: el, fmtDate: fmtDate, fmtNum: fmtNum, authFailed: authFailed, showError: showError, views: views, render: render, state: state, AR: AR, API_BASE: API_BASE, session: session };
 
   function init() {
