@@ -470,25 +470,32 @@ const NOTES = {
   ]}
 };
 
-// ---------------- ONE-SHOT MIGRATION: PR#44 male-plan id rewrite ----------------
+// ---------------- DATA-DRIVEN MIGRATION: PR#44 male-plan id rewrite ----------------
 // PR #44 (2026-09-28, commit 1bba5a6) replaced the old Chest&Triceps/
 // Back&Biceps A/B split with an Upper/Lower A/B split and gave every
 // DAYS_MALE day and exercise a brand-new id (e.g. ct_a -> m_upperA,
 // cta_bench -> mua_bench). That orphaned any existing male-plan user's
 // history in gym_checks/gym_weights/gym_sessions (all keyed by those ids)
 // plus the remembered active-day tab — nothing in the new DAYS_MALE matches
-// the old ids anymore. This is a one-shot, idempotent rewrite guarded by
-// FLAG below: for every old id that has a same-exercise counterpart in the
-// new split (matched by exact `en` name + `vid`), its data is merged onto
-// the new id, never overwriting data already sitting under the new id. Old
-// ids with no counterpart (the rewrite genuinely dropped that exact move —
-// e.g. cta_fly/Cable Chest Fly) are left exactly where they are — nothing
-// is deleted, so a future reviewer can still find it.
-(function migrateMaleIdsV2(){
-  var FLAG = "gym_migr_male_v2";
+// the old ids anymore. This is a data-driven, idempotent rewrite: for every
+// old id that has a same-exercise counterpart in the new split (matched by
+// exact `en` name + `vid`), its data is merged onto the new id, never
+// overwriting data already sitting under the new id. Old ids with no
+// counterpart (the rewrite genuinely dropped that exact move — e.g.
+// cta_fly/Cable Chest Fly) are left exactly where they are — nothing is
+// deleted, so a future reviewer can still find it.
+//
+// Exposed as window.GymMigrations.maleV2() (not a one-shot flag-gated IIFE)
+// so it can be re-run whenever old-id data might exist: once here at boot,
+// and again by sync.js after every server pull — a device still on an
+// older app.js can push old-id data at any point, and that data needs
+// migrating the moment it lands here, not just once on this device's first
+// boot after the id rewrite shipped. Every write below only fires when old-
+// id data is actually found unmerged, so a call that finds nothing to do
+// is a fast no-op.
+window.GymMigrations = window.GymMigrations || {};
+window.GymMigrations.maleV2 = function migrateMaleIdsV2(){
   try {
-    if (localStorage.getItem(FLAG) === "1") return;
-
     var DAY_MAP = { ct_a: "m_upperA", bb_a: "m_lowerA", ct_b: "m_upperB", bb_b: "m_lowerB" };
     var EX_MAP = {
       // ct_a (Chest & Triceps A) ->
@@ -514,7 +521,16 @@ const NOTES = {
 
     var touched = {}; // gym_* key -> true, so we know which sync meta timestamps to bump below
 
-    function readRaw(key){ try { return JSON.parse(localStorage.getItem(key)) || {}; } catch(e){ return {}; } }
+    // A corrupt/unexpected blob (null, a bare number/string, an array) must
+    // yield a plain object here, never something Object.keys()/property
+    // access on it could choke on downstream — fall back to {} for anything
+    // that isn't a real non-array object.
+    function readRaw(key){
+      try {
+        var v = JSON.parse(localStorage.getItem(key));
+        return (v && typeof v === "object" && !Array.isArray(v)) ? v : {};
+      } catch(e){ return {}; }
+    }
     function writeRaw(key, val){ localStorage.setItem(key, JSON.stringify(val)); touched[key] = true; }
     function mergeDateArray(oldArr, newArr){
       // Union two [{date,...}] arrays by date, keeping the existing
@@ -527,17 +543,46 @@ const NOTES = {
       });
       return added;
     }
+    // Review fix (PR#48 HIGH): mergeDateArray() above appends migrated-in
+    // old-id entries at the END, regardless of date, so a newer new-id entry
+    // logged after #44 shipped ends up BEFORE an older migrated-in one.
+    // lastLog()/lastSessionFor() read arr[arr.length-1] and the weight-input
+    // placeholder uses that "last" entry, so Save-without-typing would log a
+    // stale weight. Sort every migration-touched array back into date-
+    // ascending order — and since this also repairs arrays #46's original
+    // (pre-fix) one-shot run already left mis-ordered, it must run every
+    // time on every mapped new-id array, not just ones this run just merged
+    // into, and must only report a change when the order actually moved
+    // (so the idempotent no-op case in review's run2 stays a no-op).
+    function sortByDateAsc(arr){
+      arr.sort(function(a, b){
+        var ad = (a && a.date) || "", bd = (b && b.date) || "";
+        return ad < bd ? -1 : ad > bd ? 1 : 0;
+      });
+    }
+    function repairOrder(obj, newIds){
+      var changed = false;
+      newIds.forEach(function(id){
+        var arr = obj[id];
+        if (!Array.isArray(arr) || arr.length < 2) return;
+        var before = arr.slice();
+        sortByDateAsc(arr);
+        for (var i = 0; i < arr.length; i++) { if (arr[i] !== before[i]) { changed = true; break; } }
+      });
+      return changed;
+    }
 
     // ---- gym_weights: { exId: [ {date,...}, ... ] }, keyed by exercise only ----
     var weights = readRaw("gym_weights");
     var weightsChanged = false;
     Object.keys(EX_MAP).forEach(function(oldEx){
       var arr = weights[oldEx];
-      if (!arr || !arr.length) return;
+      if (!Array.isArray(arr) || !arr.length) return;
       var newEx = EX_MAP[oldEx];
       var existing = weights[newEx] || [];
       if (mergeDateArray(arr, existing)) { weights[newEx] = existing; weightsChanged = true; }
     });
+    if (repairOrder(weights, Object.keys(EX_MAP).map(function(k){ return EX_MAP[k]; }))) weightsChanged = true;
     if (weightsChanged) writeRaw("gym_weights", weights);
 
     // ---- gym_sessions: { dayId: [ {date, durationSec}, ... ] } ----
@@ -545,11 +590,12 @@ const NOTES = {
     var sessionsChanged = false;
     Object.keys(DAY_MAP).forEach(function(oldDay){
       var arr = sessions[oldDay];
-      if (!arr || !arr.length) return;
+      if (!Array.isArray(arr) || !arr.length) return;
       var newDay = DAY_MAP[oldDay];
       var existing = sessions[newDay] || [];
       if (mergeDateArray(arr, existing)) { sessions[newDay] = existing; sessionsChanged = true; }
     });
+    if (repairOrder(sessions, Object.keys(DAY_MAP).map(function(k){ return DAY_MAP[k]; }))) sessionsChanged = true;
     if (sessionsChanged) writeRaw("gym_sessions", sessions);
 
     // ---- gym_checks: { "YYYY-MM-DD_dayId": { exId: bool } } ----
@@ -563,6 +609,10 @@ const NOTES = {
       if (key.length < 12 || key.charAt(10) !== "_") return; // not a "YYYY-MM-DD_dayId" key
       var date = key.slice(0, 10);
       var dayChecks = checks[key];
+      // A single bad entry (null, or hand-edited into a non-object) must
+      // never abort the whole migration — skip just that entry and keep
+      // going with the rest of gym_checks.
+      if (!dayChecks || typeof dayChecks !== "object" || Array.isArray(dayChecks)) return;
       Object.keys(dayChecks).forEach(function(exId){
         var newEx = EX_MAP[exId];
         var newDay = newEx && EX_TO_NEW_DAY[newEx];
@@ -592,32 +642,67 @@ const NOTES = {
       }
     } catch(e){}
 
-    // Sync-safe: bump gym_meta_updatedAt for every key rewritten above so
-    // that when sync.js (loaded later, deferred) does its first pull, this
-    // fresh local migration wins the last-write-wins comparison against any
-    // stale, still-old-id-keyed snapshot already sitting on the server —
-    // and so the *next* push sends the migrated data. sync.js isn't loaded
-    // yet at this point in the page, so window.GymSync.onLocalWrite() isn't
-    // callable — write the same META_KEY blob directly, in the exact shape
-    // sync.js's own readMeta()/writeMeta() use (key -> epoch-ms timestamp).
+    // ---- active in-progress session (LOCAL_ONLY in sync.js — never synced,
+    // so it's rewritten in place with no meta bump) ----
+    var sessionActiveChanged = false;
+    try {
+      var activeSess = JSON.parse(localStorage.getItem("gym_session_active"));
+      if (activeSess && activeSess.dayId && DAY_MAP[activeSess.dayId]) {
+        activeSess.dayId = DAY_MAP[activeSess.dayId];
+        localStorage.setItem("gym_session_active", JSON.stringify(activeSess));
+        sessionActiveChanged = true;
+      }
+    } catch(e){}
+
+    // Sync-safe: bump gym_meta_updatedAt for every key rewritten above so a
+    // later push actually sends the migrated data, WITHOUT letting the bump
+    // itself win a last-write-wins race it has no business winning. Stamping
+    // Date.now() here made a second device that migrates later (its own
+    // clock, always "now") beat a first device's genuinely newer post-
+    // migration workouts already on the server, clobbering them on that
+    // second device's next push. Bumping the key's own last-known meta value
+    // by +1 instead only beats a stale, equal-timestamp old-id server
+    // snapshot (the actual goal), while still losing the normal LWW compare
+    // in sync.js's applyMerged() (~line 294) to any remote write that is
+    // genuinely newer than what this device last knew.
+    //
+    // Review fix (PR#48 MED): when a key has NO usable prior meta at all
+    // (e.g. a male user whose gym_checks/gym_weights history predates
+    // sync.js and never signed in), base was 0 and this used to write
+    // meta[k]=1 (1970-01-01T00:00:00.001Z) — an artificially ancient
+    // timestamp. sync.js's buildEntries() would otherwise backfill a
+    // missing meta record to "now" so untouched local-only data wins on
+    // first sign-in; stamping 1 instead defeats that backfill and lets any
+    // pre-existing server copy for that key silently win, overwriting the
+    // user's local-only history. Skip the bump entirely when there's no
+    // usable prior meta and leave the key unset — buildEntries() (sync.js
+    // ~line 252) backfills it to "now" itself.
     var syncKeys = Object.keys(touched).filter(function(k){ return k.indexOf("gym_") === 0 && k !== "gym_meta_updatedAt"; });
     if (syncKeys.length) {
       try {
         var meta = JSON.parse(localStorage.getItem("gym_meta_updatedAt")) || {};
-        var now = Date.now();
-        syncKeys.forEach(function(k){ meta[k] = now; });
-        localStorage.setItem("gym_meta_updatedAt", JSON.stringify(meta));
+        var metaChanged = false;
+        syncKeys.forEach(function(k){
+          var prior = meta[k];
+          var hasUsablePrior = typeof prior === "number" && isFinite(prior) && prior > 0;
+          if (!hasUsablePrior) return; // no prior record — let buildEntries() backfill to "now"
+          meta[k] = prior + 1;
+          metaChanged = true;
+        });
+        if (metaChanged) localStorage.setItem("gym_meta_updatedAt", JSON.stringify(meta));
       } catch(e){}
     }
 
-    localStorage.setItem(FLAG, "1");
+    return weightsChanged || sessionsChanged || checksChanged || sessionActiveChanged || syncKeys.length > 0;
   } catch(e) {
     // A bad/unexpected blob must never break boot — leave data exactly as
     // found and let normal fallbacks (e.g. "day id not in DAYS -> DAYS[0]")
     // handle it, same as before this migration existed.
     try { if (window.console) console.error("[migrateMaleIdsV2] skipped:", e); } catch(e2){}
+    return false;
   }
-})();
+};
+window.GymMigrations.maleV2();
 
 // ---------------- PLAN + STYLE + LANG STATE ----------------
 let activePlan  = localStorage.getItem("gym_plan");                 // "male" | "female" | null (first run)
