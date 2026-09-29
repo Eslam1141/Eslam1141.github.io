@@ -68,7 +68,10 @@
     eAssistant: ["Couldn't delete AI coach data, so nothing was deleted. Try again later.", "تعذر حذف بيانات المدرب الذكي، لذلك لم يُحذف شيء. حاول لاحقًا."],
     eUnavailable: ["This action isn't configured on the server yet.", "هذا الإجراء غير مُعدّ على الخادم بعد."],
     eNotFound: ["User not found.", "المستخدم غير موجود."],
-    eGeneric: ["Something went wrong. Try again.", "حدث خطأ. حاول مرة أخرى."]
+    eGeneric: ["Something went wrong. Try again.", "حدث خطأ. حاول مرة أخرى."],
+    actBlock: ["blocked", "حظر"], actUnblock: ["unblocked", "ألغى حظر"], actEdit: ["edited", "عدّل"],
+    actReset: ["sent a password reset to", "أرسل إعادة تعيين كلمة المرور إلى"], actDelete: ["deleted", "حذف"],
+    noActivity: ["No admin actions yet.", "لا توجد إجراءات إدارية بعد."], more: ["Load more", "تحميل المزيد"]
   };
   function s(key, params) {
     var v = STR[key] ? STR[key][AR ? 1 : 0] : key;
@@ -425,7 +428,32 @@
     input.focus();
   }
 
-  // Task 5 adds views.activity.
+  // ---- activity ----
+  views.activity = function () {
+    var page = 1, list = el("div", { class: "adm-audit" }), more = el("button", { class: "adm-btn", text: s("more") });
+    var ACT = { block: "actBlock", unblock: "actUnblock", edit: "actEdit", reset_password: "actReset", delete: "actDelete" };
+    function load() {
+      more.disabled = true;
+      api("/audit?page=" + page + "&pageSize=50").then(function (r) {
+        if (authFailed(r)) return;
+        if (!r.ok) { list.appendChild(el("p", { class: "adm-err", text: s("loadErr") })); more.disabled = false; return; }
+        var es = r.data.entries || [];
+        if (page === 1) { main.textContent = ""; main.appendChild(list); main.appendChild(more); }
+        if (page === 1 && !es.length) { list.appendChild(el("p", { class: "adm-msg", text: s("noActivity") })); more.remove(); return; }
+        es.forEach(function (e) {
+          var when = new Date(e.at);
+          var line = fmtDate(e.at) + " " + (isNaN(when) ? "" : when.toLocaleTimeString(AR ? "ar" : "en", { hour: "2-digit", minute: "2-digit" })) +
+            " — " + e.adminEmail + " " + s(ACT[e.action] || "actEdit") + " " + (e.targetEmail || e.targetId);
+          var fields = e.details ? Object.keys(e.details).join(", ") : "";
+          list.appendChild(el("div", null, [line, fields ? el("div", { class: "adm-sub", text: fields }) : null]));
+        });
+        if (es.length < 50) more.remove(); else { page++; more.disabled = false; }
+      });
+    }
+    more.addEventListener("click", load);
+    load();
+  };
+
   window.__admin = { api: api, s: s, addStrings: addStrings, el: el, fmtDate: fmtDate, fmtNum: fmtNum, authFailed: authFailed, showError: showError, views: views, render: render, state: state, AR: AR, API_BASE: API_BASE, session: session };
 
   function init() {
