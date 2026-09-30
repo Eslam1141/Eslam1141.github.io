@@ -82,6 +82,8 @@
     reallowed: ["{e} can sign up again.", "يمكن لـ {e} التسجيل مجددًا."],
     eGeneric: ["Something went wrong. Try again.", "حدث خطأ. حاول مرة أخرى."],
     actBlock: ["blocked", "حظر"], actUnblock: ["unblocked", "ألغى حظر"], actEdit: ["edited", "عدّل"],
+    actReallow: ["re-allowed sign-up for", "سمح مجددًا بتسجيل"],
+    actDeletePartial: ["partially deleted (failed):", "حذف جزئيًا (فشل):"],
     actReset: ["sent a password reset to", "أرسل إعادة تعيين كلمة المرور إلى"], actDelete: ["deleted", "حذف"],
     noActivity: ["No admin actions yet.", "لا توجد إجراءات إدارية بعد."], more: ["Load more", "تحميل المزيد"]
   };
@@ -507,7 +509,9 @@
         box.remove();
         reload();
         var note = el("p", { class: "adm-ok", role: "status", text: s("reallowed", { e: t.email }) });
+        note.tabIndex = -1;
         main.insertBefore(note, main.firstChild);
+        note.focus();
         setTimeout(function () { note.remove(); }, 5000);
       });
     });
@@ -518,7 +522,7 @@
   // ---- activity ----
   views.activity = function () {
     var page = 1, list = el("div", { class: "adm-audit" }), more = el("button", { class: "adm-btn", text: s("more") });
-    var ACT = { block: "actBlock", unblock: "actUnblock", edit: "actEdit", reset_password: "actReset", delete: "actDelete" };
+    var ACT = { block: "actBlock", unblock: "actUnblock", edit: "actEdit", reset_password: "actReset", delete: "actDelete", tombstone_clear: "actReallow", admin_delete_partial: "actDeletePartial" };
     function load() {
       more.disabled = true;
       api("/audit?page=" + page + "&pageSize=50").then(function (r) {

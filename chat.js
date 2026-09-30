@@ -374,6 +374,8 @@
     }).then(function (r) {
       if (!r) return;
       setSending(false);
+      var code = r.status === 403 && r.body && r.body.error && (r.body.error.code || r.body.error);
+      if ((code === "account_blocked" || code === "account_removed") && window.GymHeader && GymHeader.onBlocked) GymHeader.onBlocked(code === "account_removed");
       if (r.status === 200 && r.body && r.body.reply) {
         pushHistory("assistant", r.body.reply);
         var replyEl = bubble("assistant", "");
