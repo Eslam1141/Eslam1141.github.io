@@ -8,7 +8,7 @@ USER root
 RUN chmod +x /docker-entrypoint.d/40-render-config.sh
 USER 101
 
-COPY --chown=101:101 index.html styles.css app.js ui.js coach.js checkin.js chat.js food.js sync.js auth-email.js auth-email.css calendar.js workout-builder.js header.js notifications.js profile.js hero-video.js metallic-button.js toast.js beams-bg.js service-worker.js manifest.json config.js /usr/share/nginx/html/
+COPY --chown=101:101 index.html styles.css app.js ui.js coach.js checkin.js chat.js food.js sync.js auth-email.js auth-email.css calendar.js workout-builder.js header.js notifications.js profile.js hero-video.js metallic-button.js toast.js beams-bg.js service-worker.js manifest.json config.js admin.html admin.js admin.css /usr/share/nginx/html/
 COPY --chown=101:101 icons/ /usr/share/nginx/html/icons/
 COPY --chown=101:101 widgets/ /usr/share/nginx/html/widgets/
 

@@ -87,11 +87,26 @@
       .catch(function () { return null; });
   }
 
+  var blockedShown = false;
+  function onBlocked() {
+    if (blockedShown) return;
+    blockedShown = true;
+    if (window.GymSync && typeof GymSync.signOut === "function") GymSync.signOut();
+    if (window.GymToast) GymToast.show({ message: str("hdrBlocked"), duration: 10000 });
+    setTimeout(function () { blockedShown = false; }, 3000);
+  }
+
   function refreshMe() {
     if (!isAuthed()) { clearState(); render(); emitChange(); return Promise.resolve(null); }
     var seq = ++meSeq;
     return api("/me")
       .then(function (res) {
+        if (res.status === 403) {
+          return res.json().catch(function () { return {}; }).then(function (b) {
+            if (b && b.error && b.error.code === "account_blocked") onBlocked();
+            throw new Error("me 403");
+          });
+        }
         if (!res.ok) throw new Error("me " + res.status);
         return res.json();
       })
@@ -141,6 +156,7 @@
       '  <div class="tb-menu" id="tbMenu" role="menu" hidden>' +
       '    <div class="tb-menu-name" id="tbMenuName"></div>' +
       '    <button type="button" role="menuitem" id="tbMenuProfile"></button>' +
+      '    <button type="button" role="menuitem" id="tbMenuAdmin" hidden></button>' +
       '    <button type="button" role="menuitem" id="tbMenuSignOut"></button>' +
       '  </div>' +
       '</div>';
@@ -162,6 +178,10 @@
         try { window.__gymPrevTab = (typeof GymUI.currentTab === "function") ? GymUI.currentTab() : "plan"; } catch (e) {}
         GymUI.navigate("profile");
       }
+    });
+    document.getElementById("tbMenuAdmin").addEventListener("click", function () {
+      setMenuOpen(false);
+      window.location.href = "/admin.html"; // same tab: sessionStorage session carries over
     });
     document.getElementById("tbMenuSignOut").addEventListener("click", function () {
       setMenuOpen(false);
@@ -210,6 +230,9 @@
     avatarBtn.setAttribute("aria-label", str("hdrAccountMenu"));
     document.getElementById("tbMenuName").textContent = displayName();
     document.getElementById("tbMenuProfile").textContent = str("hdrGoProfile");
+    var adminItem = document.getElementById("tbMenuAdmin");
+    adminItem.hidden = !(me && me.isAdmin === true);
+    adminItem.textContent = str("hdrAdmin");
     document.getElementById("tbMenuSignOut").textContent = str("hdrSignOut");
   }
 
@@ -251,6 +274,7 @@
     me: function () { return me; },
     refreshMe: refreshMe,
     setMe: setMe,
+    onBlocked: onBlocked,
     photo: function () { return photoData; },
     reloadPhoto: reloadPhoto,
     defaultAvatar: DEFAULT_AVATAR,

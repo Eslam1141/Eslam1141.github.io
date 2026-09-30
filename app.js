@@ -300,6 +300,8 @@ const T = {
   hdrStreak:["{n}-day streak","سلسلة {n} يوم"],
   hdrAccountMenu:["Account menu","قائمة الحساب"],
   hdrGoProfile:["Go to profile","الذهاب إلى الملف الشخصي"],
+  hdrAdmin:["Admin dashboard","لوحة الإدارة"],
+  hdrBlocked:["This account has been disabled. Contact support if you think this is a mistake.","تم تعطيل هذا الحساب. تواصل مع الدعم إذا كنت تعتقد أن هذا خطأ."],
   hdrSignOut:["Sign out","تسجيل الخروج"],
   notifBell:["Notifications","الإشعارات"],
   notifBellUnread:["Notifications, {n} unread","الإشعارات، {n} غير مقروءة"],
