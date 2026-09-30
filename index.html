@@ -21,15 +21,22 @@
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="widgets/coach-loading.css">
 <link rel="stylesheet" href="auth-email.css">
+<link rel="stylesheet" href="signin-fx.css">
 </head>
 <body>
 
 <div id="bgfx" aria-hidden="true"><span></span><span></span><span></span></div>
 
 <section id="onboarding" hidden>
-  <video class="ob-video" muted playsinline preload="auto" loop aria-hidden="true"
-    src="https://cdn.21st.dev/assets/mirror/21/21a77eac28eacbb7e142016eefeaa0b4a766619e51113629a3bc6df6af066c0f.mp4"></video>
+  <video class="ob-video" muted playsinline preload="none" loop aria-hidden="true"
+    data-src="https://cdn.21st.dev/assets/mirror/21/21a77eac28eacbb7e142016eefeaa0b4a766619e51113629a3bc6df6af066c0f.mp4"></video>
   <div class="ob-video-overlay" aria-hidden="true"></div>
+  <!-- Decorative left panel (>=1024px only, see signin-fx.css); rings + orbiting icons are built by signin-fx.js. -->
+  <div class="ob-stage" aria-hidden="true">
+    <div class="fx-rings"></div>
+    <div class="fx-orbits"></div>
+    <div class="fx-hero"><span class="fx-headline">RepVane</span><span class="fx-tagline" data-i18n="fxTagline">Every rep counts.</span></div>
+  </div>
   <div class="ob-inner">
     <div class="ob-fx" aria-hidden="true"></div>
     <img class="ob-logo" src="icons/logo-dv.svg" alt="" width="96" height="96">
@@ -60,27 +67,6 @@
     </div>
   </div>
 </section>
-
-<div id="planChooser" hidden>
-  <img class="pc-logo" src="icons/logo-dv.svg" alt="" width="78" height="78">
-  <div id="pcStep1">
-    <h2 data-i18n="chooseTitle">Choose your plan</h2>
-    <p data-i18n="chooseSub">You can switch anytime from the top of the app.</p>
-    <div class="pc-btns">
-      <button data-choose="male" id="pcMale"><span data-i18n="male">Male</span><span class="sub" data-i18n="maleSub">4-day gym plan</span></button>
-      <button data-choose="female" id="pcFemale"><span data-i18n="female">Female</span><span class="sub" data-i18n="femaleSub">4-day home plan</span></button>
-    </div>
-  </div>
-  <div id="pcStep2" hidden>
-    <h2 data-i18n="chooseStyleTitle">Choose your workout type</h2>
-    <p data-i18n="chooseSub">You can switch anytime from the top of the app.</p>
-    <div class="pc-btns">
-      <button data-choose-style="gym" id="pcGym"><span data-i18n="styleGym">Gym</span></button>
-      <button data-choose-style="cal" id="pcCal"><span data-i18n="styleCal">In-House / Bodyweight</span></button>
-    </div>
-    <button type="button" id="pcBack" class="pc-back" data-i18n="back">Back</button>
-  </div>
-</div>
 
 <nav id="appNav" aria-label="Primary">
   <button type="button" data-tab="plan" aria-current="page">
@@ -377,6 +363,7 @@
 <script src="food.js" defer></script>
 <script src="sync.js" defer></script>
 <script src="auth-email.js" defer></script>
+<script src="signin-fx.js" defer></script>
 <script src="calendar.js" defer></script>
 <script src="workout-builder.js" defer></script>
 <script src="header.js" defer></script>

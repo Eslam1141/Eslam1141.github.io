@@ -2,27 +2,17 @@ name: gym-ui image
 on:
   push:
     branches: [main]
-    paths:
-      - "index.html"
-      - "app.js"
-      - "ui.js"
-      - "coach.js"
-      - "chat.js"
-      - "sync.js"
-      - "calendar.js"
-      - "workout-builder.js"
-      - "hero-video.js"
-      - "metallic-button.js"
-      - "styles.css"
-      - "service-worker.js"
-      - "manifest.json"
-      - "config.js"
-      - "icons/**"
-      - "widgets/**"
-      - "web/coach-loading/**"
-      - "docker/**"
-      - "Dockerfile"
-      - ".github/workflows/docker-image.yml"
+    # Build on any change except files that never reach the image. (An
+    # allow-list of paths kept going stale: header.js/profile.js/admin.* etc.
+    # were missing, so merges touching only those never deployed.)
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "graphify-out/**"
+      - "tools/**"
+      - "screenshots/**"
+  # Manual redeploy from the Actions tab.
+  workflow_dispatch:
   pull_request:
 
 jobs:
@@ -57,7 +47,7 @@ jobs:
       - uses: docker/setup-buildx-action@v4.4.1
       - name: Login to ghcr.io (for cache check)
         id: ghcr-login-cache
-        if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         uses: docker/login-action@v4.6.0
         with:
           registry: ghcr.io
@@ -65,7 +55,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Check whether this tree's image is already cached
         id: cache-check
-        if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         run: |
           TREE_SHA="${{ steps.tree-sha.outputs.tree_sha }}"
           if docker buildx imagetools inspect "ghcr.io/eslam1141/gym-ui:tree-$TREE_SHA" > /dev/null 2>&1; then

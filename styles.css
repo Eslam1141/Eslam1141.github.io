@@ -67,10 +67,6 @@ header.hero .sub{ color:var(--paper-dim); font-size:var(--text-sm); }
   display:block; width:46px; height:46px; margin:0 auto 8px;
   border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,.4);
 }
-.pc-logo{
-  width:78px; height:78px; border-radius:20px;
-  box-shadow:0 10px 30px rgba(0,0,0,.45); margin-bottom:4px;
-}
 
 /* "More" screen groups (formerly the slide-in settings panel) */
 .sp-group, .more-group{ margin-bottom:20px; }
@@ -132,45 +128,6 @@ header.hero .sub{ color:var(--paper-dim); font-size:var(--text-sm); }
 [dir="rtl"] .video-wrap{ margin:12px 38px 0 0; }
 [dir="rtl"] .lastlog{ margin:8px 38px 0 0; }
 .lastlog{ margin:8px 0 0 38px; font-size:var(--text-xs); color:var(--paper-dim); }
-
-#planChooser{
-  position:fixed; inset:0; z-index:200;
-  /* Same gradient recipe as #onboarding (styles.css ~line 596) so this
-     required "pick your plan" step reads as the next step of the one
-     onboarding flow the user just went through, not a separate/older
-     screen reappearing (user-reported: "sometimes I see the old landing
-     page with the Male/Female choose" — root cause was purely visual:
-     functionally this only ever fires right after onboarding completes,
-     or on a reload before a plan's been picked, but a flat solid
-     background made it look like an unrelated legacy page). */
-  background:
-    radial-gradient(60vmax 60vmax at 15% -10%, color-mix(in srgb, var(--accent) 40%, transparent), transparent 60%),
-    radial-gradient(55vmax 55vmax at 100% 20%, color-mix(in srgb, var(--accent-2) 34%, transparent), transparent 60%),
-    radial-gradient(50vmax 50vmax at 50% 120%, color-mix(in srgb, var(--accent-3) 26%, transparent), transparent 62%),
-    var(--bg);
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  gap:14px; padding:32px; text-align:center;
-}
-#planChooser[hidden]{ display:none; }
-#planChooser h2{ margin:0; font-size:var(--text-lg); font-weight:900; }
-#planChooser p{ margin:0 0 8px; color:var(--paper-dim); font-size:var(--text-sm); }
-#planChooser .pc-btns{ display:flex; gap:14px; flex-wrap:wrap; justify-content:center; }
-#planChooser button{
-  min-width:132px; padding:18px 20px; border-radius:14px; cursor:pointer;
-  font-family:inherit; font-weight:800; font-size:var(--text-md);
-  background:var(--panel); border:1px solid var(--line); color:var(--paper);
-}
-#planChooser button .sub{ display:block; font-weight:600; font-size:var(--text-xs); color:var(--paper-dim); margin-top:4px; }
-#planChooser #pcStep1:not([hidden]), #planChooser #pcStep2:not([hidden]){
-  display:flex; flex-direction:column; align-items:center; gap:14px;
-}
-#planChooser button.pc-back{
-  min-width:0; padding:8px 10px; background:none; border:none; box-shadow:none;
-  color:var(--paper-dim); font-weight:700; font-size:var(--text-sm); text-decoration:underline;
-}
-#pcMale{ border-color:#0B7A75; } /* male persona colour, fixed like #pcFemale */
-#pcFemale{ border-color:#e85c9a; background:#271a33; color:#f6ebf2; }
-#pcFemale .sub{ color:#c7abbf; }
 
 .session-card{
   display:flex; align-items:center; justify-content:space-between; gap:14px;
@@ -650,9 +607,6 @@ body:not([data-tab="coach"]) #coachFabTip{ display:none; }
 @keyframes cardIn{ from{ opacity:0; transform:translateY(12px); } to{ opacity:1; transform:none; } }
 @keyframes fadeIn{ from{ opacity:0; } to{ opacity:1; } }
 .ex-card.anim-in{ animation:cardIn .34s cubic-bezier(.22,.61,.36,1) both; }
-#planChooser:not([hidden]){ animation:fadeIn .25s ease both; }
-#planChooser .pc-btns button{ animation:cardIn .4s cubic-bezier(.22,.61,.36,1) both; }
-#planChooser .pc-btns button:nth-child(2){ animation-delay:.07s; }
 .days-list button.active{ animation:fadeIn .2s ease; }
 
 /* gradient hover — desktop / fine pointer only, so touch taps don't stick */
@@ -678,12 +632,6 @@ body:not([data-tab="coach"]) #coachFabTip{ display:none; }
   }
   .session-btn{ transition:filter .16s, transform .12s, box-shadow .18s; }
   .session-btn:hover{ filter:brightness(.88); /* darken, not lighten: white-on-teal must stay >= 4.5:1 */ transform:translateY(-1px); box-shadow:0 8px 20px color-mix(in srgb, var(--rust) 40%, transparent); }
-  #planChooser button{ transition:border-color .18s, transform .18s, box-shadow .18s, background-image .3s; }
-  #planChooser button:hover{
-    transform:translateY(-3px);
-    background-image:linear-gradient(135deg, color-mix(in srgb, var(--rust) 22%, transparent), transparent 65%);
-    box-shadow:0 12px 30px rgba(0,0,0,.45);
-  }
   .reset-link:hover{ color:var(--accent-tint); }
   .check:hover{ border-color:var(--rust); }
   .modal-close:hover, .expand-btn:hover, .panelClose:hover{ filter:brightness(1.25); }
@@ -909,8 +857,7 @@ body.anon-mode [data-style-btn].locked{ opacity:.4; }
 
 /* primary buttons: gradient fill */
 .session-btn:not(.stop),
-.anon-lock-btn,
-#planChooser #pcMale{
+.anon-lock-btn{
   background-image:linear-gradient(135deg, var(--accent), var(--accent-2));
   border:none;
 }
@@ -1012,7 +959,6 @@ body.anon-mode [data-style-btn].locked{ opacity:.4; }
 #appNav button:active{ transform:scale(.9); }
 
 body.onboarding-open #appNav{ display:none !important; }
-body:has(#planChooser:not([hidden])) #appNav{ display:none; }
 
 #timerBar{ bottom:calc(var(--nav-h) + env(safe-area-inset-bottom)); }
 #toTop{ bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 20px); }
@@ -1512,7 +1458,7 @@ body:has(#planChooser:not([hidden])) #appNav{ display:none; }
 
 /* ---- Print / "Download PDF" — only the Coach result, in ink-friendly B/W ---- */
 @media print{
-  #bgfx, #appNav, #timerBar, #miniTimer, #toTop, #onboarding, #planChooser,
+  #bgfx, #appNav, #timerBar, #miniTimer, #toTop, #onboarding,
   #coachFab, #coachFabTip, #coachChat,
   #screen-plan, #screen-more, #videoModal, #calendarStrip, #calendarModal,
   .coach-actions, .coach-links, .coach-res-head .coach-mascot, .coach-tip-btn{ display:none !important; }
@@ -1558,7 +1504,6 @@ body:has(#planChooser:not([hidden])) #appNav{ display:none; }
 [dir="rtl"] #topBar{ right:auto; left:12px; }
 #topBar[hidden],
 body.onboarding-open #topBar,
-body:has(#planChooser:not([hidden])) #topBar,
 body:has(#videoModal.show) #topBar{ display:none !important; }
 /* keep the centred hero titles clear of the fixed bar on phones */
 @media (max-width:899.98px){

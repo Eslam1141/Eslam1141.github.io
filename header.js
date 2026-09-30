@@ -48,6 +48,7 @@
   var me = null;          // last GET /me document for the signed-in user
   var photoData = null;   // data: URL of the user's photo, or null
   var photoLoadedFor = null; // user id the photo cache belongs to
+  var photoLoadedURL = null; // me.photoURL the cached photo was loaded from
   var listeners = [];
   var meSeq = 0;
 
@@ -56,7 +57,7 @@
   }
 
   function clearState() {
-    me = null; photoData = null; photoLoadedFor = null;
+    me = null; photoData = null; photoLoadedFor = null; photoLoadedURL = null;
     meSeq++; // drop any in-flight /me response for the previous account
   }
 
@@ -71,7 +72,15 @@
 
   function reloadPhoto() {
     if (!me || !me.photoURL) { photoData = null; photoLoadedFor = me ? me.id : null; emitChange(); return Promise.resolve(null); }
-    var forId = me.id;
+    var forId = me.id, forURL = me.photoURL;
+    // photoURL is either "/me/photo" (uploaded, fetched with auth and
+    // converted to a data: URL) or an absolute https URL (the Google
+    // picture fallback) which img-src https: lets us load directly.
+    if (/^https:\/\//i.test(me.photoURL)) {
+      photoData = forURL; photoLoadedFor = forId; photoLoadedURL = forURL;
+      render(); emitChange();
+      return Promise.resolve(photoData);
+    }
     return api("/me/photo", { timeoutMs: 15000 })
       .then(function (res) {
         if (res.status === 404) return null;
@@ -80,11 +89,20 @@
       })
       .then(function (url) {
         if (!me || me.id !== forId) return null; // account changed meanwhile
-        photoData = url; photoLoadedFor = forId;
-        emitChange();
+        photoData = url; photoLoadedFor = forId; photoLoadedURL = forURL;
+        render(); emitChange();
         return url;
       })
       .catch(function () { return null; });
+  }
+
+  var blockedShown = false;
+  function onBlocked() {
+    if (blockedShown) return;
+    blockedShown = true;
+    if (window.GymSync && typeof GymSync.signOut === "function") GymSync.signOut();
+    if (window.GymToast) GymToast.show({ message: str("hdrBlocked"), duration: 10000 });
+    setTimeout(function () { blockedShown = false; }, 3000);
   }
 
   function refreshMe() {
@@ -92,6 +110,12 @@
     var seq = ++meSeq;
     return api("/me")
       .then(function (res) {
+        if (res.status === 403) {
+          return res.json().catch(function () { return {}; }).then(function (b) {
+            if (b && b.error && b.error.code === "account_blocked") onBlocked();
+            throw new Error("me 403");
+          });
+        }
         if (!res.ok) throw new Error("me " + res.status);
         return res.json();
       })
@@ -100,7 +124,7 @@
         me = doc || {};
         render();
         emitChange();
-        if (me.photoURL && (me.id !== photoLoadedFor || !photoData)) reloadPhoto();
+        if (me.photoURL && (me.id !== photoLoadedFor || me.photoURL !== photoLoadedURL || !photoData)) reloadPhoto();
         else if (!me.photoURL && photoData) { photoData = null; render(); emitChange(); }
         return me;
       })
@@ -141,6 +165,7 @@
       '  <div class="tb-menu" id="tbMenu" role="menu" hidden>' +
       '    <div class="tb-menu-name" id="tbMenuName"></div>' +
       '    <button type="button" role="menuitem" id="tbMenuProfile"></button>' +
+      '    <button type="button" role="menuitem" id="tbMenuAdmin" hidden></button>' +
       '    <button type="button" role="menuitem" id="tbMenuSignOut"></button>' +
       '  </div>' +
       '</div>';
@@ -148,6 +173,11 @@
     bellSlot = document.getElementById("tbBellSlot");
     avatarBtn = document.getElementById("tbAvatar");
     avatarImg = document.getElementById("tbAvatarImg");
+    // Google picture URLs can expire or be rate-limited: fall back to the default.
+    avatarImg.addEventListener("error", function () {
+      if (avatarImg.getAttribute("src") !== DEFAULT_AVATAR) avatarImg.setAttribute("src", DEFAULT_AVATAR);
+      avatarBtn.classList.add("is-default");
+    });
     menu = document.getElementById("tbMenu");
 
     avatarBtn.addEventListener("click", function (e) {
@@ -162,6 +192,10 @@
         try { window.__gymPrevTab = (typeof GymUI.currentTab === "function") ? GymUI.currentTab() : "plan"; } catch (e) {}
         GymUI.navigate("profile");
       }
+    });
+    document.getElementById("tbMenuAdmin").addEventListener("click", function () {
+      setMenuOpen(false);
+      window.location.href = "/admin.html"; // same tab: sessionStorage session carries over
     });
     document.getElementById("tbMenuSignOut").addEventListener("click", function () {
       setMenuOpen(false);
@@ -205,11 +239,15 @@
     }
 
     var src = photoData || DEFAULT_AVATAR;
+    avatarImg.setAttribute("referrerpolicy", "no-referrer");
     if (avatarImg.getAttribute("src") !== src) avatarImg.setAttribute("src", src);
     avatarBtn.classList.toggle("is-default", !photoData);
     avatarBtn.setAttribute("aria-label", str("hdrAccountMenu"));
     document.getElementById("tbMenuName").textContent = displayName();
     document.getElementById("tbMenuProfile").textContent = str("hdrGoProfile");
+    var adminItem = document.getElementById("tbMenuAdmin");
+    adminItem.hidden = !(me && me.isAdmin === true);
+    adminItem.textContent = str("hdrAdmin");
     document.getElementById("tbMenuSignOut").textContent = str("hdrSignOut");
   }
 
@@ -251,6 +289,7 @@
     me: function () { return me; },
     refreshMe: refreshMe,
     setMe: setMe,
+    onBlocked: onBlocked,
     photo: function () { return photoData; },
     reloadPhoto: reloadPhoto,
     defaultAvatar: DEFAULT_AVATAR,

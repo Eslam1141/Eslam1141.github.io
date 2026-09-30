@@ -75,7 +75,8 @@
     aeErrCode: ["Enter the 6-digit code from the email.", "أدخل الرمز المكوّن من 6 أرقام من البريد."],
     aeErrMismatch: ["The passwords don't match.", "كلمتا المرور غير متطابقتين."],
     aeErrPwRequired: ["Enter your password.", "أدخل كلمة المرور."],
-    aeErrGeneric: ["Something went wrong. Please try again.", "حدث خطأ ما. يُرجى المحاولة مجددًا."]
+    aeErrGeneric: ["Something went wrong. Please try again.", "حدث خطأ ما. يُرجى المحاولة مجددًا."],
+    aeErrBlocked: ["This account has been disabled.", "تم تعطيل هذا الحساب."]
   };
 
   // Register into app.js's shared string table (a global `const T` from a
@@ -126,6 +127,7 @@
   function errorKey(res, ctx) {
     var st = res && res.status, code = (res && res.code) || "", msg = ((res && res.message) || "").toLowerCase();
     if (!st) return "aeErrNetwork";
+    if (st === 403 && code === "account_blocked") return "aeErrBlocked";
     if (st === 429) return "aeErrRateLimit";
     if (st === 503) return "aeErrUnavailable";
     if (st === 409) {
@@ -211,8 +213,14 @@
     var cls = o.cls ? ' class="' + o.cls + '"' : "";
     var extra = o.extra || "";
     var hint = o.hintKey ? '<p class="ae-hint" data-i18n="' + o.hintKey + '">' + escHtml(tr(o.hintKey)) + '</p>' : "";
-    return '<label class="ae-field"><span data-i18n="' + labelKey + '">' + escHtml(tr(labelKey)) + '</span>' +
-      '<input id="' + id + '" name="' + id + '" type="' + type + '"' + cls + val + ac + extra + ' required></label>' + hint;
+    // .ae-glow wraps the input for the mouse-follow border glow (signin-fx.css);
+    // password fields also get the show/hide eye (toggled by signin-fx.js).
+    var isPw = type === "password";
+    var eye = isPw ? '<button type="button" class="ae-eye" aria-pressed="false" data-i18n-aria="aeShowPw" aria-label="' + escAttr(typeof t === "function" ? t("aeShowPw") : "Show password") + '"></button>' : "";
+    return '<label class="ae-field"><span id="' + id + 'Lbl" data-i18n="' + labelKey + '">' + escHtml(tr(labelKey)) + '</span>' +
+      '<span class="ae-glow' + (isPw ? ' ae-glow-eye' : '') + '">' +
+      '<input id="' + id + '" name="' + id + '" type="' + type + '" aria-labelledby="' + id + 'Lbl"' + cls + val + ac + extra + ' required>' + eye +
+      '</span></label>' + hint;
   }
   function linkHtml(id, key) {
     return '<button type="button" id="' + id + '" class="ae-link" data-i18n="' + key + '">' + escHtml(tr(key)) + '</button>';
