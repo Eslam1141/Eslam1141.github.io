@@ -224,6 +224,7 @@
     var defaultAvatar = (window.GymHeader && GymHeader.defaultAvatar) || "icons/avatar-default.svg";
     el("profPhotoImg").setAttribute("referrerpolicy", "no-referrer");
     el("profPhotoImg").src = photo || defaultAvatar;
+    el("profPhotoImg").onerror = function () { if (this.getAttribute("src") !== defaultAvatar) this.src = defaultAvatar; };
 
     if (!nameDirty) el("profNameInput").value = (me && (me.displayName || me.name)) || "";
     if (!weightDirty) el("profWeightInput").value = (me && me.weightKg != null) ? me.weightKg : "";

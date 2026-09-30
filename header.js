@@ -156,6 +156,10 @@
     bellSlot = document.getElementById("tbBellSlot");
     avatarBtn = document.getElementById("tbAvatar");
     avatarImg = document.getElementById("tbAvatarImg");
+    // Google picture URLs can expire or be rate-limited: fall back to the default.
+    avatarImg.addEventListener("error", function () {
+      if (avatarImg.getAttribute("src") !== DEFAULT_AVATAR) avatarImg.setAttribute("src", DEFAULT_AVATAR);
+    });
     menu = document.getElementById("tbMenu");
 
     avatarBtn.addEventListener("click", function (e) {
