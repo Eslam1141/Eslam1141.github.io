@@ -336,7 +336,12 @@
     var img = avatar(u, true);
     if (u.hasPhoto) {
       api("/users/" + encodeURIComponent(u.id) + "/photo").then(function (r) {
-        if (r.ok && r.blob) r.blob.blob().then(function (b) { img.src = URL.createObjectURL(b); });
+        // data: URL, not blob: — CSP img-src doesn't allow blob: (same as header.js)
+        if (r.ok && r.blob) r.blob.blob().then(function (b) {
+          var fr = new FileReader();
+          fr.onload = function () { img.src = fr.result; };
+          fr.readAsDataURL(b);
+        });
       });
     }
     var badges = el("div", null, [
