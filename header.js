@@ -72,6 +72,14 @@
   function reloadPhoto() {
     if (!me || !me.photoURL) { photoData = null; photoLoadedFor = me ? me.id : null; emitChange(); return Promise.resolve(null); }
     var forId = me.id;
+    // photoURL is either "/me/photo" (uploaded, fetched with auth and
+    // converted to a data: URL) or an absolute https URL (the Google
+    // picture fallback) which img-src https: lets us load directly.
+    if (/^https:\/\//i.test(me.photoURL)) {
+      photoData = me.photoURL; photoLoadedFor = forId;
+      emitChange();
+      return Promise.resolve(photoData);
+    }
     return api("/me/photo", { timeoutMs: 15000 })
       .then(function (res) {
         if (res.status === 404) return null;
@@ -205,6 +213,7 @@
     }
 
     var src = photoData || DEFAULT_AVATAR;
+    avatarImg.setAttribute("referrerpolicy", "no-referrer");
     if (avatarImg.getAttribute("src") !== src) avatarImg.setAttribute("src", src);
     avatarBtn.classList.toggle("is-default", !photoData);
     avatarBtn.setAttribute("aria-label", str("hdrAccountMenu"));

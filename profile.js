@@ -222,6 +222,7 @@
     var me = (window.GymHeader && typeof GymHeader.me === "function") ? GymHeader.me() : null;
     var photo = (window.GymHeader && typeof GymHeader.photo === "function") ? GymHeader.photo() : null;
     var defaultAvatar = (window.GymHeader && GymHeader.defaultAvatar) || "icons/avatar-default.svg";
+    el("profPhotoImg").setAttribute("referrerpolicy", "no-referrer");
     el("profPhotoImg").src = photo || defaultAvatar;
 
     if (!nameDirty) el("profNameInput").value = (me && (me.displayName || me.name)) || "";
