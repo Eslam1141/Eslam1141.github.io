@@ -35,8 +35,6 @@
     aeNewPassword: ["New password", "كلمة المرور الجديدة"],
     aeConfirmPassword: ["Confirm new password", "تأكيد كلمة المرور الجديدة"],
     aePhone: ["Phone number", "رقم الهاتف"],
-    aeShowPw: ["Show password", "إظهار كلمة المرور"],
-    aeHidePw: ["Hide password", "إخفاء كلمة المرور"],
     aePwHint: ["At least 8 characters, with a letter and a number.", "8 أحرف على الأقل، تتضمن حرفًا ورقمًا."],
     aePhoneHint: ["Include your country code, e.g. ‎+201001234567.", "أدخل رمز الدولة، مثل ‎+201001234567."],
     aeLoginBtn: ["Log in", "تسجيل الدخول"],
@@ -218,8 +216,7 @@
     // .ae-glow wraps the input for the mouse-follow border glow (signin-fx.css);
     // password fields also get the show/hide eye (toggled by signin-fx.js).
     var isPw = type === "password";
-    var eye = isPw ? '<button type="button" class="ae-eye" aria-pressed="false" aria-label="' + escAttr(tr("aeShowPw")) +
-      '" data-show="' + escAttr(tr("aeShowPw")) + '" data-hide="' + escAttr(tr("aeHidePw")) + '"></button>' : "";
+    var eye = isPw ? '<button type="button" class="ae-eye" aria-pressed="false" data-i18n-aria="aeShowPw" aria-label="' + escAttr(typeof t === "function" ? t("aeShowPw") : "Show password") + '"></button>' : "";
     return '<label class="ae-field"><span id="' + id + 'Lbl" data-i18n="' + labelKey + '">' + escHtml(tr(labelKey)) + '</span>' +
       '<span class="ae-glow' + (isPw ? ' ae-glow-eye' : '') + '">' +
       '<input id="' + id + '" name="' + id + '" type="' + type + '" aria-labelledby="' + id + 'Lbl"' + cls + val + ac + extra + ' required>' + eye +

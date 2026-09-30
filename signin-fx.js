@@ -9,11 +9,6 @@
 (function () {
   "use strict";
 
-  try {
-    if (typeof T === "object" && T && !T.fxTagline) T.fxTagline = ["Every rep counts.", "كل تكرار يُحسب."];
-    if (typeof applyStaticI18n === "function") applyStaticI18n();
-  } catch (e) {}
-
   var NS = "http://www.w3.org/2000/svg";
   // lucide-style icons (24x24, 2px round stroke), inline so nothing loads.
   var ICONS = {
@@ -73,12 +68,18 @@
 
     // Mouse-follow glow: only sets two custom properties; the visible radius
     // (0 -> 100px on :hover) is pure CSS.
+    var glowEl = null, glowX = 0, glowY = 0, glowRaf = 0;
+    function paintGlow() {
+      glowRaf = 0;
+      var b = glowEl.getBoundingClientRect();
+      glowEl.style.setProperty("--x", (glowX - b.left) + "px");
+      glowEl.style.setProperty("--y", (glowY - b.top) + "px");
+    }
     ob.addEventListener("mousemove", function (e) {
       var g = e.target.closest && e.target.closest(".ae-glow");
       if (!g) return;
-      var b = g.getBoundingClientRect();
-      g.style.setProperty("--x", (e.clientX - b.left) + "px");
-      g.style.setProperty("--y", (e.clientY - b.top) + "px");
+      glowEl = g; glowX = e.clientX; glowY = e.clientY;
+      if (!glowRaf) glowRaf = requestAnimationFrame(paintGlow);
     }, { passive: true });
 
     ob.addEventListener("click", function (e) {
@@ -89,7 +90,6 @@
       var show = input.type === "password";
       input.type = show ? "text" : "password";
       btn.setAttribute("aria-pressed", show ? "true" : "false");
-      btn.setAttribute("aria-label", show ? btn.dataset.hide : btn.dataset.show);
     });
   }
 

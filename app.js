@@ -280,6 +280,8 @@ const T = {
   obSub:["Plans, an AI coach that reads your InBody, a rest timer, form videos and progress that follows you across devices.","خطط، مدرّب ذكي يقرأ نتائج InBody، مؤقّت راحة، فيديوهات أداء، وتقدّم يتابعك عبر أجهزتك."],
   obStart:["Start Changing Yourself","ابدأ بتغيير نفسك"],
   obContinue:["Continue without signing in","المتابعة بدون تسجيل الدخول"],
+  fxTagline:["Every rep counts.","كل تكرار يُحسب."],
+  aeShowPw:["Show password","إظهار كلمة المرور"],
   obWhy:["Why sign in?","لماذا تسجّل الدخول؟"],
   obWhy1:["Keep progress across devices","احفظ تقدّمك عبر الأجهزة"],
   obWhy2:["All training days & important notes","كل أيام التمرين والملاحظات المهمة"],
@@ -1395,6 +1397,7 @@ toTopBtn.onclick = ()=>{
 // ---------------- i18n APPLY ----------------
 function applyStaticI18n(){
   document.querySelectorAll("[data-i18n]").forEach(el=>{ el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll("[data-i18n-aria]").forEach(el=>{ el.setAttribute("aria-label", t(el.dataset.i18nAria)); });
   document.querySelectorAll("[data-i18n-html]").forEach(el=>{ el.innerHTML = t(el.dataset.i18nHtml); });
   document.title = t("appTitle");
   document.getElementById("langBtn").textContent = t("langBtn");

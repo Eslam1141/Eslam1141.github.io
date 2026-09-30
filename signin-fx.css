@@ -146,6 +146,9 @@
     position:relative;
     animation:fx-rise .8s var(--ease) calc(var(--i, 0) * 70ms + 80ms) backwards;
   }
+  .ob-step:not([inert]) .ob-why-toggle{
+    animation:fx-rise .8s var(--ease) calc(var(--i, 0) * 70ms + 80ms) backwards, ob-why-glow 3.2s ease-in-out infinite;
+  }
   .ob-step:not([inert]) .ae-glow{ animation-delay:calc(var(--i, 0) * 70ms + 150ms); }
   #onboarding:not([hidden]) :is(.ob-title, .ob-sub)::after,
   .ob-step:not([inert]) :is(h2, .ae-sub, .ae-notice, .ae-field > span:first-child, .ae-submit, .ae-link, .ob-secondary, .ob-start-btn, .ob-why-toggle, .ob-gbtn)::after,
