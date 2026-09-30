@@ -13,6 +13,7 @@
     back: ["← Back to app", "→ العودة إلى التطبيق"],
     tabOverview: ["Overview", "نظرة عامة"],
     tabUsers: ["Users", "المستخدمون"],
+    tabRemoved: ["Removed users", "المستخدمون المحذوفون"],
     tabActivity: ["Activity", "النشاط"],
     noSession: ["Open this page from the app's avatar menu while signed in.", "افتح هذه الصفحة من قائمة الصورة الرمزية في التطبيق بعد تسجيل الدخول."],
     expired: ["Your session expired. Go back to the app, then open Admin again.", "انتهت جلستك. عد إلى التطبيق ثم افتح لوحة الإدارة مرة أخرى."],
@@ -68,6 +69,17 @@
     eAssistant: ["Couldn't delete AI coach data, so nothing was deleted. Try again later.", "تعذر حذف بيانات المدرب الذكي، لذلك لم يُحذف شيء. حاول لاحقًا."],
     eUnavailable: ["This action isn't configured on the server yet.", "هذا الإجراء غير مُعدّ على الخادم بعد."],
     eNotFound: ["User not found.", "المستخدم غير موجود."],
+    eBlockedReset: ["This account is blocked, so no reset email was sent. Unblock it first.", "هذا الحساب محظور، لذلك لم يُرسل بريد إعادة التعيين. ألغِ الحظر أولًا."],
+    fReason: ["Reason (optional)", "السبب (اختياري)"],
+    rmNone: ["No removed users. Deleted accounts are listed here so they can't sign up again.", "لا يوجد مستخدمون محذوفون. تظهر الحسابات المحذوفة هنا لمنع إعادة تسجيلها."],
+    rmBy: ["Deleted by {a}", "حذفه {a}"],
+    rmReason: ["Reason: {r}", "السبب: {r}"],
+    rmExpires: ["Block ends {d}", "ينتهي المنع {d}"],
+    rmPageOf: ["Page {p}", "صفحة {p}"],
+    reallow: ["Re-allow", "السماح مجددًا"],
+    reallowTitle: ["Let this person sign up again?", "السماح لهذا الشخص بالتسجيل مجددًا؟"],
+    reallowBody: ["They will be able to create a new account with this email. Their old data stays deleted.", "سيتمكن من إنشاء حساب جديد بهذا البريد. تبقى بياناته القديمة محذوفة."],
+    reallowed: ["{e} can sign up again.", "يمكن لـ {e} التسجيل مجددًا."],
     eGeneric: ["Something went wrong. Try again.", "حدث خطأ. حاول مرة أخرى."],
     actBlock: ["blocked", "حظر"], actUnblock: ["unblocked", "ألغى حظر"], actEdit: ["edited", "عدّل"],
     actReset: ["sent a password reset to", "أرسل إعادة تعيين كلمة المرور إلى"], actDelete: ["deleted", "حذف"],
@@ -156,7 +168,7 @@
   }
   function setTab(tab) {
     state.tab = tab;
-    ["overview", "users", "activity"].forEach(function (t) {
+    ["overview", "users", "removed", "activity"].forEach(function (t) {
       var b = document.querySelector('[data-tab="' + t + '"]');
       b.setAttribute("aria-selected", t === tab ? "true" : "false");
     });
@@ -236,6 +248,7 @@
       case "confirm_mismatch": return s("eMismatch");
       case "assistant_delete_failed": return s("eAssistant");
       case "delete_unavailable": case "reset_unavailable": return s("eUnavailable");
+      case "account_blocked": return s("eBlockedReset");
       case "not_found": return s("eNotFound");
       case "invalid_request": return r.message || s("eGeneric");
       default: return s("eGeneric");
@@ -406,12 +419,13 @@
   function deleteDialog(u, status) {
     var input = el("input", { type: "email", autocomplete: "off", "aria-label": s("kvEmail") });
     var go = el("button", { class: "adm-btn danger", text: s("delGo"), disabled: true });
+    var reason = el("textarea", { rows: "2", maxlength: "200", "aria-label": s("fReason"), placeholder: s("fReason") });
     var err = el("p", { class: "adm-err", role: "alert" });
     var box = el("div", { class: "adm-section", role: "alertdialog", "aria-labelledby": "admDelTitle" }, [
       el("h2", { id: "admDelTitle", text: s("delTitle") }),
       el("p", { text: s("delBody") }),
       el("p", null, [el("b", { text: u.email })]),
-      input, err,
+      input, reason, err,
       el("div", { class: "adm-actions" }, [go, el("button", { class: "adm-btn", text: s("cancel"), onclick: function () { box.remove(); } })])
     ]);
     input.addEventListener("input", function () {
@@ -419,7 +433,7 @@
     });
     go.addEventListener("click", function () {
       go.disabled = true;
-      api("/users/" + encodeURIComponent(u.id), { method: "DELETE", body: { confirmEmail: input.value.trim() } }).then(function (r) {
+      api("/users/" + encodeURIComponent(u.id), { method: "DELETE", body: { confirmEmail: input.value.trim(), reason: reason.value.trim() || undefined } }).then(function (r) {
         if (authFailed(r)) { closePanel(); return; }
         if (!r.ok) { err.textContent = errText(r); go.disabled = false; return; }
         closePanel();
@@ -431,6 +445,74 @@
     });
     panel.appendChild(box);
     input.focus();
+  }
+
+  // ---- removed users (tombstones) ----
+  state.removed = { page: 1 };
+  views.removed = function () {
+    var p = state.removed, host = el("div");
+    main.textContent = "";
+    main.appendChild(host);
+    function load() {
+      api("/tombstones?page=" + p.page + "&pageSize=25").then(function (r) {
+        if (authFailed(r)) return;
+        host.textContent = "";
+        if (!r.ok) {
+          host.appendChild(el("p", { class: "adm-err", role: "alert", text: s("loadErr") }));
+          host.appendChild(el("button", { class: "adm-btn", text: s("retry"), onclick: load }));
+          return;
+        }
+        var ts = r.data.tombstones || [];
+        if (!ts.length && p.page > 1) { p.page--; return load(); }
+        if (!ts.length) { host.appendChild(el("p", { class: "adm-msg", text: s("rmNone") })); return; }
+        host.appendChild(el("div", { class: "adm-list" }, ts.map(function (t) {
+          var row = el("div", { class: "adm-row adm-tomb" });
+          var btn = el("button", { type: "button", class: "adm-btn", text: s("reallow"), onclick: function () { reallowDialog(t, row, load); } });
+          [el("span", null, [
+            el("div", { class: "adm-email", text: t.email }),
+            el("div", { class: "adm-sub", text: s("rmBy", { a: t.deletedBy || "—" }) + " · " + fmtDate(t.deletedAt) }),
+            t.reason ? el("div", { class: "adm-sub", text: s("rmReason", { r: t.reason }) }) : null,
+            t.expiresAt ? el("div", { class: "adm-sub", text: s("rmExpires", { d: fmtDate(t.expiresAt) }) }) : null
+          ]), btn].forEach(function (c) { row.appendChild(c); });
+          return row;
+        })));
+        // The API returns no total, so paging is prev/next on a full page.
+        host.appendChild(el("div", { class: "adm-pager" }, [
+          el("button", { class: "adm-btn", text: s("prev"), disabled: p.page <= 1, onclick: function () { p.page--; load(); } }),
+          el("span", { class: "adm-sub", text: s("rmPageOf", { p: p.page }) }),
+          el("button", { class: "adm-btn", text: s("next"), disabled: ts.length < 25, onclick: function () { p.page++; load(); } })
+        ]));
+      });
+    }
+    load();
+  };
+  function reallowDialog(t, row, reload) {
+    if (row.nextSibling && row.nextSibling.className === "adm-section") return;
+    var err = el("p", { class: "adm-err", role: "alert" });
+    var go = el("button", { class: "adm-btn primary", text: s("reallow") });
+    var box = el("div", { class: "adm-section", role: "alertdialog", "aria-labelledby": "admReTitle" }, [
+      el("h2", { id: "admReTitle", text: s("reallowTitle") }),
+      el("p", { text: s("reallowBody") }),
+      el("p", null, [el("b", { text: t.email })]),
+      err,
+      el("div", { class: "adm-actions" }, [go, el("button", { class: "adm-btn", text: s("cancel"), onclick: function () { box.remove(); btn0.focus(); } })])
+    ]);
+    var btn0 = row.querySelector("button");
+    go.addEventListener("click", function () {
+      go.disabled = true;
+      api("/tombstones", { method: "DELETE", body: { email: t.email } }).then(function (r) {
+        if (authFailed(r)) return;
+        // 404 means it is already cleared, which is the state we wanted.
+        if (!r.ok && r.status !== 404) { err.textContent = errText(r); go.disabled = false; return; }
+        box.remove();
+        reload();
+        var note = el("p", { class: "adm-ok", role: "status", text: s("reallowed", { e: t.email }) });
+        main.insertBefore(note, main.firstChild);
+        setTimeout(function () { note.remove(); }, 5000);
+      });
+    });
+    row.parentNode.insertBefore(box, row.nextSibling);
+    go.focus();
   }
 
   // ---- activity ----
@@ -469,6 +551,7 @@
     document.getElementById("admBack").textContent = s("back");
     document.getElementById("tabOverview").textContent = s("tabOverview");
     document.getElementById("tabUsers").textContent = s("tabUsers");
+    document.getElementById("tabRemoved").textContent = s("tabRemoved");
     document.getElementById("tabActivity").textContent = s("tabActivity");
     document.title = "RepVane — " + s("title");
     var sess = session();

@@ -23,10 +23,13 @@ body.adm{background:var(--bg);color:var(--paper);min-height:100vh;margin:0;font-
 .adm-bars i{display:block;height:10px;border-radius:5px;background:var(--accent-tint)}
 .adm-tools{display:flex;flex-wrap:wrap;gap:8px;margin-block-end:12px}
 .adm-tools input,.adm-tools select,.adm-form input{background:var(--panel2);border:1px solid var(--line);color:var(--paper);border-radius:10px;padding:10px 12px;font:inherit;min-height:44px;box-sizing:border-box}
+.adm-section textarea{display:block;width:100%;margin-block:8px;background:var(--panel2);border:1px solid var(--line);color:var(--paper);border-radius:10px;padding:10px 12px;font:inherit;box-sizing:border-box;resize:vertical}
 .adm-tools input{flex:1;min-width:0}
-.adm-list{display:grid;gap:8px}
+.adm-list{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
 .adm-row{display:grid;grid-template-columns:40px 1.6fr 1fr 1fr 1fr 90px;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;cursor:pointer;text-align:start;color:inherit;font:inherit;width:100%}
 .adm-row:hover,.adm-row:focus-visible{border-color:var(--accent-tint)}
+.adm-row.adm-tomb{grid-template-columns:minmax(0,1fr) auto;cursor:default}
+.adm-tomb .adm-email,.adm-tomb .adm-sub{overflow-wrap:anywhere}
 .adm-av{width:36px;height:36px;border-radius:50%;object-fit:cover;background:var(--panel2)}
 .adm-email{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .adm-sub{color:var(--paper-dim);font-size:var(--text-sm)}
