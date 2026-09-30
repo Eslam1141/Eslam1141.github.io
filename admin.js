@@ -145,7 +145,7 @@
   // Global auth failures replace the page with a message.
   function authFailed(r) {
     if (r.status === 401) { showMsg(session() ? "expired" : "noSession", true); return true; }
-    if (r.status === 403 && (r.code === "forbidden" || r.code === "account_blocked")) { showMsg("notAdmin", true); return true; }
+    if (r.status === 403 && (r.code === "forbidden" || r.code === "account_blocked" || r.code === "account_removed")) { showMsg("notAdmin", true); return true; }
     return false;
   }
 

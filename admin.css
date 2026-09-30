@@ -29,7 +29,7 @@ body.adm{background:var(--bg);color:var(--paper);min-height:100vh;margin:0;font-
 .adm-row{display:grid;grid-template-columns:40px 1.6fr 1fr 1fr 1fr 90px;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;cursor:pointer;text-align:start;color:inherit;font:inherit;width:100%}
 .adm-row:hover,.adm-row:focus-visible{border-color:var(--accent-tint)}
 .adm-row.adm-tomb{grid-template-columns:minmax(0,1fr) auto;cursor:default}
-.adm-tomb .adm-email,.adm-tomb .adm-sub{overflow-wrap:anywhere}
+.adm-tomb .adm-email,.adm-tomb .adm-sub,.adm-section b{overflow-wrap:anywhere;white-space:normal;text-overflow:clip}
 .adm-av{width:36px;height:36px;border-radius:50%;object-fit:cover;background:var(--panel2)}
 .adm-email{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .adm-sub{color:var(--paper-dim);font-size:var(--text-sm)}
