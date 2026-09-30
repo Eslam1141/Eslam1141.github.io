@@ -141,7 +141,7 @@
   .fx-orb-rev{ animation-direction:reverse; }
 
   #onboarding:not([hidden]) :is(.ob-title, .ob-sub),
-  .ob-step:not([inert]) :is(h2, .ae-sub, .ae-notice, .ae-field > span:first-child, .ae-submit, .ae-link, .ob-secondary, .ob-start-btn, .ob-why-toggle, .ob-gbtn),
+  .ob-step:not([inert]) :is(h2, .ae-sub, .ae-notice, .ae-field > span:first-child, .ae-submit, .ae-link, .ob-secondary, .ob-start-btn, .ob-gbtn),
   .ob-step:not([inert]) .ae-glow{
     position:relative;
     animation:fx-rise .8s var(--ease) calc(var(--i, 0) * 70ms + 80ms) backwards;
@@ -151,7 +151,7 @@
   }
   .ob-step:not([inert]) .ae-glow{ animation-delay:calc(var(--i, 0) * 70ms + 150ms); }
   #onboarding:not([hidden]) :is(.ob-title, .ob-sub)::after,
-  .ob-step:not([inert]) :is(h2, .ae-sub, .ae-notice, .ae-field > span:first-child, .ae-submit, .ae-link, .ob-secondary, .ob-start-btn, .ob-why-toggle, .ob-gbtn)::after,
+  .ob-step:not([inert]) :is(h2, .ae-sub, .ae-notice, .ae-field > span:first-child, .ae-submit, .ae-link, .ob-secondary, .ob-start-btn, .ob-gbtn)::after,
   .ob-step:not([inert]) .ae-glow::after{
     content:""; position:absolute; inset:0; z-index:2; pointer-events:none; border-radius:inherit;
     background:var(--fx-skel); opacity:0;
