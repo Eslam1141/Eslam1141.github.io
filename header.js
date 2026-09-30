@@ -97,11 +97,11 @@
   }
 
   var blockedShown = false;
-  function onBlocked() {
+  function onBlocked(removed) {
     if (blockedShown) return;
     blockedShown = true;
     if (window.GymSync && typeof GymSync.signOut === "function") GymSync.signOut();
-    if (window.GymToast) GymToast.show({ message: str("hdrBlocked"), duration: 10000 });
+    if (window.GymToast) GymToast.show({ message: str(removed === true ? "hdrRemoved" : "hdrBlocked"), duration: 10000 });
     setTimeout(function () { blockedShown = false; }, 3000);
   }
 
@@ -112,7 +112,9 @@
       .then(function (res) {
         if (res.status === 403) {
           return res.json().catch(function () { return {}; }).then(function (b) {
-            if (b && b.error && b.error.code === "account_blocked") onBlocked();
+            var code = b && b.error && (b.error.code || b.error);
+            if (code === "account_blocked") onBlocked();
+            else if (code === "account_removed") onBlocked(true);
             throw new Error("me 403");
           });
         }
