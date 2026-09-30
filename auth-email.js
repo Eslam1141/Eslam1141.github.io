@@ -77,7 +77,8 @@
     aeErrCode: ["Enter the 6-digit code from the email.", "أدخل الرمز المكوّن من 6 أرقام من البريد."],
     aeErrMismatch: ["The passwords don't match.", "كلمتا المرور غير متطابقتين."],
     aeErrPwRequired: ["Enter your password.", "أدخل كلمة المرور."],
-    aeErrGeneric: ["Something went wrong. Please try again.", "حدث خطأ ما. يُرجى المحاولة مجددًا."]
+    aeErrGeneric: ["Something went wrong. Please try again.", "حدث خطأ ما. يُرجى المحاولة مجددًا."],
+    aeErrBlocked: ["This account has been disabled.", "تم تعطيل هذا الحساب."]
   };
 
   // Register into app.js's shared string table (a global `const T` from a
@@ -128,6 +129,7 @@
   function errorKey(res, ctx) {
     var st = res && res.status, code = (res && res.code) || "", msg = ((res && res.message) || "").toLowerCase();
     if (!st) return "aeErrNetwork";
+    if (st === 403 && code === "account_blocked") return "aeErrBlocked";
     if (st === 429) return "aeErrRateLimit";
     if (st === 503) return "aeErrUnavailable";
     if (st === 409) {

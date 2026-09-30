@@ -288,18 +288,16 @@ const T = {
   anonLockTitle:["Sign in to unlock everything","سجّل الدخول لفتح كل المزايا"],
   anonLockBody:["The full multi-day plans, important notes, cross-device sync and the AI coach are free with a Google account.","الخطط الكاملة متعددة الأيام، الملاحظات المهمة، المزامنة بين الأجهزة، ومدرّب الذكاء الاصطناعي — كلها مجانية مع حساب جوجل."],
   anonSignIn:["Sign in with Google","سجّل الدخول عبر جوجل"],
-  chooseTitle:["Choose your plan","اختر خطتك"],
-  chooseSub:["You can switch anytime from the top of the app.","يمكنك التبديل في أي وقت من أعلى التطبيق."],
-  chooseStyleTitle:["Choose your workout type","اختر نوع تمرينك"],
-  back:["Back","رجوع"],
-  male:["Male","رجالي"], maleSub:["4-day gym plan","خطة 4 أيام في الجيم"],
-  female:["Female","نسائي"], femaleSub:["4-day home plan","خطة 4 أيام في المنزل"],
+  male:["Male","رجالي"],
+  female:["Female","نسائي"],
   styleGym:["Gym","جيم"], styleCal:["In-House / Bodyweight","منزلي / وزن الجسم"],
   langBtn:["العربية","English"],
   // ---- top-right header / profile / notifications (header.js, profile.js, notifications.js) ----
   hdrStreak:["{n}-day streak","سلسلة {n} يوم"],
   hdrAccountMenu:["Account menu","قائمة الحساب"],
   hdrGoProfile:["Go to profile","الذهاب إلى الملف الشخصي"],
+  hdrAdmin:["Admin dashboard","لوحة الإدارة"],
+  hdrBlocked:["This account has been disabled. Contact support if you think this is a mistake.","تم تعطيل هذا الحساب. تواصل مع الدعم إذا كنت تعتقد أن هذا خطأ."],
   hdrSignOut:["Sign out","تسجيل الخروج"],
   notifBell:["Notifications","الإشعارات"],
   notifBellUnread:["Notifications, {n} unread","الإشعارات، {n} غير مقروءة"],
@@ -1113,10 +1111,6 @@ window.GymAppRebuild = function(){
   activeDay = localStorage.getItem(activeDayStoreKey()) || DAYS[0].id;
   if(!DAYS.some(d=>d.id===activeDay)) activeDay = DAYS[0].id;
   animateCards = true;
-  if(!isAnonMode() && !activePlan){
-    document.getElementById("planChooser").hidden = false;
-    document.body.style.overflow = "hidden";
-  }
   renderAll();
 };
 
@@ -1524,49 +1518,9 @@ function renderTitle(){
   document.title = t("appTitle") + " · " + planWord + " · " + styleWord;
 }
 
-// Plan chooser is two steps: Male/Female, then Gym/In-House — picking a
-// plan used to jump straight to the workout, skipping the workout-type
-// choice entirely (it silently kept whatever style was already set).
-//
-// User report ("sometimes I see the old landing page with the Male/Female
-// choose"): this #planChooser IS still part of the current app (not a
-// stale cached copy of an old index.html — see service-worker.js, which
-// is already network-first with a build-time content-hash CACHE_NAME, so
-// there's no literal version to bump here; a genuinely stale offline
-// fallback is possible but narrow). It's a required step — DAYS depends
-// on activePlan/activeStyle — and only ever triggers from two places, both
-// gated on `!isAnonMode() && !activePlan`: right after onboarding finishes
-// (ui.js completeSignIn() -> GymAppRebuild(), below) and on a fresh page
-// load for an already-onboarded, signed-in visitor who never picked one
-// (init block further down). Anon visitors never see it (line below:
-// `isAnonMode() || activePlan`). The "old landing page" impression was
-// purely visual: it used a flat solid background, unrelated to the
-// current onboarding hero's styling, so re-appearing (e.g. right after an
-// anon session converts to a real Google sign-in mid-visit) read as
-// reverting to a different, older screen. Fixed in styles.css by giving
-// #planChooser the same gradient backdrop as #onboarding so it presents
-// as the next step of the one onboarding flow instead of a separate one.
-document.querySelectorAll("[data-choose]").forEach(b=>{
-  b.onclick = ()=>{
-    activePlan = b.dataset.choose;
-    applyState(true);                // updates the plan behind the chooser live
-    document.getElementById("pcStep1").hidden = true;
-    document.getElementById("pcStep2").hidden = false;
-  };
-});
-document.getElementById("pcBack").onclick = ()=>{
-  document.getElementById("pcStep2").hidden = true;
-  document.getElementById("pcStep1").hidden = false;
-};
-document.querySelectorAll("[data-choose-style]").forEach(b=>{
-  b.onclick = ()=>{
-    activeStyle = b.dataset.chooseStyle;
-    applyState(true);
-    document.getElementById("planChooser").hidden = true;
-    document.body.style.overflow = "";
-    window.scrollTo(0, 0);           // start at the top of the app, not mid-page
-  };
-});
+// Plan (Male/Female) and program (Gym/In-House) are switched from the More
+// tab only. There is no first-run picker: until one is chosen the app runs
+// the male/gym default (activePlan stays null, see INIT below).
 document.querySelectorAll("[data-plan-btn]").forEach(b=>{
   b.onclick = ()=>{
     if(isAnonMode()){ if(window.GymUI) window.GymUI.promptSignIn(); return; }
@@ -1584,14 +1538,7 @@ document.getElementById("langBtn").onclick = ()=> applyLang(activeLang === "ar" 
 document.documentElement.lang = activeLang === "ar" ? "ar" : "en";
 document.documentElement.dir  = activeLang === "ar" ? "rtl" : "ltr";
 applyStaticI18n();
-var _obDone = (function(){ try { return localStorage.getItem("gym_onboarded") === "1"; } catch(e){ return true; } })();
-if(isAnonMode() || activePlan){
-  applyState(false);
-} else if(_obDone){
-  document.getElementById("planChooser").hidden = false;
-  document.body.style.overflow = "hidden"; // lock scroll behind the chooser
-  applyState(false); // render behind the chooser (defaults to male / gym)
-} else {
-  // First run: ui.js shows #onboarding over the top; render the app behind it.
-  applyState(false);
-}
+// No plan picked yet renders the male/gym default without persisting it:
+// writing gym_plan here would stamp a fresh local timestamp and win the
+// next sync merge over the plan this account already saved server-side.
+applyState(false);

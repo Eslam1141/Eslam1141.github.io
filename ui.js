@@ -198,7 +198,6 @@
     if (!ob) return;
     ob.hidden = false;
     document.body.classList.add("onboarding-open");
-    var pc = el("planChooser"); if (pc) pc.hidden = true;
     document.body.style.overflow = "hidden";
     window.scrollTo(0, 0);
     // Choices (Google / email / continue-anon) are visible on the very

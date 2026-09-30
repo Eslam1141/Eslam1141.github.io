@@ -73,6 +73,7 @@ self.addEventListener("fetch", (event) => {
   // Never intercept API or Google Identity traffic — sync freshness and auth
   // are handled in sync.js, and these must always hit the network.
   if (url.pathname.startsWith("/api/") ||
+      url.pathname.startsWith("/admin") ||
       url.hostname.endsWith("googleapis.com") ||
       url.hostname === "accounts.google.com") {
     return;

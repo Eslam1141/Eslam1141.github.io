@@ -222,7 +222,9 @@
     var me = (window.GymHeader && typeof GymHeader.me === "function") ? GymHeader.me() : null;
     var photo = (window.GymHeader && typeof GymHeader.photo === "function") ? GymHeader.photo() : null;
     var defaultAvatar = (window.GymHeader && GymHeader.defaultAvatar) || "icons/avatar-default.svg";
+    el("profPhotoImg").setAttribute("referrerpolicy", "no-referrer");
     el("profPhotoImg").src = photo || defaultAvatar;
+    el("profPhotoImg").onerror = function () { if (this.getAttribute("src") !== defaultAvatar) this.src = defaultAvatar; };
 
     if (!nameDirty) el("profNameInput").value = (me && (me.displayName || me.name)) || "";
     if (!weightDirty) el("profWeightInput").value = (me && me.weightKg != null) ? me.weightKg : "";
@@ -326,6 +328,7 @@
       })
       .then(function () {
         setPhotoStatus(str("profPhotoSaved"), false);
+        if (window.GymHeader && typeof GymHeader.setMe === "function") GymHeader.setMe({ photoURL: "/me/photo" });
         return (window.GymHeader && typeof GymHeader.reloadPhoto === "function") ? GymHeader.reloadPhoto() : null;
       })
       .then(function () { renderData(); })

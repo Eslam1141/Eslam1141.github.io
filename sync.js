@@ -335,6 +335,12 @@
     })
       .then(function (res) {
         if (res.status === 401) { handleAuthLost("expired"); return null; }
+        if (res.status === 403) {
+          return res.json().catch(function () { return {}; }).then(function (b) {
+            if (b && b.error && b.error.code === "account_blocked" && window.GymHeader && GymHeader.onBlocked) GymHeader.onBlocked();
+            return null;
+          });
+        }
         if (!res.ok) throw new Error("progress PUT " + res.status);
         return res.json();
       })
