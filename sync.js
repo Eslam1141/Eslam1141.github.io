@@ -45,7 +45,7 @@
   // by any script on the real site real users visit. Gate it (and the
   // account-data wipe it can trigger) off the production origin.
   var IS_PROD = (function () {
-    try { return location.hostname === "gym-app.cloider.app"; } catch (e) { return false; }
+    try { return location.hostname === "repvane.cloider.app"; } catch (e) { return false; }
   })();
   var META_KEY = "gym_meta_updatedAt";
   // Device-local cache of the last Google ID token (NOT gym_-prefixed => never
