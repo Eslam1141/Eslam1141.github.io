@@ -328,6 +328,7 @@
       })
       .then(function () {
         setPhotoStatus(str("profPhotoSaved"), false);
+        if (window.GymHeader && typeof GymHeader.setMe === "function") GymHeader.setMe({ photoURL: "/me/photo" });
         return (window.GymHeader && typeof GymHeader.reloadPhoto === "function") ? GymHeader.reloadPhoto() : null;
       })
       .then(function () { renderData(); })
