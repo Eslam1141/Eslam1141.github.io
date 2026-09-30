@@ -45,6 +45,18 @@ Deployment is done from the **`gym-platform`** Helm chart in the
 [`gym-be`](https://github.com/Eslam1141/gym-be) repo, which deploys `gym-ui` and
 `gym-be` behind one Ingress (`/` → UI, `/api` → API, same origin).
 
+### CI deploy
+
+The `deploy` job in `.github/workflows/docker-image.yml` (main only, after the image
+is pushed/promoted) checks out `Eslam1141/gym-be`, sets `gymUi.image.tag` to this
+commit SHA in `deploy/helm/gym-platform/values-cluster.yaml`, commits it
+(`deploy: gym-ui <sha7> [skip ci]`) and runs `helm upgrade gym ... --reset-then-reuse-values`
+using gym-be's `deploy/scripts/`. It shares the `deploy-gym` concurrency group with gym-be's deploy.
+
+Required repo secrets: `KUBE_CONFIG` (existing) and **`GYM_BE_DEPLOY_TOKEN`** — a
+fine-grained PAT scoped to the `Eslam1141/gym-be` repo only with **Contents: Read and write**
+(must be allowed to push to `main` there). The job fails early with a clear message if it is missing.
+
 ## GitHub Pages
 
 Unaffected. The committed `config.js` has empty values, so the Pages site shows no
