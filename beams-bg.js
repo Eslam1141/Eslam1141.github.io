@@ -8,7 +8,7 @@
 // space (matching the container's logical size), so the DPR scale is the
 // only place device pixels enter the picture.
 //
-// Usage: RepVaneBeams.mount(containerEl, { intensity: "subtle"|"medium"|"strong" })
+// Usage: EtqademBeams.mount(containerEl, { intensity: "subtle"|"medium"|"strong" })
 // -> { destroy() }. The container must be a positioned element (static
 // containers get position:relative applied automatically); the canvas is
 // inserted as its first child, absolutely filling it, behind existing
@@ -241,5 +241,5 @@
     };
   }
 
-  window.RepVaneBeams = { mount: mount };
+  window.EtqademBeams = { mount: mount };
 })();

@@ -24,12 +24,12 @@
 
   var ob = null;
   var heroVideo = null;
-  // RepVaneBeams controller for the in-app backdrop (#bgfx). Runs only while the
+  // EtqademBeams controller for the in-app backdrop (#bgfx). Runs only while the
   // app itself is showing: the onboarding/landing screen has its own hero video.
   var appBeams = null;
   function startAppBeams() {
     var host = el("bgfx");
-    if (!appBeams && host && window.RepVaneBeams) appBeams = RepVaneBeams.mount(host, { intensity: "subtle" });
+    if (!appBeams && host && window.EtqademBeams) appBeams = EtqademBeams.mount(host, { intensity: "subtle" });
   }
   function stopAppBeams() {
     if (appBeams) { appBeams.destroy(); appBeams = null; }

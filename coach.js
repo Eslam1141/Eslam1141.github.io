@@ -132,7 +132,7 @@
     histEmpty: ["No past assessments yet.", "لا توجد تقييمات سابقة بعد."],
     histOpen: ["Open", "افتح"],
     back: ["Back", "رجوع"],
-    pdfTitle: ["RepVane Coach plan", "خطة مدرّب RepVane"],
+    pdfTitle: ["Etqadem Coach plan", "خطة مدرّب اتقدم"],
     shareImage: ["Save Image", "حفظ كصورة"],
     saveAcct: ["Save to my plans", "حفظ في خططي"],
     savedTick: ["Saved ✓", "تم الحفظ ✓"],
@@ -297,7 +297,7 @@
   // Uses html2canvas's onclone to mutate a cloned, off-DOM copy of the card
   // before it's rasterized — mirroring what @media print already does for
   // the PDF fallback (hide the on-screen action/link button rows, show the
-  // "RepVane Coach plan — <date>" print-head title) without ever touching the
+  // "Etqadem Coach plan — <date>" print-head title) without ever touching the
   // live page, so there's nothing to clean up even if capture rejects. ----
   function downloadResultImage() {
     var card = document.querySelector(".coach-result");
@@ -521,7 +521,7 @@
     return svg;
   }
 
-  var teaserBeams = null; // RepVaneBeams controller for the current teaser card
+  var teaserBeams = null; // EtqademBeams controller for the current teaser card
 
   function renderTeaser() {
     if (teaserBeams) { teaserBeams.destroy(); teaserBeams = null; }
@@ -537,7 +537,7 @@
       h("p", { class: "coach-tease-body" }, s("teaseBody")),
       bullets, btn);
     mount(card);
-    if (window.RepVaneBeams) teaserBeams = RepVaneBeams.mount(card, { intensity: "subtle" });
+    if (window.EtqademBeams) teaserBeams = EtqademBeams.mount(card, { intensity: "subtle" });
   }
 
   // ---------------- form ----------------

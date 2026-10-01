@@ -79,6 +79,9 @@
   background:linear-gradient(180deg, var(--paper) 10%, var(--accent-tint) 65%, color-mix(in srgb, var(--accent) 45%, transparent));
   -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent;
 }
+/* Arabic wordmark (اتقدم): tracking breaks letter joins, and the tighter
+   Latin line-height clips the dots under the gradient text fill. */
+html[lang="ar"] .fx-headline{ letter-spacing:0; line-height:1.4; }
 .fx-tagline{ font-size:var(--text-md); font-weight:700; color:var(--paper-dim); }
 
 /* ---------- input mouse-follow glow ---------- */

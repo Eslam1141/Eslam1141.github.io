@@ -12,7 +12,7 @@
 // unprocessed (e.g. local testing via `python -m http.server`, no Docker
 // build), CACHE_NAME is just this fixed string — still syntactically valid
 // and fully functional, just not content-addressed.
-const CACHE_NAME = "repvane-__CACHE_HASH__";
+const CACHE_NAME = "etqadem-__CACHE_HASH__";
 const ASSETS = [
   "./index.html",
   "./styles.css",
