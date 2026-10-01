@@ -1,6 +1,6 @@
 {
-  "name": "RepVane",
-  "short_name": "RepVane",
+  "name": "Etqadem",
+  "short_name": "Etqadem",
   "description": "Workout plans with weight tracking, rest timer and form videos",
   "start_url": "./index.html",
   "scope": "./",

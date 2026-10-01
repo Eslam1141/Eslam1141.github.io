@@ -3,7 +3,7 @@
   --rust:var(--accent); --rust-soft:#0f3b39; --green:#3fb950; --green-soft:#123320;
   --paper:#eef2f7; --paper-dim:#9fb0c3; --line:#26303d;
   --glow:rgba(60,194,184,0.18); --nav-bg:rgba(13,17,23,0.95);
-  /* RepVane teal. --accent is the fill colour (white text on it = 5.18:1).
+  /* Etqadem teal. --accent is the fill colour (white text on it = 5.18:1).
      --accent-2 (emerald) also carries white text in gradients (5.48:1).
      --accent-tint is for accent-coloured TEXT/icons on the dark panels
      (6.9:1 on --panel2); raw --accent there is only 2.9:1. */

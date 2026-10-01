@@ -1,4 +1,4 @@
-/* admin.js — RepVane admin dashboard (admin.html only).
+/* admin.js — Etqadem admin dashboard (admin.html only).
  * Reads the session sync.js stored in this tab's sessionStorage; never loads
  * sync.js. gym-be enforces admin rights on every call — this page only
  * reacts to 401/403. All API data is rendered with textContent. */
@@ -557,7 +557,7 @@
     document.getElementById("tabUsers").textContent = s("tabUsers");
     document.getElementById("tabRemoved").textContent = s("tabRemoved");
     document.getElementById("tabActivity").textContent = s("tabActivity");
-    document.title = "RepVane — " + s("title");
+    document.title = "Etqadem — " + s("title");
     var sess = session();
     if (!sess) return showMsg("noSession", true);
     document.getElementById("admWho").textContent = (sess.profile && sess.profile.email) || "";

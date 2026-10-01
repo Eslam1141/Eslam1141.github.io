@@ -1,4 +1,4 @@
-"""Generate the RepVane "Dial Vane" SVG icon set from the canonical design-canvas geometry.
+"""Generate the Etqadem "Dial Vane" SVG icon set from the canonical design-canvas geometry.
 
 Source of truth: RepVane Logo canvas, artboard project/DialVane.dc.html (concept G) in the
 deep-teal pick (#0B7A75). 100x100 grid, centre (50,50):
@@ -69,27 +69,27 @@ white = mark("#ffffff", "#ffffff", "#ffffff", 0.4, "#ffffff", None)
 
 files = {
     # Primary app mark on a rounded paper tile (favicon SVG, in-app logos, manifest "any").
-    "logo-dv.svg": svg("RepVane logo", "Dial Vane mark on a rounded paper tile; mark at 0.9 so the "
+    "logo-dv.svg": svg("Etqadem logo", "Dial Vane mark on a rounded paper tile; mark at 0.9 so the "
                        "ring clears the tile corners.", tile + scaled(light, 0.9)),
     # Transparent, for dark panels.
-    "logo-dv-ondark.svg": svg("RepVane logo", "Reversed mark, no tile, for dark surfaces.",
+    "logo-dv-ondark.svg": svg("Etqadem logo", "Reversed mark, no tile, for dark surfaces.",
                               mark(PAPER, ACCENT_ON_DARK, PAPER, 0.28, ACCENT_ON_DARK, INK)),
     # Single-colour silhouette (Safari mask-icon, notification icon, print).
-    "logo-dv-mono.svg": svg("RepVane logo, monochrome", "Single-colour silhouette, transparent bg.",
+    "logo-dv-mono.svg": svg("Etqadem logo, monochrome", "Single-colour silhouette, transparent bg.",
                             white),
     # PWA maskable: full-bleed paper, mark inside the 80% safe-zone circle.
-    "logo-dv-maskable.svg": svg("RepVane logo", "Maskable: full-bleed paper, mark scaled into the "
+    "logo-dv-maskable.svg": svg("Etqadem logo", "Maskable: full-bleed paper, mark scaled into the "
                                 "80% safe zone.", full + scaled(light, 0.8)),
     # <=32px: canvas 20px variant (accent ticks only, heavier dumbbell), on the tile.
-    "logo-dv-tiny.svg": svg("RepVane logo", "Small-size variant (<=32px): lit ticks only, heavier "
+    "logo-dv-tiny.svg": svg("Etqadem logo", "Small-size variant (<=32px): lit ticks only, heavier "
                             "dumbbell so it still reads at 16px.",
                             tile + scaled(ticks(ACCENT, None, 0, width=10, y1=4, y2=17, dim_ticks=False)
                                           + needle(INK, ACCENT, heavy=True), 0.92)),
     # Android adaptive icon layers: transparent, mark inside the 66% safe zone.
-    "logo-dv-android-fg.svg": svg("RepVane logo, Android adaptive foreground",
+    "logo-dv-android-fg.svg": svg("Etqadem logo, Android adaptive foreground",
                                   "Adaptive foreground: transparent, mark inside the 66% safe zone; "
                                   "pair with a flat #F3F0E8 background.", scaled(light, 0.64)),
-    "logo-dv-android-mono.svg": svg("RepVane logo, Android themed monochrome",
+    "logo-dv-android-mono.svg": svg("Etqadem logo, Android themed monochrome",
                                     "Android 13+ themed-icon layer: silhouette inside the safe zone.",
                                     scaled(white, 0.64)),
 }

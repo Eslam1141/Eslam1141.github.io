@@ -275,7 +275,7 @@ window.GymExerciseVideo = function(name){
   return hit ? EX_VID[hit] : "";
 };
 const T = {
-  appTitle:["RepVane","RepVane"],
+  appTitle:["Etqadem","اتقدم"],
   obTitle:["Your AI coach, everywhere","مدرّبك الذكي في كل مكان"],
   obSub:["Plans, an AI coach that reads your InBody, a rest timer, form videos and progress that follows you across devices.","خطط، مدرّب ذكي يقرأ نتائج InBody، مؤقّت راحة، فيديوهات أداء، وتقدّم يتابعك عبر أجهزتك."],
   obStart:["Start Changing Yourself","ابدأ بتغيير نفسك"],
@@ -376,7 +376,7 @@ const T = {
   programLabel:["Program","البرنامج"],
   langLabel:["Language","اللغة"],
   premiumLabel:["Premium","بريميوم"],
-  premiumTitle:["RepVane Premium","RepVane بريميوم"],
+  premiumTitle:["Etqadem Premium","اتقدم بريميوم"],
   premiumSub:["Coming soon","قريباً"],
   premiumPerk1:["Higher AI-coach limits","حدود أعلى لمحادثات المدرّب الذكي"],
   premiumPerk2:["Ramadan mode adjustments","تعديلات وضع رمضان"],
