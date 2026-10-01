@@ -124,8 +124,36 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions: {}
+    # Serializes gym-ui deploys only: concurrency groups are scoped to one repository, so this does NOT
+    # block gym-be's deploy job. Cross-repo safety is in gym-be's deploy/scripts/helm-deploy.sh
+    # (fresh values from origin/main before each attempt + drift guard).
+    concurrency:
+      group: deploy-gym
+      cancel-in-progress: false
     environment: production
     steps:
+      - name: check deploy token
+        env:
+          GYM_BE_DEPLOY_TOKEN: ${{ secrets.GYM_BE_DEPLOY_TOKEN }}
+        run: |
+          if [ -z "$GYM_BE_DEPLOY_TOKEN" ]; then
+            echo "::error::secret GYM_BE_DEPLOY_TOKEN is not set. Add a fine-grained PAT (repo Eslam1141/gym-be, Contents: Read and write) to the 'production' environment secrets of this repo; see README-deploy.md."
+            exit 1
+          fi
+      # The build job always leaves ghcr.io/eslam1141/gym-ui:<sha> in place on main
+      # (fresh push, or promotion of the cached tree image), and deploy needs build.
+      - uses: actions/checkout@v7.0.1
+        with:
+          path: ui
+          fetch-depth: 0
+      - uses: actions/checkout@v7.0.1
+        with:
+          repository: Eslam1141/gym-be
+          ref: main
+          path: gym-be
+          token: ${{ secrets.GYM_BE_DEPLOY_TOKEN }}
+      - uses: azure/setup-helm@v5.0.1
+        with: { version: v4.2.2 }
       - uses: azure/setup-kubectl@v5.1.0
       - name: kubeconfig
         env:
@@ -133,7 +161,28 @@ jobs:
         run: |
           mkdir -p ~/.kube
           printf '%s' "$KUBE_CONFIG" | base64 -d > ~/.kube/config
-      - name: roll gym-ui to the new image
+      - name: skip if a newer gym-ui commit is already pinned
+        id: stale
         run: |
-          kubectl -n gym set image deploy/gym-gym-ui "gym-ui=ghcr.io/eslam1141/gym-ui:${GITHUB_SHA}"
+          git -C gym-be fetch -q origin main
+          cur=$(git -C gym-be show origin/main:deploy/helm/gym-platform/values-cluster.yaml | grep -A2 '^gymUi:' | grep -oE '[0-9a-f]{40}' | head -1)
+          if [ -n "$cur" ] && [ "$cur" != "$GITHUB_SHA" ] && git -C ui merge-base --is-ancestor "$GITHUB_SHA" "$cur" 2>/dev/null; then
+            echo "values already at newer gym-ui commit $cur; skipping"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: bump gymUi.image.tag in gym-be values-cluster.yaml and push
+        if: steps.stale.outputs.skip != 'true'
+        working-directory: gym-be
+        run: bash deploy/scripts/commit-image-tag.sh gymUi "$GITHUB_SHA" main
+      - name: helm upgrade gym
+        if: steps.stale.outputs.skip != 'true'
+        working-directory: gym-be
+        env:
+          DEPLOYING: gym-ui
+        run: bash deploy/scripts/helm-deploy.sh
+      - name: verify rollout
+        if: steps.stale.outputs.skip != 'true'
+        run: |
           kubectl -n gym rollout status deploy/gym-gym-ui --timeout=120s
+          img=$(kubectl -n gym get deploy/gym-gym-ui -o jsonpath='{.spec.template.spec.containers[0].image}')
+          [ "$img" = "ghcr.io/eslam1141/gym-ui:$GITHUB_SHA" ] || { echo "::error::live image is $img, expected this commit"; exit 1; }
