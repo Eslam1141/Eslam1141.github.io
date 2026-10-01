@@ -6,7 +6,7 @@ Mark box is 96 x 96. New filenames (-etq) because /icons/ is cached as immutable
 import pathlib
 
 OUT = pathlib.Path(__file__).resolve().parent.parent.parent / "icons"
-TEAL = "#0B7A75"; LIT = "#3CC2B8"; PAPER = "#F3F0E8"; WHITE = "#ffffff"
+TEAL = "#0B7A75"; LIT = "#3CC2B8"; PAPER = "#F3F0E8"; INK = "#14161B"; WHITE = "#ffffff"
 DY = 2
 
 
@@ -47,21 +47,21 @@ def svg(label, comment, body):
             f'  <!-- {comment} -->\n  {body}\n</svg>\n')
 
 
-tile = f'<rect width="96" height="96" rx="21" ry="21" fill="{TEAL}"/>'
-full = f'<rect width="96" height="96" fill="{TEAL}"/>'
+tile = f'<rect width="96" height="96" rx="21" ry="21" fill="{PAPER}"/>'
+full = f'<rect width="96" height="96" fill="{PAPER}"/>'
 files = {
-    "logo-etq.svg": svg("Etqadem logo", "Stair-climber mark, white on a rounded Deep Teal tile.",
-                        tile + scaled(mark(WHITE, WHITE), 0.78)),
+    "logo-etq.svg": svg("Etqadem logo", "Stair-climber mark, ink figure and steps with a Deep Teal head, on a rounded paper tile.",
+                        tile + scaled(mark(INK, TEAL), 0.78)),
     "logo-etq-ondark.svg": svg("Etqadem logo", "Reversed mark, no tile, for dark surfaces.", mark(PAPER, LIT)),
     "logo-etq-mono.svg": svg("Etqadem logo, monochrome", "Single-colour silhouette, transparent bg.",
                              mark(WHITE, WHITE)),
-    "logo-etq-maskable.svg": svg("Etqadem logo", "Maskable: full-bleed Deep Teal, mark inside the 80% safe circle.",
-                                 full + scaled(mark(WHITE, WHITE), 0.62)),
+    "logo-etq-maskable.svg": svg("Etqadem logo", "Maskable: full-bleed paper, mark inside the 80% safe circle.",
+                                 full + scaled(mark(INK, TEAL), 0.62)),
     "logo-etq-tiny.svg": svg("Etqadem logo", "Small-size variant (16px): heavier limbs and plates, one arm.",
-                             tile + small(WHITE, WHITE)),
+                             tile + small(INK, TEAL)),
     "logo-etq-android-fg.svg": svg("Etqadem logo, Android adaptive foreground",
-                                   "Adaptive foreground: transparent, mark inside the 66% safe zone; pair with flat #0B7A75.",
-                                   scaled(mark(WHITE, WHITE), 0.48)),
+                                   "Adaptive foreground: transparent, mark inside the 66% safe zone; pair with flat #F3F0E8.",
+                                   scaled(mark(INK, TEAL), 0.48)),
     "logo-etq-android-mono.svg": svg("Etqadem logo, Android themed monochrome",
                                      "Android 13+ themed-icon layer: silhouette inside the safe zone.",
                                      scaled(mark(WHITE, WHITE), 0.48)),
@@ -69,4 +69,4 @@ files = {
 for name, content in files.items():
     (OUT / name).write_text(content, encoding="utf-8", newline="\n")
     print("wrote", name)
-(OUT / "android-bg-color-etq.txt").write_text(TEAL + "\n", encoding="utf-8", newline="\n")
+(OUT / "android-bg-color-etq.txt").write_text(PAPER + "\n", encoding="utf-8", newline="\n")
