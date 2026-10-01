@@ -1,0 +1,483 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-01T12:30:45.275512+00:00",
+  "title": "Design System: RepVane",
+  "extensions": {
+    "colorMeta": {
+      "vane-teal": {
+        "role": "primary",
+        "displayName": "Vane Teal",
+        "canonical": "#0B7A75",
+        "tonalRamp": [
+          "#053836",
+          "#096763",
+          "#0d9690",
+          "#12c4bc",
+          "#2cece3",
+          "#69f2eb",
+          "#abf7f4",
+          "#e3fcfb"
+        ]
+      },
+      "vane-teal-tint": {
+        "role": "primary",
+        "displayName": "Lit Teal",
+        "canonical": "#3CC2B8",
+        "tonalRamp": [
+          "#0e2f2c",
+          "#1b5651",
+          "#277d76",
+          "#33a49b",
+          "#50c9c0",
+          "#82d8d2",
+          "#b9e9e6",
+          "#e8f8f7"
+        ]
+      },
+      "vane-teal-deep-wash": {
+        "role": "primary",
+        "displayName": "Deep Teal Wash",
+        "canonical": "#0f3b39",
+        "tonalRamp": [
+          "#0c312f",
+          "#175956",
+          "#21827e",
+          "#2baba5",
+          "#48d0ca",
+          "#7ddeda",
+          "#b6ecea",
+          "#e7f9f8"
+        ]
+      },
+      "emerald": {
+        "role": "secondary",
+        "displayName": "Emerald",
+        "canonical": "#047857",
+        "tonalRamp": [
+          "#023b2b",
+          "#046d4f",
+          "#059e73",
+          "#07cf96",
+          "#21f8bb",
+          "#61face",
+          "#a6fce4",
+          "#e1fef6"
+        ]
+      },
+      "lagoon": {
+        "role": "secondary",
+        "displayName": "Lagoon",
+        "canonical": "#2BB3A3",
+        "tonalRamp": [
+          "#0c312d",
+          "#165a52",
+          "#208478",
+          "#29ad9d",
+          "#46d3c2",
+          "#7bdfd4",
+          "#b5ede7",
+          "#e6f9f7"
+        ]
+      },
+      "done-green": {
+        "role": "tertiary",
+        "displayName": "Done Green",
+        "canonical": "#3fb950",
+        "tonalRamp": [
+          "#102e14",
+          "#1d5424",
+          "#297a35",
+          "#36a045",
+          "#54c564",
+          "#85d690",
+          "#bbe8c1",
+          "#e8f7ea"
+        ]
+      },
+      "ink-night": {
+        "role": "neutral",
+        "displayName": "Ink Night",
+        "canonical": "#0d1117",
+        "tonalRamp": [
+          "#161d27",
+          "#293548",
+          "#3b4d68",
+          "#4d6589",
+          "#6c86ac",
+          "#97a9c4",
+          "#c4cfde",
+          "#ebeff4"
+        ]
+      },
+      "slate-panel": {
+        "role": "neutral",
+        "displayName": "Slate Panel",
+        "canonical": "#161d27",
+        "tonalRamp": [
+          "#161d27",
+          "#283548",
+          "#3b4e68",
+          "#4d6689",
+          "#6c87ac",
+          "#97a9c4",
+          "#c4cfde",
+          "#ebeff4"
+        ]
+      },
+      "slate-panel-raised": {
+        "role": "neutral",
+        "displayName": "Raised Slate",
+        "canonical": "#1e2733",
+        "tonalRamp": [
+          "#171d27",
+          "#2a3647",
+          "#3c4f67",
+          "#4f6787",
+          "#6e88aa",
+          "#98aac3",
+          "#c5cfdd",
+          "#eceff4"
+        ]
+      },
+      "chalk": {
+        "role": "neutral",
+        "displayName": "Chalk",
+        "canonical": "#eef2f7",
+        "tonalRamp": [
+          "#141d2a",
+          "#24364c",
+          "#344e6f",
+          "#456792",
+          "#6388b6",
+          "#90aacb",
+          "#c1cfe2",
+          "#eaeff5"
+        ]
+      },
+      "chalk-dim": {
+        "role": "neutral",
+        "displayName": "Dim Chalk",
+        "canonical": "#9fb0c3",
+        "tonalRamp": [
+          "#181e26",
+          "#2b3745",
+          "#3f5164",
+          "#526a84",
+          "#728ba7",
+          "#9bacc0",
+          "#c7d1dc",
+          "#ecf0f3"
+        ]
+      },
+      "hairline": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "#26303d",
+        "tonalRamp": [
+          "#171e26",
+          "#2b3645",
+          "#3f4f65",
+          "#526884",
+          "#7289a7",
+          "#9aabc0",
+          "#c6d0dc",
+          "#eceff3"
+        ]
+      },
+      "female-rose": {
+        "role": "primary",
+        "displayName": "Rose (female persona)",
+        "canonical": "#e85c9a",
+        "tonalRamp": [
+          "#36081c",
+          "#620e33",
+          "#8f144b",
+          "#bc1a62",
+          "#e33682",
+          "#eb70a6",
+          "#f4afcd",
+          "#fbe4ee"
+        ]
+      },
+      "female-violet": {
+        "role": "secondary",
+        "displayName": "Violet (female persona)",
+        "canonical": "#b06cf0",
+        "tonalRamp": [
+          "#1f0638",
+          "#390a66",
+          "#540f94",
+          "#6e14c2",
+          "#8f2fea",
+          "#af6bf0",
+          "#d2acf6",
+          "#f0e3fc"
+        ]
+      },
+      "female-apricot": {
+        "role": "secondary",
+        "displayName": "Apricot (female persona)",
+        "canonical": "#f0a35c",
+        "tonalRamp": [
+          "#381e05",
+          "#673609",
+          "#954f0e",
+          "#c46712",
+          "#ec882d",
+          "#f1ab6a",
+          "#f7d0ab",
+          "#fcefe3"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Big hero numbers and onboarding headlines."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Rest-timer countdown and stat readouts, tabular numerals."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Screen and section titles."
+      },
+      "subtitle": {
+        "displayName": "Subtitle",
+        "purpose": "Exercise names and primary button labels."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Coach chat, notes, descriptions."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Tool buttons, toggles, meta values."
+      },
+      "overline": {
+        "displayName": "Overline",
+        "purpose": "Group labels, nav labels, units."
+      }
+    },
+    "shadows": [
+      {
+        "name": "elev-1",
+        "value": "0 2px 10px rgba(0,0,0,.28)",
+        "purpose": "Every card at rest."
+      },
+      {
+        "name": "elev-2",
+        "value": "0 14px 40px rgba(0,0,0,.45)",
+        "purpose": "Cards on hover, sheets and dialogs."
+      },
+      {
+        "name": "accent-glow",
+        "value": "0 8px 24px color-mix(in srgb, var(--accent) 45%, transparent)",
+        "purpose": "Coach button and hero primary actions only."
+      },
+      {
+        "name": "timer-shelf",
+        "value": "0 -8px 24px rgba(0,0,0,.4)",
+        "purpose": "Rest timer bar, casting upward."
+      },
+      {
+        "name": "sheen",
+        "value": "linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0) 42%)",
+        "purpose": "Top-down highlight overlay on cards."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease",
+        "value": "cubic-bezier(.22,.61,.36,1)",
+        "purpose": "Default easing for state transitions and card entry."
+      },
+      {
+        "name": "ease-spring",
+        "value": "cubic-bezier(.34,1.56,.64,1)",
+        "purpose": "Springy press on the coach button."
+      },
+      {
+        "name": "dur-fast",
+        "value": ".14s",
+        "purpose": "Press, color and lift changes."
+      },
+      {
+        "name": "dur-med",
+        "value": ".28s",
+        "purpose": "Shadow and border transitions."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "phone-narrow",
+        "value": "640px"
+      },
+      {
+        "name": "desktop-rail",
+        "value": "900px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Hero action (Start session): accent to secondary gradient, darkens and lifts on hover, compresses on press.",
+      "html": "<button class=\"ds-btn-primary\">Start session</button>",
+      "css": ".ds-btn-primary{font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;border:none;cursor:pointer;font-weight:800;font-size:14px;padding:12px 18px;border-radius:10px;color:#fff;background:linear-gradient(135deg,var(--accent,#0B7A75),var(--accent-2,#047857));box-shadow:0 0 0 1px rgba(0,0,0,.3),0 9px 9px rgba(0,0,0,.12),0 2px 5px rgba(0,0,0,.15);transition:filter .14s,transform .14s,box-shadow .28s;}.ds-btn-primary:hover{filter:brightness(.88);transform:translateY(-1px);box-shadow:0 8px 20px color-mix(in srgb,var(--accent,#0B7A75) 40%,transparent);}.ds-btn-primary:active{transform:scale(.97);}.ds-btn-primary:focus-visible{outline:2px solid var(--accent,#0B7A75);outline-offset:2px;}"
+    },
+    {
+      "name": "Tool Button",
+      "kind": "button",
+      "refersTo": "button-tool",
+      "description": "Small in-card action (Save, Rest, Video) with a 44px minimum target.",
+      "html": "<button class=\"ds-btn-tool\"><svg viewBox=\"0 0 24 24\" width=\"13\" height=\"13\"><path d=\"M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 10.6V6h-2v7.4l5.2 3.1 1-1.7z\" fill=\"currentColor\"/></svg>Rest</button>",
+      "css": ".ds-btn-tool{font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:44px;min-width:44px;background:var(--panel2,#1e2733);border:1px solid var(--line,#26303d);color:var(--paper,#eef2f7);font-size:12.5px;font-weight:700;padding:8px 11px;border-radius:8px;cursor:pointer;transition:transform .14s,border-color .28s;}.ds-btn-tool:hover{border-color:var(--accent,#0B7A75);}.ds-btn-tool:active{transform:scale(.96);}.ds-btn-tool:focus-visible{outline:2px solid var(--accent,#0B7A75);outline-offset:2px;}"
+    },
+    {
+      "name": "Segmented Toggle",
+      "kind": "chip",
+      "refersTo": "segment",
+      "description": "Two- or three-way choice (plan, style); the selected option fills with the accent.",
+      "html": "<div class=\"ds-seg\"><button class=\"ds-seg-on\">Gym</button><button>Home</button></div>",
+      "css": ".ds-seg{display:flex;gap:6px;max-width:320px;}.ds-seg button{font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;flex:1;padding:9px 10px;border-radius:9px;cursor:pointer;font-weight:700;font-size:12.5px;background:transparent;border:1px solid var(--line,#26303d);color:var(--paper-dim,#9fb0c3);transition:background .18s,border-color .18s,color .18s,transform .12s;}.ds-seg button:hover{color:var(--paper,#eef2f7);}.ds-seg button:active{transform:scale(.96);}.ds-seg button:focus-visible{outline:2px solid var(--accent,#0B7A75);outline-offset:2px;}.ds-seg .ds-seg-on{background:var(--accent,#0B7A75);border-color:var(--accent,#0B7A75);color:#fff;}"
+    },
+    {
+      "name": "Exercise Card",
+      "kind": "card",
+      "refersTo": "card-exercise",
+      "description": "The unit of work: checkbox, name, sets/reps meta; lifts on hover, turns green when done.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-top\"><span class=\"ds-check\"></span><div class=\"ds-card-title\">Barbell Bench Press</div></div><div class=\"ds-card-meta\"><span><b>4</b> sets</span><span><b>8–10</b> reps</span><span><b>90s</b> rest</span></div></div>",
+      "css": ".ds-card{font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;position:relative;max-width:420px;background-color:var(--panel,#161d27);background-image:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,0) 42%);border:1px solid var(--line,#26303d);border-radius:14px;padding:14px 14px 12px;color:var(--paper,#eef2f7);box-shadow:0 2px 10px rgba(0,0,0,.28);transition:transform .14s cubic-bezier(.22,.61,.36,1),box-shadow .28s cubic-bezier(.22,.61,.36,1);}.ds-card:hover{transform:translateY(-2px);box-shadow:0 14px 40px rgba(0,0,0,.45);}.ds-card-top{display:flex;gap:12px;align-items:flex-start;}.ds-check{flex:none;width:26px;height:26px;border-radius:8px;border:2px solid var(--line,#26303d);background:var(--bg-alt,#141b24);}.ds-card-title{font-weight:700;font-size:16px;}.ds-card-meta{display:flex;gap:14px;margin:10px 0 0;margin-inline-start:38px;color:var(--paper-dim,#9fb0c3);font-size:12.5px;}.ds-card-meta b{color:var(--paper,#eef2f7);font-size:14px;font-variant-numeric:tabular-nums;}"
+    },
+    {
+      "name": "Log Field",
+      "kind": "input",
+      "refersTo": "input-log",
+      "description": "Recessed weight/reps input with an always-visible unit suffix.",
+      "html": "<label class=\"ds-log\"><input value=\"60\" inputmode=\"decimal\" aria-label=\"Weight\"><span>kg</span></label>",
+      "css": ".ds-log{font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;display:inline-flex;align-items:center;gap:5px;background:var(--bg-alt,#141b24);border:1px solid var(--line,#26303d);border-radius:8px;padding:6px 10px;}.ds-log input{width:52px;background:transparent;border:none;color:var(--paper,#eef2f7);font:inherit;font-size:14px;font-weight:700;text-align:center;font-variant-numeric:tabular-nums;}.ds-log input:focus{outline:none;}.ds-log:focus-within{border-color:var(--accent,#0B7A75);}.ds-log span{font-size:11px;color:var(--paper-dim,#9fb0c3);}"
+    },
+    {
+      "name": "Bottom Navigation",
+      "kind": "nav",
+      "refersTo": "nav-bar",
+      "description": "Fixed glass tab bar; the active tab is Lit Teal with an accent glow.",
+      "html": "<nav class=\"ds-nav\"><button aria-current=\"page\"><svg viewBox=\"0 0 24 24\"><path d=\"M4 10h2V7h2v10H6v-3H4zm14-3h2v3h-2zm0 7h2v3h-2zM9 11h6v2H9zm-1-4h1v10H8zm7 0h1v10h-1z\"/></svg>Workout</button><button><svg viewBox=\"0 0 24 24\"><path d=\"M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V9h14z\"/></svg>Calendar</button><button><svg viewBox=\"0 0 24 24\"><path d=\"M6 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm12 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-6 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z\"/></svg>More</button></nav>",
+      "css": ".ds-nav{font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;display:flex;height:58px;max-width:420px;background:rgba(13,17,23,.95);border-top:1px solid var(--line,#26303d);backdrop-filter:blur(14px) saturate(1.2);}.ds-nav button{flex:1;background:none;border:none;cursor:pointer;font:inherit;color:var(--paper-dim,#9fb0c3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;font-weight:700;transition:color .14s,transform .14s;}.ds-nav svg{width:22px;height:22px;fill:currentColor;}.ds-nav button:hover{color:var(--paper,#eef2f7);}.ds-nav button[aria-current=page]{color:var(--accent-tint,#3CC2B8);}.ds-nav button[aria-current=page] svg{filter:drop-shadow(0 3px 8px color-mix(in srgb,var(--accent,#0B7A75) 55%,transparent));}.ds-nav button:active{transform:scale(.9);}.ds-nav button:focus-visible{outline:2px solid var(--accent,#0B7A75);outline-offset:-2px;}"
+    },
+    {
+      "name": "Coach Button",
+      "kind": "custom",
+      "refersTo": "coach-fab",
+      "description": "Signature floating coach: gradient circle with an accent glow and a springy press.",
+      "html": "<button class=\"ds-fab\" aria-label=\"Coach\"><svg viewBox=\"0 0 24 24\"><path d=\"M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8l-4 4V6a2 2 0 0 1 2-2z\" fill=\"#fff\"/></svg></button>",
+      "css": ".ds-fab{width:52px;height:52px;border-radius:50%;border:none;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--accent,#0B7A75),var(--accent-2,#047857));box-shadow:0 8px 24px color-mix(in srgb,var(--accent,#0B7A75) 45%,transparent);transition:transform .16s cubic-bezier(.34,1.56,.64,1);}.ds-fab svg{width:26px;height:26px;}.ds-fab:hover{transform:translateY(-2px);}.ds-fab:active{transform:scale(.9);}.ds-fab:focus-visible{outline:2px solid var(--accent-tint,#3CC2B8);outline-offset:3px;}"
+    },
+    {
+      "name": "Coach Chat Bubbles",
+      "kind": "custom",
+      "refersTo": "chat-bubble-coach",
+      "description": "User bubble in the accent on the end side; coach bubble in raised slate on the start side.",
+      "html": "<div class=\"ds-chat\"><div class=\"ds-msg ds-user\">How heavy should I go today?</div><div class=\"ds-msg ds-coach\">Start at 60 kg for 8 reps. If the last two reps feel easy, add 2.5 kg next set.</div></div>",
+      "css": ".ds-chat{font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;display:flex;flex-direction:column;gap:10px;max-width:420px;}.ds-msg{max-width:82%;padding:9px 12px;border-radius:14px;font-size:14px;line-height:1.5;}.ds-user{align-self:flex-end;background:var(--accent,#0B7A75);color:#fff;border-end-end-radius:4px;}.ds-coach{align-self:flex-start;background:var(--panel2,#1e2733);border:1px solid var(--line,#26303d);color:var(--paper,#eef2f7);border-end-start-radius:4px;}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Coach's Clipboard",
+    "overview": "RepVane is the clipboard a good coach carries across the gym floor: every exercise is its own card, every set gets a checkmark, and the coach is always one tap away in the corner. The interface is practical first. A beginner standing at a rack, phone in one sweaty hand, sees what to do next, logs the weight, starts the rest timer, and moves on. Nothing on a training screen should make them think about the app instead of the lift.\n\nThe clipboard sits in a lively room. The app is dark (ink-night backgrounds, slate cards) and lit by one teal light source that warms the buttons, the active day and the coach. Depth and motion are part of the identity, not garnish: cards lift and carry a faint top sheen, the main Start button has a WebGL metallic shine, and soft light beams drift behind the screens. Liveliness serves energy and encouragement; clarity of the next action always wins when the two compete.\n\nThe system ships two official persona palettes with identical structure: Vane Teal (the default, and the brand) and Rose & Violet (applied when the user picks the female plan). Arabic right-to-left and English are equal citizens; every layout uses logical properties so it mirrors cleanly.",
+    "keyCharacteristics": [
+      "Dark-only, single-column, phone-first (640px content column), bottom tab bar on phones, side rail at 900px and up.",
+      "One accent family per persona; the accent marks the next action and the current state.",
+      "Cards are the unit of work: one exercise, one card, one checkmark.",
+      "Lively depth: lifted cards, sheen, gradient primary fills, metallic Start button, beams backdrop, springy press feedback.",
+      "44px minimum tap targets everywhere, including small controls (invisible hit areas where the visual is smaller).",
+      "System font stack; weight does the hierarchy (700 for controls, 900 for headings and big numbers)."
+    ],
+    "rules": [
+      {
+        "name": "The Light Source Rule",
+        "body": "Each screen has one light source: the persona accent. It marks the next action and the current state (primary button, active day, on-toggle, active tab). If two things on a screen are filled with accent, one of them is wrong.",
+        "section": "colors"
+      },
+      {
+        "name": "The Text-Tint Rule",
+        "body": "Accent used as text or an icon on a dark surface is always the tint (Lit Teal / Lit Rose), never the raw fill color.",
+        "section": "colors"
+      },
+      {
+        "name": "The Green Means Done Rule",
+        "body": "Green is reserved for completion. Never use it for a button, link or brand moment.",
+        "section": "colors"
+      },
+      {
+        "name": "The Variable Rule",
+        "body": "Components read colors only through the CSS variables (`--accent`, `--panel`, `--paper`...), never hard-coded hex, so both personas work without extra code.",
+        "section": "colors"
+      },
+      {
+        "name": "The Marker Weight Rule",
+        "body": "Hierarchy is binary in weight: 700 for anything interactive or labelled, 900 for headings and big numbers. Don't introduce 500/600 in-between weights.",
+        "section": "typography"
+      },
+      {
+        "name": "The Token Size Rule",
+        "body": "Font sizes come only from the `--text-*` ramp. The ramp replaced 21 ad-hoc sizes; don't reintroduce one-offs.",
+        "section": "typography"
+      },
+      {
+        "name": "The No-Caps-in-Arabic Rule",
+        "body": "Uppercase and letter-spacing apply to Latin overlines only; Arabic labels are never tracked out.",
+        "section": "typography"
+      },
+      {
+        "name": "The Logical Property Rule",
+        "body": "Use `inline-start/end`, `inset-inline` and `text-align:start` everywhere so Arabic mirrors without overrides. Physical `left/right` are only for things that must not mirror.",
+        "section": "layout"
+      },
+      {
+        "name": "The One-Thumb Rule",
+        "body": "On training screens, the actions a user takes mid-set (tick, log, rest) sit in the lower two-thirds of each card and are at least 44×44px.",
+        "section": "layout"
+      },
+      {
+        "name": "The Lively, Not Loud Rule",
+        "body": "Effects are welcome: lift, sheen, gradient, glow, springy press. But a signature effect never sits on top of text the user must read mid-set, and every effect has a `prefers-reduced-motion` fallback (beams freeze, presses stop scaling, cards stop moving).",
+        "section": "elevation"
+      },
+      {
+        "name": "The Glow Follows Accent Rule",
+        "body": "Glows are tinted with the persona accent via `color-mix` on `--accent`, never a fixed color, so they switch with the persona.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Corner Scale Rule",
+        "body": "Radius grows with the element: 8 → 10 → 14 → 20. A small control never gets a big radius, and a card is never sharp-cornered.",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "Do read every color through the CSS variables so the Vane Teal and Rose & Violet personas both work automatically.",
+      "Do use the Teal → Emerald (or Rose → Violet) 135° gradient for hero primary actions, and a solid accent fill for selected states.",
+      "Do use Lit Teal (`--accent-tint`) for accent text and icons on dark surfaces.",
+      "Do keep every tap target at least 44×44px, with an invisible hit area if the visual is smaller.",
+      "Do give every motion and effect a `prefers-reduced-motion` fallback.",
+      "Do use tabular numerals for timers, weights and counts.",
+      "Do use logical properties (`margin-inline-start`, `inset-inline`, `text-align:start`) so Arabic mirrors.",
+      "Do make interactive things feel physical: a 2px lift on hover, a .96–.98 scale on press."
+    ],
+    "donts": [
+      "Don't hard-code accent hex values in components; the female persona will break.",
+      "Don't use green for anything except completion.",
+      "Don't lighten a teal button on hover; darken it.",
+      "Don't put raw Vane Teal text on slate (2.9:1); use the tint.",
+      "Don't add font sizes outside the `--text-*` ramp, or weights other than 400/700/900.",
+      "Don't let a fixed element (nav, timer, coach button) cover a card's controls; keep the screen's bottom padding.",
+      "Don't reintroduce orange as a brand color, or the old \"Athlex\" name or blue accent.",
+      "Don't add a light theme ad hoc; the system is dark-only until a light theme is designed as a full persona-aware set."
+    ]
+  }
+}
