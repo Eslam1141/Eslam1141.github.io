@@ -85,8 +85,17 @@ jobs:
           docker run -d --rm -p 8080:8080 -e GOOGLE_CLIENT_ID=ci.apps.googleusercontent.com --name ui gym-ui:ci
           for i in $(seq 1 20); do curl -fsS localhost:8080/healthz && break; sleep 1; done
           curl -fsS localhost:8080/healthz | grep -q ok
-          curl -fsS localhost:8080/config.js | grep -q ci.apps.googleusercontent.com
-          test "$(curl -s -o /dev/null -w '%{http_code}' localhost:8080/index.html)" = "200"
+          curl -fsS localhost:8080/app/config.js | grep -q ci.apps.googleusercontent.com
+          # landing at /, app at /app/, old app URLs redirect (docker/default.conf)
+          curl -fsS localhost:8080/ | grep -q 'landing.css'
+          curl -fsS localhost:8080/app/ | grep -q 'id="onboarding"'
+          curl -fsS localhost:8080/app/service-worker.js | grep -Eq 'etqadem-[0-9a-f]{12}'
+          curl -fsS localhost:8080/service-worker.js | grep -q 'unregister'
+          test "$(curl -s -o /dev/null -w '%{http_code}' localhost:8080/index.html)" = "301"
+          curl -sI localhost:8080/index.html | tr -d '\r' | grep -qi '^location: /app/$'
+          curl -sI 'localhost:8080/?reset_token=abc' | tr -d '\r' | grep -qi '^location: /app/?reset_token=abc$'
+          curl -fsSI localhost:8080/ | grep -qi 'content-security-policy'
+          curl -fsSI localhost:8080/app/ | grep -qi 'content-security-policy'
           test "$(curl -s -o /dev/null -w '%{http_code}' localhost:8080/missing)" = "404"
           docker rm -f ui
       - name: Smoke (read-only rootfs)
@@ -96,7 +105,7 @@ jobs:
             --tmpfs /tmp --tmpfs /var/cache/nginx --tmpfs /var/run \
             -e GOOGLE_CLIENT_ID=ro.apps.googleusercontent.com --name uiro gym-ui:ci
           for i in $(seq 1 20); do curl -fsS localhost:8090/healthz && break; sleep 1; done
-          curl -fsS localhost:8090/config.js | grep -q ro.apps.googleusercontent.com
+          curl -fsS localhost:8090/app/config.js | grep -q ro.apps.googleusercontent.com
           docker rm -f uiro
       - name: Push tree-tagged image (cache for later promotion)
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && steps.cache-check.outputs.exists != '0'

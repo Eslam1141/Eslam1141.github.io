@@ -158,7 +158,7 @@
     main.textContent = "";
     main.appendChild(el("div", { class: "adm-msg" }, [
       el("p", { text: s(key) }),
-      withLink ? el("a", { href: "/", text: s("back") }) : null
+      withLink ? el("a", { href: "./", text: s("back") }) : null
     ]));
   }
   function showError(retryFn) {
