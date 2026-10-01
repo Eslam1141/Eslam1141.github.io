@@ -47,7 +47,8 @@ const ASSETS = [
   "./icons/icon-maskable-512-etq.png",
   "./icons/apple-touch-icon-etq.png",
   "./icons/favicon-32-etq.png",
-  "./icons/favicon-16-etq.png"
+  "./icons/favicon-16-etq.png",
+  "./fonts/alexandria-var.woff2"
 ];
 
 self.addEventListener("install", (event) => {

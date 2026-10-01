@@ -713,6 +713,21 @@ let activePlan  = localStorage.getItem("gym_plan");                 // "male" | 
 let activeStyle = localStorage.getItem("gym_style") || "gym";       // "gym" | "cal"
 let activeLang  = localStorage.getItem("gym_lang")  || "en";        // "en" | "ar"
 
+// Theme (dark default | light) is a separate axis from the plan persona; both
+// pick the palette in styles.css. Stored as gym_theme; absent = dark. The
+// browser chrome colour follows the resolved surface.
+const THEME_COLORS = {
+  dark:  { male:"#0d1117", female:"#17121a" },
+  light: { male:"#F3F0E8", female:"#F8F0F3" }
+};
+function applyTheme(){
+  const theme = localStorage.getItem("gym_theme") === "light" ? "light" : "dark";
+  document.documentElement.dataset.theme = theme;
+  const tc = document.querySelector('meta[name="theme-color"]');
+  if(tc) tc.setAttribute("content", THEME_COLORS[theme][activePlan === "female" ? "female" : "male"]);
+}
+applyTheme();
+
 // Anonymous = chose "continue without an account" and not currently signed in.
 function isAnonMode(){
   try {
@@ -1434,8 +1449,7 @@ function applyState(persist){
   DAYS = pickDays();
   animateCards = true;
   document.documentElement.dataset.plan = activePlan || "male";
-  const tc = document.querySelector('meta[name="theme-color"]');
-  if(tc) tc.setAttribute("content", activePlan === "female" ? "#17121a" : "#0d1117");
+  applyTheme();
   activeDay = localStorage.getItem(activeDayStoreKey()) || DAYS[0].id;
   if(!DAYS.some(d=>d.id===activeDay)) activeDay = DAYS[0].id;
   openVideoId = null;
