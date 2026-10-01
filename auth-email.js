@@ -76,6 +76,7 @@
     aeErrMismatch: ["The passwords don't match.", "كلمتا المرور غير متطابقتين."],
     aeErrPwRequired: ["Enter your password.", "أدخل كلمة المرور."],
     aeErrGeneric: ["Something went wrong. Please try again.", "حدث خطأ ما. يُرجى المحاولة مجددًا."],
+    aeErrRemoved: ["This account was removed. Contact support if you think this is a mistake.", "تمت إزالة هذا الحساب. تواصل مع الدعم إذا كنت تعتقد أن هذا خطأ."],
     aeErrBlocked: ["This account has been disabled.", "تم تعطيل هذا الحساب."]
   };
 
@@ -128,6 +129,7 @@
     var st = res && res.status, code = (res && res.code) || "", msg = ((res && res.message) || "").toLowerCase();
     if (!st) return "aeErrNetwork";
     if (st === 403 && code === "account_blocked") return "aeErrBlocked";
+    if (st === 403 && code === "account_removed") return "aeErrRemoved";
     if (st === 429) return "aeErrRateLimit";
     if (st === 503) return "aeErrUnavailable";
     if (st === 409) {

@@ -337,7 +337,8 @@
         if (res.status === 401) { handleAuthLost("expired"); return null; }
         if (res.status === 403) {
           return res.json().catch(function () { return {}; }).then(function (b) {
-            if (b && b.error && b.error.code === "account_blocked" && window.GymHeader && GymHeader.onBlocked) GymHeader.onBlocked();
+            var code = b && b.error && (b.error.code || b.error);
+            if ((code === "account_blocked" || code === "account_removed") && window.GymHeader && GymHeader.onBlocked) GymHeader.onBlocked(code === "account_removed");
             return null;
           });
         }
