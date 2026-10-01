@@ -74,6 +74,7 @@ self.addEventListener("fetch", (event) => {
   // are handled in sync.js, and these must always hit the network.
   if (url.pathname.startsWith("/api/") ||
       url.pathname.startsWith("/admin") ||
+      url.pathname.startsWith("/app/admin") ||
       url.hostname.endsWith("googleapis.com") ||
       url.hostname === "accounts.google.com") {
     return;
@@ -91,7 +92,7 @@ self.addEventListener("fetch", (event) => {
         // /reset-password?token=...) into Cache Storage: the cache key is the
         // full URL, so the live reset token would sit on disk until evicted.
         const holdsSecret = url.searchParams.has("reset_token") ||
-          url.pathname === "/reset-password";
+          /\/reset-password$/.test(url.pathname);
         if (!holdsSecret && networkResponse && networkResponse.status === 200) {
           const clone = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));

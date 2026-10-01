@@ -529,10 +529,10 @@
     try {
       var qs = new URLSearchParams(location.search);
       var tok = qs.get("reset_token");
-      if (!tok && location.pathname === "/reset-password") tok = qs.get("token");
+      if (!tok && /\/reset-password$/.test(location.pathname)) tok = qs.get("token");
       if (tok) {
         resetToken = tok;
-        try { history.replaceState(null, "", "/"); } catch (e) {}
+        try { history.replaceState(null, "", "./"); } catch (e) {}
         open("reset");
         return;
       }
