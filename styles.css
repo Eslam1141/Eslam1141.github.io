@@ -129,11 +129,11 @@ body{
 .wrap{max-width:640px; margin:0 auto; padding:0 16px; position:relative; z-index:1;}
 
 header.hero{ padding:18px 52px 16px; position:relative; text-align:center; }
-header.hero h1{ font-size:var(--text-lg); font-weight:var(--fw-black); margin:0 0 3px; line-height:1.3; }
+header.hero h1{ font-size:var(--text-xl); font-weight:var(--fw-black); margin:0 0 3px; line-height:1.3; }
 header.hero .sub{ color:var(--paper-dim); font-size:var(--text-sm); }
 .hero-logo{
   display:block; width:46px; height:46px; margin:0 auto 8px;
-  border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,.4);
+  border-radius:12px; box-shadow:var(--elev-1);
 }
 
 /* "More" screen groups (formerly the slide-in settings panel) */
@@ -535,26 +535,29 @@ header.hero .sub{ color:var(--paper-dim); font-size:var(--text-sm); }
    collide; JS hides it while a rest timer is showing (#timerBar/#miniTimer
    already own that space) or the chat drawer itself is open. */
 #coachFab{
-  position:fixed; inset-inline-start:16px; z-index:65;
+  position:fixed; inset-inline-start:calc(16px + env(safe-area-inset-left)); z-index:65;
   bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 20px);
-  width:52px; height:52px; border-radius:50%; padding:0; border:none; cursor:pointer;
-  background:linear-gradient(135deg, var(--accent), var(--accent-2));
+  width:56px; height:56px; border-radius:50%; padding:0; cursor:pointer;
+  background:var(--primary); border:2px solid var(--surface-2);
   display:flex; align-items:center; justify-content:center;
-  box-shadow:0 8px 24px color-mix(in srgb, var(--accent) 45%, transparent);
-  transition:transform .16s cubic-bezier(.34,1.56,.64,1);
+  box-shadow:var(--elev-2), 0 0 0 1px var(--line);
+  transition:transform var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
 }
+#coachFab:hover{ background:var(--primary-hover); }
+#coachFab:active{ background:var(--primary-pressed); }
+#coachFab svg [fill="var(--paper-dim)"]{ fill:var(--on-primary); fill-opacity:.7; }
 #coachFab[hidden]{ display:none; }
-#coachFab:active{ transform:scale(.9); }
-#coachFab svg{ width:30px; height:30px; }
+#coachFab:active{ transform:scale(.92); }
+#coachFab svg{ width:32px; height:32px; }
 
 #coachFabTip{
-  position:fixed; inset-inline-start:16px; z-index:65;
-  bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 82px);
-  max-width:200px; background:var(--panel2); border:1px solid var(--line);
-  border-radius:14px; padding:10px 12px; font-size:var(--text-sm); line-height:1.45;
-  color:var(--paper); box-shadow:0 10px 28px rgba(0,0,0,.4); cursor:pointer;
+  position:fixed; inset-inline-start:calc(16px + env(safe-area-inset-left)); z-index:65;
+  bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 86px);
+  max-width:200px; background:var(--panel); border:1px solid var(--line);
+  border-radius:var(--radius); padding:10px 12px; font-size:var(--text-sm); line-height:1.45;
+  color:var(--paper); box-shadow:var(--elev-2); cursor:pointer;
   opacity:0; transform:translateY(10px) scale(.96);
-  transition:opacity .22s ease, transform .22s cubic-bezier(.34,1.56,.64,1);
+  transition:opacity var(--dur-med) var(--ease), transform var(--dur-med) var(--ease);
 }
 #coachFabTip[hidden]{ display:none; }
 #coachFabTip.show{ opacity:1; transform:none; }
@@ -572,7 +575,7 @@ body:not([data-tab="coach"]) #coachFabTip{ display:none; }
      underneath the rail (z-index 120 vs 65), invisible and unclickable.
      Physical left/right + [dir=rtl] flip, matching #timerBar's approach. */
   #coachFab{ bottom:24px; left:calc(var(--side-w) + 16px); right:auto; }
-  #coachFabTip{ bottom:86px; left:calc(var(--side-w) + 16px); right:auto; }
+  #coachFabTip{ bottom:90px; left:calc(var(--side-w) + 16px); right:auto; }
   [dir="rtl"] #coachFab{ left:auto; right:calc(var(--side-w) + 16px); }
   [dir="rtl"] #coachFabTip{ left:auto; right:calc(var(--side-w) + 16px); }
 }
@@ -926,8 +929,9 @@ body.anon-mode [data-style-btn].locked{ opacity:.4; }
   position:relative; box-shadow:var(--elev-1);
   transition:transform var(--dur-fast) var(--ease), box-shadow var(--dur-med) var(--ease), border-color var(--dur-med);
 }
+.ex-card, .warmup-card{ isolation:isolate; } /* sheen sits behind the card text, not over it */
 .ex-card::before, .warmup-card::before{
-  content:""; position:absolute; inset:0; border-radius:inherit;
+  content:""; position:absolute; inset:0; border-radius:inherit; z-index:-1;
   background:var(--sheen); pointer-events:none;
 }
 .ex-card:hover, .warmup-card:hover, .notes:hover{
@@ -1009,7 +1013,7 @@ body.anon-mode [data-style-btn].locked{ opacity:.4; }
 /* ============================================================
    Track D — adaptive nav (bottom bar ↔ side rail) + Coach screen
    ============================================================ */
-:root{ --nav-h:58px; --side-w:92px; }
+:root{ --nav-h:56px; --side-w:92px; }
 
 .screen[hidden]{ display:none; }
 /* each screen reserves room for the fixed bottom bar so its last control
@@ -1024,19 +1028,31 @@ body.anon-mode [data-style-btn].locked{ opacity:.4; }
   display:flex; align-items:stretch;
   background:var(--nav-bg); border-top:1px solid var(--line);
   backdrop-filter:blur(14px) saturate(1.2); -webkit-backdrop-filter:blur(14px) saturate(1.2);
-  padding-bottom:env(safe-area-inset-bottom);
+  padding:0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
+/* each tab: icon sits in a pill that fills with the primary tint when current */
 #appNav button{
-  flex:1; min-width:0; background:none; border:none; cursor:pointer;
+  --pill-top:var(--space-2);
+  position:relative; flex:1; min-width:0; min-height:44px; background:none; border:none; cursor:pointer;
   font-family:inherit; color:var(--paper-dim);
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  gap:3px; padding:8px 4px; font-size:var(--text-xs); font-weight:700;
+  display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+  gap:2px; padding:calc(var(--pill-top) + 4px) 4px 6px; font-size:var(--text-xs); font-weight:var(--fw-bold); line-height:1.3;
   transition:color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
 }
+#appNav button::before{
+  content:""; position:absolute; top:var(--pill-top); inset-inline-start:50%;
+  width:56px; height:30px; margin-inline-start:-28px; border-radius:var(--radius-pill);
+  background:color-mix(in srgb, var(--primary) 18%, var(--surface-2));
+  transform:scaleX(.5); opacity:0;
+  transition:transform var(--dur-med) var(--ease), opacity var(--dur-fast) var(--ease);
+}
+#appNav button > *{ position:relative; }
 #appNav button svg{ width:22px; height:22px; fill:currentColor; }
-#appNav button[aria-current="page"]{ color:var(--accent-tint); }
-#appNav button[aria-current="page"] svg{ filter:drop-shadow(0 3px 8px color-mix(in srgb, var(--accent) 55%, transparent)); }
-#appNav button:active{ transform:scale(.9); }
+#appNav button[aria-current="page"]{ color:var(--primary-text); }
+#appNav button[aria-current="page"]::before{ transform:none; opacity:1; }
+#appNav button:hover:not([aria-current="page"]){ color:var(--ink); }
+#appNav button:active{ transform:scale(.94); }
+#appNav button:focus-visible{ outline-offset:-4px; border-radius:var(--radius); }
 
 body.onboarding-open #appNav{ display:none !important; }
 
@@ -1050,9 +1066,9 @@ body.onboarding-open #appNav{ display:none !important; }
     top:0; bottom:0; left:0; right:auto; width:var(--side-w);
     flex-direction:column; align-items:stretch; justify-content:flex-start;
     border-top:none; border-right:1px solid var(--line);
-    padding:14px 0 0;
+    padding:var(--space-4) 0 0;
   }
-  #appNav button{ flex:none; gap:5px; padding:14px 4px; font-size:var(--text-xs); }
+  #appNav button{ --pill-top:var(--space-2); flex:none; min-height:64px; }
   body{ padding-left:var(--side-w); }
   .screen{ padding-bottom:96px; } /* P0-1: clears the rail-anchored FABs (52px + 24px gap + margin) */
   #timerBar{ left:var(--side-w); right:0; bottom:0; }
@@ -1397,6 +1413,7 @@ body.onboarding-open #appNav{ display:none !important; }
 @media (prefers-reduced-motion: reduce){
   .coach-spin{ animation-duration:2s; }
   #appNav button:active, .day-chip:active, .coach-primary:active{ transform:none; }
+  #appNav button::before{ transform:none; }
 }
 
 /* ---- workout calendar: week strip (above #dayTabs) ---- */
@@ -1574,24 +1591,24 @@ body.onboarding-open #appNav{ display:none !important; }
    ============================================================ */
 #topBar{
   position:fixed; z-index:110;
-  top:calc(env(safe-area-inset-top) + 10px); right:12px; left:auto;
+  top:calc(env(safe-area-inset-top) + 10px); right:calc(12px + env(safe-area-inset-right)); left:auto;
   display:flex; align-items:center; gap:6px;
-  padding:4px; border-radius:999px;
+  padding:4px; border-radius:var(--radius-pill);
   background:var(--nav-bg); border:1px solid var(--line);
   box-shadow:var(--elev-1);
   backdrop-filter:blur(14px) saturate(1.2); -webkit-backdrop-filter:blur(14px) saturate(1.2);
 }
-[dir="rtl"] #topBar{ right:auto; left:12px; }
+[dir="rtl"] #topBar{ right:auto; left:calc(12px + env(safe-area-inset-left)); }
 #topBar[hidden],
 body.onboarding-open #topBar,
 body:has(#videoModal.show) #topBar{ display:none !important; }
 /* keep the centred hero titles clear of the fixed bar on phones */
 @media (max-width:899.98px){
-  body.has-topbar header.hero{ padding-top:58px; }
+  body.has-topbar header.hero{ padding-top:72px; }
 }
 .tb-streak{
-  display:inline-flex; align-items:center; height:32px; padding:0 10px;
-  border-radius:999px; font-size:var(--text-sm); font-weight:800; white-space:nowrap;
+  display:inline-flex; align-items:center; height:44px; padding:0 12px;
+  border-radius:var(--radius-pill); font-size:var(--text-sm); font-weight:800; white-space:nowrap;
   color:var(--paper); background:var(--panel2); border:1px solid var(--line);
   font-variant-numeric:tabular-nums;
 }
@@ -1600,7 +1617,7 @@ body:has(#videoModal.show) #topBar{ display:none !important; }
 .tb-slot:empty{ display:none; }
 .tb-avatar-wrap{ position:relative; display:inline-flex; }
 .tb-avatar{
-  width:36px; height:36px; padding:0; border-radius:50%; cursor:pointer;
+  width:44px; height:44px; padding:0; border-radius:50%; cursor:pointer;
   border:2px solid var(--accent); background:var(--panel2); overflow:hidden;
   display:inline-flex; align-items:center; justify-content:center;
   transition:transform var(--dur-fast) var(--ease);
@@ -1632,7 +1649,7 @@ body:has(#videoModal.show) #topBar{ display:none !important; }
 
 /* ---- notification bell (in tb-slot) + inbox panel (notifications.js) ---- */
 .tb-bell{
-  position:relative; width:36px; height:36px; border-radius:50%;
+  position:relative; width:44px; height:44px; border-radius:50%;
   display:inline-flex; align-items:center; justify-content:center;
   background:transparent; border:none; cursor:pointer; color:var(--paper);
   transition:transform var(--dur-fast) var(--ease);
@@ -1641,7 +1658,7 @@ body:has(#videoModal.show) #topBar{ display:none !important; }
 .tb-bell:active{ transform:scale(.92); }
 .tb-bell-badge{
   position:absolute; top:-2px; inset-inline-end:-2px; min-width:16px; height:16px; padding:0 3px;
-  border-radius:999px; background:var(--rust); color:#fff; font-size:var(--text-xs); font-weight:800;
+  border-radius:999px; background:var(--rust); color:var(--on-primary); font-size:var(--text-xs); font-weight:800;
   line-height:16px; text-align:center; border:2px solid var(--nav-bg);
   font-variant-numeric:tabular-nums;
 }
