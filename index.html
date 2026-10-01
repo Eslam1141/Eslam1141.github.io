@@ -18,6 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="Etqadem">
 <meta name="mobile-web-app-capable" content="yes">
 
+<script src="theme-boot.js"></script>
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="widgets/coach-loading.css">
 <link rel="stylesheet" href="auth-email.css">
@@ -205,6 +206,15 @@
       <div class="plan-toggle" id="styleToggle">
         <button data-style-btn="gym" data-i18n="styleGym">Gym</button>
         <button data-style-btn="cal" data-i18n="styleCal">In-House / Bodyweight</button>
+      </div>
+    </div>
+
+    <div class="more-group">
+      <div class="more-label" id="themeLabel" data-i18n="themeLabel">Appearance</div>
+      <div class="plan-toggle theme-toggle" id="themeToggle" role="radiogroup" aria-labelledby="themeLabel">
+        <button type="button" role="radio" data-theme-btn="auto" data-i18n="themeAuto">Auto</button>
+        <button type="button" role="radio" data-theme-btn="light" data-i18n="themeLight">Light</button>
+        <button type="button" role="radio" data-theme-btn="dark" data-i18n="themeDark">Dark</button>
       </div>
     </div>
 

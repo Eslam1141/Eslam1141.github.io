@@ -375,6 +375,8 @@ const T = {
   planLabel:["Plan","الخطة"],
   programLabel:["Program","البرنامج"],
   langLabel:["Language","اللغة"],
+  themeLabel:["Appearance","المظهر"],
+  themeAuto:["Auto","تلقائي"], themeLight:["Light","فاتح"], themeDark:["Dark","داكن"],
   premiumLabel:["Premium","بريميوم"],
   premiumTitle:["Etqadem Premium","اتقدم بريميوم"],
   premiumSub:["Coming soon","قريباً"],
@@ -712,6 +714,21 @@ window.GymMigrations.maleV2();
 let activePlan  = localStorage.getItem("gym_plan");                 // "male" | "female" | null (first run)
 let activeStyle = localStorage.getItem("gym_style") || "gym";       // "gym" | "cal"
 let activeLang  = localStorage.getItem("gym_lang")  || "en";        // "en" | "ar"
+
+// Theme (auto | light | dark) is a separate axis from the plan persona; both
+// pick the palette in styles.css. theme-boot.js (loaded in <head>) resolves
+// gym_theme before first paint, follows the OS in auto mode and owns the
+// theme-color meta; this only re-applies it when the persona changes.
+function applyTheme(){
+  if(window.GymTheme) window.GymTheme.apply(activePlan);
+}
+function renderThemeToggle(){
+  const mode = window.GymTheme ? window.GymTheme.mode() : "auto";
+  document.querySelectorAll("[data-theme-btn]").forEach(b=>{
+    b.setAttribute("aria-checked", b.dataset.themeBtn === mode ? "true" : "false");
+    b.tabIndex = b.dataset.themeBtn === mode ? 0 : -1;
+  });
+}
 
 // Anonymous = chose "continue without an account" and not currently signed in.
 function isAnonMode(){
@@ -1434,8 +1451,7 @@ function applyState(persist){
   DAYS = pickDays();
   animateCards = true;
   document.documentElement.dataset.plan = activePlan || "male";
-  const tc = document.querySelector('meta[name="theme-color"]');
-  if(tc) tc.setAttribute("content", activePlan === "female" ? "#17121a" : "#0d1117");
+  applyTheme();
   activeDay = localStorage.getItem(activeDayStoreKey()) || DAYS[0].id;
   if(!DAYS.some(d=>d.id===activeDay)) activeDay = DAYS[0].id;
   openVideoId = null;
@@ -1536,6 +1552,30 @@ document.querySelectorAll("[data-plan-btn]").forEach(b=>{
 document.querySelectorAll("[data-style-btn]").forEach(b=>{
   b.onclick = ()=> setStyle(b.dataset.styleBtn);
 });
+// Appearance: Auto (follow the phone) / Light / Dark. A radiogroup with a
+// roving tabindex: arrows move + select, and in RTL the visual order flips.
+(function(){
+  const group = document.getElementById("themeToggle");
+  if(!group) return;
+  const btns = Array.from(group.querySelectorAll("[data-theme-btn]"));
+  const pick = b=>{
+    if(window.GymTheme) window.GymTheme.setMode(b.dataset.themeBtn);
+    renderThemeToggle();
+  };
+  btns.forEach(b=>{ b.onclick = ()=> pick(b); });
+  group.addEventListener("keydown", e=>{
+    const rtl = document.documentElement.dir === "rtl";
+    const fwd = e.key === "ArrowDown" || e.key === (rtl ? "ArrowLeft" : "ArrowRight");
+    const back = e.key === "ArrowUp" || e.key === (rtl ? "ArrowRight" : "ArrowLeft");
+    if(!fwd && !back) return;
+    e.preventDefault();
+    const i = btns.indexOf(document.activeElement);
+    const next = btns[(i + (fwd ? 1 : btns.length - 1)) % btns.length];
+    next.focus();
+    pick(next);
+  });
+  renderThemeToggle();
+})();
 document.getElementById("langBtn").onclick = ()=> applyLang(activeLang === "ar" ? "en" : "ar", true);
 
 // ---------------- INIT ----------------

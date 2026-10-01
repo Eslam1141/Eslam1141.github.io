@@ -16,6 +16,7 @@ const CACHE_NAME = "etqadem-__CACHE_HASH__";
 const ASSETS = [
   "./index.html",
   "./styles.css",
+  "./theme-boot.js",
   "./app.js",
   "./ui.js",
   "./coach.js",
@@ -47,7 +48,8 @@ const ASSETS = [
   "./icons/icon-maskable-512-etq.png",
   "./icons/apple-touch-icon-etq.png",
   "./icons/favicon-32-etq.png",
-  "./icons/favicon-16-etq.png"
+  "./icons/favicon-16-etq.png",
+  "./fonts/alexandria-var.woff2"
 ];
 
 self.addEventListener("install", (event) => {
