@@ -16,13 +16,13 @@ Secondary audience (confirmed, admin only): the operator, who manages users from
 
 ## Product Purpose
 
-RepVane is a free, all-in-one gym tracker: one app for the plan, the logging, the timer, form guidance, food and an AI coach, so a gym-goer doesn't juggle several apps. Success means users open it every training day, finish their sessions with it, and build a streak.
+Etqadem is a free, all-in-one gym tracker: one app for the plan, the logging, the timer, form guidance, food and an AI coach, so a gym-goer doesn't juggle several apps. Success means users open it every training day, finish their sessions with it, and build a streak.
 
 ## Positioning
 
 A free all-in-one gym tracker for Arabic- and English-speaking lifters, built around local habits: local foods in food logging and a Ramadan mode for training and eating while fasting. Its competitors are regional coaching apps such as ElCoach.
 
-Open decision: the roadmap also plans a paid Premium tier (Paymob payments, higher AI-coach quotas) and an "AI coach that reads your InBody" angle. How Premium fits with "free all-in-one" hasn't been decided. Future work must not present RepVane as paid-only, or put InBody at the center, until that's settled.
+Open decision: the roadmap also plans a paid Premium tier (Paymob payments, higher AI-coach quotas) and an "AI coach that reads your InBody" angle. How Premium fits with "free all-in-one" hasn't been decided. Future work must not present Etqadem as paid-only, or put InBody at the center, until that's settled.
 
 ## Operating Context
 
@@ -40,7 +40,7 @@ Open decision: the roadmap also plans a paid Premium tier (Paymob payments, high
 
 ## Brand Commitments
 
-- Name: **RepVane** (renamed from Athlex; no "Athlex" anywhere).
+- Name: **Etqadem** (renamed from Athlex; no "Athlex" anywhere).
 - Logo: currently the "Dial Vane" mark (`icons/logo-dv.svg`); an "RV monogram" successor is being chosen (`../brand/round7/`). The accent is teal/emerald, picked partly because ElCoach uses orange; don't drift back to orange.
 
 ## Evidence on Hand

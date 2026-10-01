@@ -1,5 +1,5 @@
 ---
-name: RepVane
+name: Etqadem
 description: A free all-in-one gym tracker for the gym floor: dark, lively, teal-lit, coach always at hand.
 colors:
   ink-night: "#0d1117"
@@ -156,13 +156,13 @@ components:
     size: "52px"
 ---
 
-# Design System: RepVane
+# Design System: Etqadem
 
 ## Overview
 
 **Creative North Star: "The Coach's Clipboard"**
 
-RepVane is the clipboard a good coach carries across the gym floor: every exercise is its own card, every set gets a checkmark, and the coach is always one tap away in the corner. The interface is practical first. A beginner standing at a rack, phone in one sweaty hand, sees what to do next, logs the weight, starts the rest timer, and moves on. Nothing on a training screen should make them think about the app instead of the lift.
+Etqadem is the clipboard a good coach carries across the gym floor: every exercise is its own card, every set gets a checkmark, and the coach is always one tap away in the corner. The interface is practical first. A beginner standing at a rack, phone in one sweaty hand, sees what to do next, logs the weight, starts the rest timer, and moves on. Nothing on a training screen should make them think about the app instead of the lift.
 
 The clipboard sits in a lively room. The app is dark (ink-night backgrounds, slate cards) and lit by one teal light source that warms the buttons, the active day and the coach. Depth and motion are part of the identity, not garnish: cards lift and carry a faint top sheen, the main Start button has a WebGL metallic shine, and soft light beams drift behind the screens. Liveliness serves energy and encouragement; clarity of the next action always wins when the two compete.
 
@@ -257,7 +257,7 @@ Fixed layers stack in a deliberate order: content (z 1), timer bar (50), coach b
 
 ## Elevation & Depth
 
-RepVane is lifted and lively. Surfaces are tonal layers (ink night → slate panel → raised slate), and on top of that, cards cast soft shadows and carry a faint top-down white sheen (`--sheen`), so they read as physical cards on the clipboard. Hover lifts a card 2px onto a deeper shadow; pressing sinks it back. Glass appears on fixed chrome: the nav bar and top bar use a 14px backdrop blur over 95% ink. Signature effects (the WebGL metallic shine behind the Start button, the canvas light beams behind screens, the gradient glow under the coach button) give the room energy.
+Etqadem is lifted and lively. Surfaces are tonal layers (ink night → slate panel → raised slate), and on top of that, cards cast soft shadows and carry a faint top-down white sheen (`--sheen`), so they read as physical cards on the clipboard. Hover lifts a card 2px onto a deeper shadow; pressing sinks it back. Glass appears on fixed chrome: the nav bar and top bar use a 14px backdrop blur over 95% ink. Signature effects (the WebGL metallic shine behind the Start button, the canvas light beams behind screens, the gradient glow under the coach button) give the room energy.
 
 ### Shadow Vocabulary
 - **Resting lift** (`--elev-1`: `0 2px 10px rgba(0,0,0,.28)`): every card at rest.
