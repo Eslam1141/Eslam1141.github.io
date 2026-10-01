@@ -70,6 +70,10 @@ self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
   const url = new URL(event.request.url);
+  // Cross-origin requests (Google avatars, cdnjs, onboarding video) go
+  // straight to the network: this worker's own CSP connect-src would block
+  // them if it fetched them itself.
+  if (url.origin !== self.location.origin) return;
   // Never intercept API or Google Identity traffic — sync freshness and auth
   // are handled in sync.js, and these must always hit the network.
   if (url.pathname.startsWith("/api/") ||

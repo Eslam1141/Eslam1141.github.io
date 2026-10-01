@@ -91,8 +91,9 @@ jobs:
           curl -fsS localhost:8080/app/ | grep -q 'id="onboarding"'
           curl -fsS localhost:8080/app/service-worker.js | grep -Eq 'etqadem-[0-9a-f]{12}'
           curl -fsS localhost:8080/service-worker.js | grep -q 'unregister'
-          test "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' localhost:8080/index.html)" = "301 http://localhost:8080/app/"
-          test "$(curl -s -o /dev/null -w '%{redirect_url}' 'localhost:8080/?reset_token=abc')" = "http://localhost:8080/app/?reset_token=abc"
+          test "$(curl -s -o /dev/null -w '%{http_code}' localhost:8080/index.html)" = "301"
+          curl -sI localhost:8080/index.html | tr -d '\r' | grep -qi '^location: /app/$'
+          curl -sI 'localhost:8080/?reset_token=abc' | tr -d '\r' | grep -qi '^location: /app/?reset_token=abc$'
           curl -fsSI localhost:8080/ | grep -qi 'content-security-policy'
           curl -fsSI localhost:8080/app/ | grep -qi 'content-security-policy'
           test "$(curl -s -o /dev/null -w '%{http_code}' localhost:8080/missing)" = "404"

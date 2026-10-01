@@ -19,7 +19,11 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     self.registration.unregister()
       .then(() => self.clients.matchAll({ type: "window" }))
-      .then((clients) => Promise.all(clients.map((c) => c.navigate(c.url).catch(() => {}))))
+      .then((clients) => Promise.all(clients
+        // Leave /app/ tabs alone: reloading one would drop in-memory state
+        // (e.g. a running rest timer); the /app/ worker claims them anyway.
+        .filter((c) => !new URL(c.url).pathname.startsWith("/app/"))
+        .map((c) => c.navigate(c.url).catch(() => {}))))
       .catch(() => {})
   );
 });
