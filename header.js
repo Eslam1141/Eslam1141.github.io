@@ -197,7 +197,7 @@
     });
     document.getElementById("tbMenuAdmin").addEventListener("click", function () {
       setMenuOpen(false);
-      window.location.href = "/admin.html"; // same tab: sessionStorage session carries over
+      window.location.href = "admin.html"; // relative (app lives at /app/); same tab: sessionStorage session carries over
     });
     document.getElementById("tbMenuSignOut").addEventListener("click", function () {
       setMenuOpen(false);
