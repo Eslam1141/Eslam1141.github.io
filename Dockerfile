@@ -25,9 +25,9 @@ RUN cd /usr/share/nginx/html && \
     HASH=$(cat index.html styles.css app.js ui.js coach.js checkin.js chat.js food.js sync.js \
         auth-email.js auth-email.css signin-fx.js signin-fx.css \
         calendar.js workout-builder.js header.js notifications.js profile.js hero-video.js metallic-button.js toast.js beams-bg.js config.js manifest.json \
-        icons/logo-dv.svg icons/coach.svg icons/avatar-default.svg icons/icon-192-dv.png icons/icon-512-dv.png \
-        icons/icon-maskable-192-dv.png icons/icon-maskable-512-dv.png \
-        icons/apple-touch-icon-dv.png icons/favicon-32-dv.png icons/favicon-16-dv.png | sha256sum | cut -c1-12) && \
+        icons/logo-etq.svg icons/coach.svg icons/avatar-default.svg icons/icon-192-etq.png icons/icon-512-etq.png \
+        icons/icon-maskable-192-etq.png icons/icon-maskable-512-etq.png \
+        icons/apple-touch-icon-etq.png icons/favicon-32-etq.png icons/favicon-16-etq.png | sha256sum | cut -c1-12) && \
     sed "/^const CACHE_NAME/s/__CACHE_HASH__/${HASH}/" service-worker.js > /tmp/service-worker.js.tmp && \
     cat /tmp/service-worker.js.tmp > service-worker.js && \
     rm /tmp/service-worker.js.tmp
