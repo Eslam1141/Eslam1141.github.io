@@ -61,6 +61,16 @@ Required secrets: `KUBE_CONFIG` (existing) and **`GYM_BE_DEPLOY_TOKEN`**, stored
 fine-grained PAT scoped to the `Eslam1141/gym-be` repo only with **Contents: Read and write**
 (must be allowed to push to `main` there). The job fails early with a clear message if it is missing.
 
+### CI pipeline and required checks
+
+Single `build` job (widget drift check, docker build + smoke tests) then `deploy` (main only, needs
+`build`, so a failed build or smoke test never deploys). On a PR the image is built (no release tags) and
+pushed as `tree-<tree sha>`; on `main` that image is promoted by retagging if the tree matches (no rebuild),
+otherwise it is rebuilt. Docker layers are cached with `type=gha,scope=gym-ui`; npm uses the setup-node cache.
+
+**Required status check** (Settings -> Branches -> `main`, or Rules -> Rulesets): **`build`**, plus
+**Require branches to be up to date before merging**. Do not mark `deploy`.
+
 ## GitHub Pages
 
 Unaffected. The committed `config.js` has empty values, so the Pages site shows no

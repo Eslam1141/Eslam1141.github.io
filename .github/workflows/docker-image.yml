@@ -15,6 +15,11 @@ on:
   workflow_dispatch:
   pull_request:
 
+# Cancel superseded PR runs only; never cancel a main run (deploy has its own group).
+concurrency:
+  group: ui-${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -70,6 +75,10 @@ jobs:
           context: .
           load: true
           tags: gym-ui:ci
+          # GitHub Actions layer cache (mode=max keeps intermediate stages); the smoke Build
+          # and the main-branch Push share it, so Push is a near no-op after Build.
+          cache-from: type=gha,scope=gym-ui
+          cache-to: type=gha,mode=max,scope=gym-ui
       - name: Smoke
         if: github.event_name == 'pull_request' || steps.cache-check.outputs.exists != '0'
         run: |
@@ -110,6 +119,10 @@ jobs:
           tags: |
             ghcr.io/eslam1141/gym-ui:${{ github.sha }}
             ghcr.io/eslam1141/gym-ui:latest
+          # GitHub Actions layer cache (mode=max keeps intermediate stages); the smoke Build
+          # and the main-branch Push share it, so Push is a near no-op after Build.
+          cache-from: type=gha,scope=gym-ui
+          cache-to: type=gha,mode=max,scope=gym-ui
       - name: Promote cached tree image to release tags
         if: github.ref == 'refs/heads/main' && steps.cache-check.outputs.exists == '0'
         run: |
