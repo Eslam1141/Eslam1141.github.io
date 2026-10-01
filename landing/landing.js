@@ -1,0 +1,161 @@
+// Etqadem landing: language toggle (shares the app's gym_lang key) and the
+// one-time typed coach reply. boot.js has already set <html lang dir>.
+(function () {
+  "use strict";
+
+  var STR = {
+    en: {
+      title: "Etqadem | Free gym tracker with an AI coach in Arabic",
+      desc: "Etqadem is one free app for your gym day: workout plan, set logging, rest timer, form videos, food log and an AI coach that answers in Arabic or English.",
+      skip: "Skip to content",
+      nav_features: "Features", nav_coach: "AI coach", nav_ramadan: "Ramadan", signin: "Sign in",
+      lang_btn: "العربية", lang_label: "Switch to Arabic",
+      hero_h1: "Your whole gym day, one free app",
+      hero_sub: "Workout plan, set logging, rest timer, form videos, food log and an AI coach that answers in Arabic or English.",
+      cta: "Start free", cta_how: "See how it works",
+      photo_alt: "A lifter under a barbell in a squat rack",
+      shot_top_alt: "Etqadem workout screen with the weekly calendar and workout timer",
+      shot_list_alt: "Etqadem exercise list with sets, reps and rest buttons",
+      shot_men_alt: "Etqadem men's plan in teal",
+      shot_women_alt: "Etqadem women's plan in rose",
+      feat_h: "Everything your gym day needs",
+      f1_h: "A plan for every day", f1_p: "Day templates with warm-ups, sets and reps already filled in. Or build your own.",
+      f2_h: "Log sets, rest on time", f2_p: "Save the weight and reps of each set, and let the rest timer count you back in.",
+      f3_h: "See the movement first", f3_p: "Exercises come with form videos, one tap away.",
+      f4_h: "Food from your kitchen", f4_p: "Search Egyptian and Gulf foods in Arabic or English and see your daily calories and macros.",
+      f5_h: "Keep the streak", f5_p: "Track your weight, check in weekly and watch your streak grow.",
+      coach_h: "A coach that answers in Arabic",
+      coach_p: "Ask about training or food in your own words. The AI coach builds a diet and training plan from your numbers and goal.",
+      coach_note: "Free with a Google account.",
+      chat_name: "AI coach", chat_cap: "Example conversation",
+      chat_label: "Example conversation with the AI coach",
+      chat_q_en: "You train legs today? What should I eat before training?",
+      chat_a_en: "About an hour and a half before, eat a meal with carbs and some protein, like a banana with yogurt or a cheese sandwich. After training, focus on protein: eggs, chicken or fava beans.",
+      ram_h: "Ramadan mode", ram_p: "Plan meals around suhoor and iftar, and train around your fast.",
+      plans_h: "Plans for men and women", plans_p: "Choose the men's or women's day templates. Switch any time, in Arabic or English.",
+      plan_m: "Men's plan", plan_f: "Women's plan",
+      final_h: "Ready for today's session?", final_p: "It's free. Sign in with Google or email, or look around without an account.",
+      credit_pre: "Photo:", credit_post: ". Cropped and recolored."
+    },
+    ar: {
+      title: "اتقدم | تطبيق جيم مجاني مع مدرب ذكي بالعربي",
+      desc: "اتقدم تطبيق واحد مجاني ليوم الجيم: خطة تمرين، تسجيل المجموعات، مؤقت راحة، فيديوهات أداء، سجل أكل ومدرب ذكي يرد بالعربي أو الإنجليزي.",
+      skip: "انتقل إلى المحتوى",
+      nav_features: "المميزات", nav_coach: "المدرب الذكي", nav_ramadan: "رمضان", signin: "تسجيل الدخول",
+      lang_btn: "English", lang_label: "التبديل إلى الإنجليزية",
+      hero_h1: "تطبيق واحد مجاني لكل يوم جيم",
+      hero_sub: "خطة تمرين، تسجيل المجموعات، مؤقت راحة، فيديوهات أداء، سجل أكل ومدرب ذكي يرد بالعربي أو الإنجليزي.",
+      cta: "ابدأ مجاناً", cta_how: "شاهد كيف يعمل",
+      photo_alt: "لاعب تحت البار في قفص السكوات",
+      shot_top_alt: "شاشة التمرين في اتقدم مع تقويم الأسبوع ومؤقت التمرين",
+      shot_list_alt: "قائمة تمارين اتقدم مع المجموعات والتكرارات وأزرار الراحة",
+      shot_men_alt: "خطة الرجال في اتقدم باللون الأخضر المزرق",
+      shot_women_alt: "خطة النساء في اتقدم باللون الوردي",
+      feat_h: "كل ما يحتاجه يومك في الجيم",
+      f1_h: "خطة لكل يوم", f1_p: "قوالب أيام جاهزة بالإحماء والمجموعات والتكرارات. أو ابنِ خطتك بنفسك.",
+      f2_h: "سجّل مجموعاتك وارتح في وقتك", f2_p: "احفظ وزن وتكرارات كل مجموعة، ودع مؤقت الراحة يعدّ لك الوقت.",
+      f3_h: "شاهد الحركة قبل أن تبدأ", f3_p: "التمارين معها فيديوهات أداء بضغطة واحدة.",
+      f4_h: "أكل من مطبخك", f4_p: "ابحث عن الأكلات المصرية والخليجية بالعربية أو الإنجليزية وشاهد سعراتك وماكروز يومك.",
+      f5_h: "حافظ على استمرارك", f5_p: "تابع وزنك، وسجّل متابعتك الأسبوعية، وراقب سلسلة أيامك وهي تكبر.",
+      coach_h: "مدرب يرد عليك بالعربي",
+      coach_p: "اسأل عن التمرين أو الأكل بكلامك أنت. المدرب الذكي يبني لك خطة أكل وتمرين من أرقامك وهدفك.",
+      coach_note: "مجاني بحساب Google.",
+      chat_name: "المدرب الذكي", chat_cap: "محادثة توضيحية",
+      chat_label: "محادثة توضيحية مع المدرب الذكي",
+      chat_q_en: "", chat_a_en: "",
+      ram_h: "وضع رمضان", ram_p: "نظّم وجباتك حول السحور والإفطار، وتمرّن حول صيامك.",
+      plans_h: "خطط للرجال والنساء", plans_p: "اختر قوالب الرجال أو النساء. بدّل متى شئت، بالعربية أو الإنجليزية.",
+      plan_m: "خطة الرجال", plan_f: "خطة النساء",
+      final_h: "جاهز لتمرين اليوم؟", final_p: "التطبيق مجاني. سجّل بحساب Google أو بالبريد، أو تجوّل بدون حساب.",
+      credit_pre: "الصورة:", credit_post: ". تم القص وتغيير الألوان."
+    }
+  };
+
+  var root = document.documentElement;
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var lang = root.lang === "ar" ? "ar" : "en";
+
+  function $all(sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); }
+
+  function apply(next) {
+    lang = next;
+    var s = STR[lang];
+    root.lang = lang;
+    root.dir = lang === "ar" ? "rtl" : "ltr";
+    document.title = s.title;
+    var meta = document.querySelector('meta[name="description"]');
+    if (meta) meta.setAttribute("content", s.desc);
+
+    $all("[data-i18n]").forEach(function (el) { el.textContent = s[el.getAttribute("data-i18n")]; });
+    $all("[data-i18n-alt]").forEach(function (el) { el.alt = s[el.getAttribute("data-i18n-alt")]; });
+
+    // The other-language echo under the headline.
+    var other = lang === "ar" ? "en" : "ar";
+    $all("[data-echo]").forEach(function (el) {
+      el.textContent = STR[other][el.getAttribute("data-echo")];
+      el.lang = other;
+    });
+
+    // English glosses under the Arabic chat, only on the English page.
+    $all("[data-gloss]").forEach(function (el) {
+      var t = s[el.getAttribute("data-gloss")];
+      el.textContent = t;
+      el.hidden = !t;
+    });
+
+    // Screenshots follow the language: the app itself flips to RTL.
+    $all("img[data-shot]").forEach(function (img) {
+      var k = img.getAttribute("data-shot").split("-");
+      img.src = "assets/app-" + k[0] + "-" + lang + "-" + k[1] + ".webp";
+    });
+
+    var btn = document.getElementById("langBtn");
+    btn.textContent = s.lang_btn;
+    btn.setAttribute("aria-label", s.lang_label);
+    var chat = document.querySelector(".chat");
+    if (chat) chat.setAttribute("aria-label", s.chat_label);
+  }
+
+  document.getElementById("langBtn").addEventListener("click", function () {
+    var next = lang === "ar" ? "en" : "ar";
+    try { localStorage.setItem("gym_lang", next); } catch (e) {}
+    apply(next);
+    finishTyping();
+  });
+
+  // Typed coach reply: plays once when the chat scrolls into view.
+  var answer = document.getElementById("chatA");
+  var full = answer ? answer.getAttribute("data-full") : "";
+  var timer = 0;
+  var io = null;
+
+  function finishTyping() {
+    if (io) { io.disconnect(); io = null; }
+    if (timer) { clearTimeout(timer); timer = 0; }
+    if (answer) { answer.textContent = full; answer.classList.remove("typing"); }
+  }
+
+  function typeReply() {
+    var i = 0;
+    answer.textContent = "";
+    answer.classList.add("typing");
+    (function step() {
+      i += 1;
+      answer.textContent = full.slice(0, i);
+      if (i < full.length) timer = setTimeout(step, 28);
+      else finishTyping();
+    })();
+  }
+
+  apply(lang);
+  root.classList.remove("pending");
+
+  if (answer && !reduce && "IntersectionObserver" in window) {
+    answer.textContent = "";
+    answer.classList.add("typing");
+    io = new IntersectionObserver(function (entries) {
+      if (entries[0].isIntersecting) { io.disconnect(); io = null; timer = setTimeout(typeReply, 600); }
+    }, { threshold: 0.6 });
+    io.observe(document.querySelector(".chat"));
+  }
+})();
