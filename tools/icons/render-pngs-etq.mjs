@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 const require = createRequire(import.meta.url);
 const { chromium } = require(process.env.PLAYWRIGHT_CORE || "playwright");
 const ICONS = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "icons");
-const TEAL = "#0B7A75";
+const PAPER = "#F3F0E8";
 
 // [source svg, output png, size, opaque background?]
 const JOBS = [
@@ -18,13 +18,13 @@ const JOBS = [
   ["logo-etq.svg", "favicon-48-etq.png", 48],
   ["logo-etq-maskable.svg", "icon-maskable-192-etq.png", 192],
   ["logo-etq-maskable.svg", "icon-maskable-512-etq.png", 512],
-  ["logo-etq-maskable.svg", "apple-touch-icon-etq.png", 180, TEAL],
+  ["logo-etq-maskable.svg", "apple-touch-icon-etq.png", 180, PAPER],
   ["logo-etq.svg", "favicon-32-etq.png", 32],
   ["logo-etq-tiny.svg", "favicon-16-etq.png", 16],
   ["logo-etq-mono.svg", "icon-mono-96-etq.png", 96],
   ["logo-etq-android-fg.svg", "android/ic-launcher-foreground-etq-432.png", 432],
   ["logo-etq-android-mono.svg", "android/ic-launcher-monochrome-etq-432.png", 432],
-  [null, "android/ic-launcher-background-etq-432.png", 432, TEAL],
+  [null, "android/ic-launcher-background-etq-432.png", 432, PAPER],
 ];
 
 const browser = await chromium.launch();
