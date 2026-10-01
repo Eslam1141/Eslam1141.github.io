@@ -96,6 +96,8 @@ jobs:
           curl -sI 'localhost:8080/?reset_token=abc' | tr -d '\r' | grep -qi '^location: /app/?reset_token=abc$'
           curl -fsSI localhost:8080/ | grep -qi 'content-security-policy'
           curl -fsSI localhost:8080/app/ | grep -qi 'content-security-policy'
+          # Google sign-in breaks under Referrer-Policy: no-referrer
+          curl -fsSI localhost:8080/app/ | grep -qi '^referrer-policy: strict-origin-when-cross-origin'
           test "$(curl -s -o /dev/null -w '%{http_code}' localhost:8080/missing)" = "404"
           docker rm -f ui
       - name: Smoke (read-only rootfs)

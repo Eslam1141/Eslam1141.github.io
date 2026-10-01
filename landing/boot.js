@@ -1,8 +1,8 @@
 // Runs synchronously from <head> (no inline script: the CSP allows 'self' scripts only).
 // 1. Old password-reset links (/?reset_token=...) belong to the app.
 // 2. Returning users (local app state) go straight to the app, unless ?home.
-//    The app sends Referrer-Policy: no-referrer, so a same-site referrer
-//    check can't work; ?home is the explicit way to see the landing.
+//    ?home is the explicit way to see the landing (a referrer check would
+//    be fragile: installed PWAs and privacy settings drop it).
 // 3. Language and direction are set before first paint.
 (function () {
   var d = document.documentElement;
