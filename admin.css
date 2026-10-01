@@ -11,7 +11,7 @@ body.adm{background:var(--bg);color:var(--paper);min-height:100vh;margin:0;font-
 .adm-msg a{color:var(--accent-tint)}
 .adm-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-block-end:20px}
 .adm-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
-.adm-card b{display:block;font-size:var(--text-2xl);font-weight:900}
+.adm-card b{display:block;font-size:var(--text-2xl);font-weight:var(--fw-black)}
 .adm-card span{color:var(--paper-dim);font-size:var(--text-sm)}
 .adm-section{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-block-end:16px}
 .adm-section h2{font-size:var(--text-md);margin:0 0 10px}

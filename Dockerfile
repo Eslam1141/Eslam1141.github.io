@@ -8,7 +8,7 @@ USER root
 RUN chmod +x /docker-entrypoint.d/40-render-config.sh
 USER 101
 
-COPY --chown=101:101 index.html styles.css app.js ui.js coach.js checkin.js chat.js food.js sync.js auth-email.js auth-email.css signin-fx.js signin-fx.css calendar.js workout-builder.js header.js notifications.js profile.js hero-video.js metallic-button.js toast.js beams-bg.js service-worker.js manifest.json config.js admin.html admin.js admin.css /usr/share/nginx/html/
+COPY --chown=101:101 index.html theme-boot.js styles.css app.js ui.js coach.js checkin.js chat.js food.js sync.js auth-email.js auth-email.css signin-fx.js signin-fx.css calendar.js workout-builder.js header.js notifications.js profile.js hero-video.js metallic-button.js toast.js beams-bg.js service-worker.js manifest.json config.js admin.html admin.js admin.css /usr/share/nginx/html/
 COPY --chown=101:101 icons/ /usr/share/nginx/html/icons/
 COPY --chown=101:101 widgets/ /usr/share/nginx/html/widgets/
 COPY --chown=101:101 fonts/ /usr/share/nginx/html/fonts/
@@ -23,7 +23,7 @@ COPY --chown=101:101 fonts/ /usr/share/nginx/html/fonts/
 # sha256sum/cut/sed are all busybox applets already present in this Alpine
 # base image, so no extra tooling is needed.
 RUN cd /usr/share/nginx/html && \
-    HASH=$(cat index.html styles.css app.js ui.js coach.js checkin.js chat.js food.js sync.js \
+    HASH=$(cat index.html theme-boot.js styles.css app.js ui.js coach.js checkin.js chat.js food.js sync.js \
         auth-email.js auth-email.css signin-fx.js signin-fx.css \
         calendar.js workout-builder.js header.js notifications.js profile.js hero-video.js metallic-button.js toast.js beams-bg.js config.js manifest.json \
         icons/logo-etq.svg icons/coach.svg icons/avatar-default.svg icons/icon-192-etq.png icons/icon-512-etq.png \

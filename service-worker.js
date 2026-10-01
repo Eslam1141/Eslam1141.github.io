@@ -16,6 +16,7 @@ const CACHE_NAME = "etqadem-__CACHE_HASH__";
 const ASSETS = [
   "./index.html",
   "./styles.css",
+  "./theme-boot.js",
   "./app.js",
   "./ui.js",
   "./coach.js",

@@ -75,7 +75,7 @@
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; text-align:center;
 }
 .fx-headline{
-  font-size:clamp(44px, 6vw, 88px); font-weight:900; line-height:1.05; letter-spacing:-.02em;
+  font-size:clamp(44px, 6vw, 88px); font-weight:var(--fw-black); line-height:1.05; letter-spacing:-.02em;
   background:linear-gradient(180deg, var(--paper) 10%, var(--accent-tint) 65%, color-mix(in srgb, var(--accent) 45%, transparent));
   -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent;
 }

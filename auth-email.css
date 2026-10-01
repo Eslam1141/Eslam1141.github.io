@@ -13,7 +13,7 @@
 
 #onboarding.ob-email-mode .ob-inner{ max-width:420px; }
 
-.ob-step-email h2{ margin:0 0 2px; font-size:19px; font-weight:900; text-align:center; }
+.ob-step-email h2{ margin:0 0 2px; font-size:19px; font-weight:var(--fw-black); text-align:center; }
 
 .ob-step-email form{ display:flex; flex-direction:column; gap:12px; width:100%; }
 
