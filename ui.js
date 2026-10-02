@@ -290,6 +290,19 @@
     }, 9000);
   }
 
+  // The user's LOCAL calendar day as YYYY-MM-DD (never toISOString, which is
+  // UTC and runs a day behind between local midnight and the UTC offset in
+  // UTC+ zones). Shared by app.js, calendar.js and food.js; evaluated on every
+  // call so a tab left open across midnight stays correct.
+  window.GymDate = {
+    key: function (offsetDays) {
+      var d = new Date();
+      if (offsetDays) d.setDate(d.getDate() + offsetDays);
+      var m = d.getMonth() + 1, day = d.getDate();
+      return d.getFullYear() + "-" + (m < 10 ? "0" : "") + m + "-" + (day < 10 ? "0" : "") + day;
+    }
+  };
+
   window.GymUI = {
     isAuthed: isAuthed,
     isAnon: isAnon,
