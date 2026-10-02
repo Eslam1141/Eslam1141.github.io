@@ -108,7 +108,7 @@
   function refreshMe() {
     if (!isAuthed()) { clearState(); render(); emitChange(); return Promise.resolve(null); }
     var seq = ++meSeq;
-    return api("/me")
+    return api("/me?today=" + window.GymDate.key())
       .then(function (res) {
         if (res.status === 403) {
           return res.json().catch(function () { return {}; }).then(function (b) {
@@ -276,6 +276,7 @@
       if (isAuthed()) refreshMe();
     });
     document.addEventListener("gym:workoutcomplete", function () { if (isAuthed()) refreshMe(); });
+    document.addEventListener("gym:restchange", function () { if (isAuthed()) refreshMe(); });
     // Language switches rewrite <html lang>; re-render our strings then.
     try {
       new MutationObserver(function () { render(); emitChange(); })
