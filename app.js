@@ -337,7 +337,6 @@ const T = {
   profStreakDays:["{n}-day streak","سلسلة {n} يوم"],
   profStreakNone:["No active streak — finish today's workout to start one.","لا توجد سلسلة حالياً — أكمل تمرين اليوم لتبدأ واحدة."],
   profTotalDays:["Days trained","أيام التمرين"],
-  profSignOut:["Sign out","تسجيل الخروج"],
   profSignInPrompt:["Sign in to see your profile.","سجّل الدخول لعرض ملفك الشخصي."],
   profSignInBtn:["Sign in","تسجيل الدخول"],
   profLoadErr:["Couldn't load your profile. Try again later.","تعذّر تحميل ملفك الشخصي. حاول مرة أخرى لاحقاً."],
@@ -374,9 +373,8 @@ const T = {
   settings:["Settings","الإعدادات"],
   planLabel:["Plan","الخطة"],
   programLabel:["Program","البرنامج"],
-  langLabel:["Language","اللغة"],
-  themeLabel:["Appearance","المظهر"],
-  themeAuto:["Auto","تلقائي"], themeLight:["Light","فاتح"], themeDark:["Dark","داكن"],
+  prefsLabel:["Display preferences","تفضيلات العرض"],
+  themeToDark:["Switch to dark mode","التبديل إلى الوضع الداكن"], themeToLight:["Switch to light mode","التبديل إلى الوضع الفاتح"],
   premiumLabel:["Premium","بريميوم"],
   premiumTitle:["Etqadem Premium","اتقدم بريميوم"],
   premiumSub:["Coming soon","قريباً"],
@@ -722,12 +720,14 @@ let activeLang  = localStorage.getItem("gym_lang")  || "en";        // "en" | "a
 function applyTheme(){
   if(window.GymTheme) window.GymTheme.apply(activePlan);
 }
-function renderThemeToggle(){
-  const mode = window.GymTheme ? window.GymTheme.mode() : "auto";
-  document.querySelectorAll("[data-theme-btn]").forEach(b=>{
-    b.setAttribute("aria-checked", b.dataset.themeBtn === mode ? "true" : "false");
-    b.tabIndex = b.dataset.themeBtn === mode ? 0 : -1;
-  });
+function renderThemePrefs(){
+  const b = document.getElementById("themeBtn");
+  if(!b) return;
+  const dark = document.documentElement.dataset.theme !== "light";
+  b.setAttribute("aria-label", t(dark ? "themeToLight" : "themeToDark"));
+  const lb = document.getElementById("langBtn");
+  lb.textContent = t("langBtn");
+  lb.lang = activeLang === "ar" ? "en" : "ar";
 }
 
 // Anonymous = chose "continue without an account" and not currently signed in.
@@ -1418,7 +1418,7 @@ function applyStaticI18n(){
   document.querySelectorAll("[data-i18n-aria]").forEach(el=>{ el.setAttribute("aria-label", t(el.dataset.i18nAria)); });
   document.querySelectorAll("[data-i18n-html]").forEach(el=>{ el.innerHTML = t(el.dataset.i18nHtml); });
   document.title = t("appTitle");
-  document.getElementById("langBtn").textContent = t("langBtn");
+  renderThemePrefs();
 }
 function applyLang(lang, persist){
   activeLang = lang;
@@ -1552,30 +1552,12 @@ document.querySelectorAll("[data-plan-btn]").forEach(b=>{
 document.querySelectorAll("[data-style-btn]").forEach(b=>{
   b.onclick = ()=> setStyle(b.dataset.styleBtn);
 });
-// Appearance: Auto (follow the phone) / Light / Dark. A radiogroup with a
-// roving tabindex: arrows move + select, and in RTL the visual order flips.
-(function(){
-  const group = document.getElementById("themeToggle");
-  if(!group) return;
-  const btns = Array.from(group.querySelectorAll("[data-theme-btn]"));
-  const pick = b=>{
-    if(window.GymTheme) window.GymTheme.setMode(b.dataset.themeBtn);
-    renderThemeToggle();
-  };
-  btns.forEach(b=>{ b.onclick = ()=> pick(b); });
-  group.addEventListener("keydown", e=>{
-    const rtl = document.documentElement.dir === "rtl";
-    const fwd = e.key === "ArrowDown" || e.key === (rtl ? "ArrowLeft" : "ArrowRight");
-    const back = e.key === "ArrowUp" || e.key === (rtl ? "ArrowRight" : "ArrowLeft");
-    if(!fwd && !back) return;
-    e.preventDefault();
-    const i = btns.indexOf(document.activeElement);
-    const next = btns[(i + (fwd ? 1 : btns.length - 1)) % btns.length];
-    next.focus();
-    pick(next);
-  });
-  renderThemeToggle();
-})();
+// Theme switch (top bar): follows the phone until tapped, then stores an explicit light/dark.
+document.getElementById("themeBtn").onclick = ()=>{
+  const dark = document.documentElement.dataset.theme !== "light";
+  if(window.GymTheme) window.GymTheme.setMode(dark ? "light" : "dark");
+  renderThemePrefs();
+};
 document.getElementById("langBtn").onclick = ()=> applyLang(activeLang === "ar" ? "en" : "ar", true);
 
 // ---------------- INIT ----------------
