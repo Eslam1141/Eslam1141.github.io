@@ -54,13 +54,12 @@
 
   function pad2(n) { return n < 10 ? "0" + n : "" + n; }
   function fmtDate(d) { return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()); }
-  // app.js's todayStr (the actual gym_checks storage key) is UTC-based:
-  // new Date().toISOString().slice(0,10) — NOT the local calendar date. Near
-  // local midnight in any UTC+ timezone the two dates diverge, so todayKey()
-  // must match app.js's basis exactly or "today" highlighting/comparisons
-  // silently point at the wrong day. todayDate() then converts that key back
-  // into a local midnight Date so weekday/month arithmetic still works.
-  function todayKey() { return new Date().toISOString().slice(0, 10); }
+  // Local calendar date, from the shared GymDate helper (ui.js) so it matches
+  // app.js's todayStr() — the gym_checks storage key — exactly. Evaluated on
+  // every call, so it moves forward if the tab stays open past midnight.
+  // todayDate() converts that key back into a local midnight Date so
+  // weekday/month arithmetic still works.
+  function todayKey() { return window.GymDate.key(); }
   function todayDate() {
     var p = todayKey().split("-");
     var d = new Date(+p[0], +p[1] - 1, +p[2]);
