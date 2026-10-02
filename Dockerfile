@@ -28,7 +28,7 @@ COPY --chown=101:101 icons/ /usr/share/nginx/html/icons/
 # sha256sum/cut/sed are all busybox applets already present in this Alpine
 # base image, so no extra tooling is needed.
 RUN cd /usr/share/nginx/html/app && \
-    HASH=$(cat index.html theme-boot.js styles.css app.js ui.js coach.js checkin.js chat.js food.js sync.js \
+    HASH=$(cat index.html theme-boot.js styles.css app.js ui.js mascot.js coach.js checkin.js chat.js food.js sync.js \
         auth-email.js auth-email.css signin-fx.js signin-fx.css \
         calendar.js workout-builder.js header.js notifications.js profile.js hero-video.js metallic-button.js toast.js beams-bg.js config.js manifest.json \
         icons/logo-etq.svg icons/coach.svg icons/avatar-default.svg icons/icon-192-etq.png icons/icon-512-etq.png \
