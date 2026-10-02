@@ -132,7 +132,6 @@
       '      </div>' +
       '      <p class="cal-more-hint" id="profStreakHint" hidden></p>' +
       '    </div>' +
-      '    <button type="button" class="prof-btn prof-signout" id="profSignOutBtn"></button>' +
       '  </div>' +
       '</div>'
     );
@@ -159,9 +158,6 @@
     el("profNameInput").addEventListener("input", function () { nameDirty = true; });
     el("profWeightInput").addEventListener("input", function () { weightDirty = true; });
     el("profHeightInput").addEventListener("input", function () { heightDirty = true; });
-    el("profSignOutBtn").addEventListener("click", function () {
-      if (window.GymSync && typeof GymSync.signOut === "function") GymSync.signOut();
-    });
 
     try {
       new MutationObserver(function (muts) {
@@ -200,7 +196,6 @@
     el("profProgressLabelEl").textContent = str("profProgressLabel");
     el("profStreakCapEl").textContent = str("profStreak");
     el("profDaysCapEl").textContent = str("profTotalDays");
-    el("profSignOutBtn").textContent = str("profSignOut");
     renderSaveBtn();
   }
 

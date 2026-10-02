@@ -88,6 +88,15 @@
   </button>
 </nav>
 
+<!-- Display preferences, top-left (top-right in RTL): theme + language. Shown signed-in or out (app.js). -->
+<div id="topPrefs" role="group" data-i18n-aria="prefsLabel">
+  <button type="button" id="themeBtn" class="tp-btn">
+    <svg class="tp-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg>
+    <svg class="tp-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg>
+  </button>
+  <button type="button" id="langBtn" class="tp-btn tp-lang"></button>
+</div>
+
 <!-- Shared top-right header (header.js): streak, notification bell, avatar menu. Signed-in only. -->
 <div id="topBar" hidden></div>
 
@@ -207,20 +216,6 @@
         <button data-style-btn="gym" data-i18n="styleGym">Gym</button>
         <button data-style-btn="cal" data-i18n="styleCal">In-House / Bodyweight</button>
       </div>
-    </div>
-
-    <div class="more-group">
-      <div class="more-label" id="themeLabel" data-i18n="themeLabel">Appearance</div>
-      <div class="plan-toggle theme-toggle" id="themeToggle" role="radiogroup" aria-labelledby="themeLabel">
-        <button type="button" role="radio" data-theme-btn="auto" data-i18n="themeAuto">Auto</button>
-        <button type="button" role="radio" data-theme-btn="light" data-i18n="themeLight">Light</button>
-        <button type="button" role="radio" data-theme-btn="dark" data-i18n="themeDark">Dark</button>
-      </div>
-    </div>
-
-    <div class="more-group">
-      <div class="more-label" data-i18n="langLabel">Language</div>
-      <button id="langBtn">العربية</button>
     </div>
 
     <div class="more-group" id="moreAccount"></div>

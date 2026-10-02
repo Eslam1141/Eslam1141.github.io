@@ -34,7 +34,6 @@
   var STR = {
     syncLabel:  { en: "Sync",              ar: "المزامنة" },
     signedInAs: { en: "Signed in as",      ar: "تم تسجيل الدخول باسم" },
-    signOut:    { en: "Sign out",          ar: "تسجيل الخروج" },
     syncHint:   { en: "Sign in to back up progress across devices.", ar: "سجّل الدخول لحفظ تقدمك عبر الأجهزة." }
   };
   function s(key) { return STR[key][appLang()]; }
@@ -649,10 +648,8 @@
     if (signedIn) {
       box.innerHTML =
         '<div class="sp-label">' + s("syncLabel") + '</div>' +
-        '<div class="sync-signed">' + s("signedInAs") + ' <b></b></div>' +
-        '<button id="gymSyncOut">' + s("signOut") + '</button>';
+        '<div class="sync-signed">' + s("signedInAs") + ' <b></b></div>';
       box.querySelector(".sync-signed b").textContent = (profile && profile.email) || "";
-      box.querySelector("#gymSyncOut").onclick = signOut;
     } else {
       box.innerHTML =
         '<div class="sp-label">' + s("syncLabel") + '</div>' +
