@@ -184,14 +184,6 @@ header.hero .sub{ color:var(--paper-dim); font-size:var(--text-sm); }
 }
 .plan-toggle button:active{ transform:scale(.96); }
 .plan-toggle button.on, .plan-toggle button[aria-checked="true"]{ background:var(--rust); border-color:var(--rust); color:var(--on-primary); }
-.theme-toggle button{ min-height:44px; }
-#langBtn{
-  width:100%; padding:10px; border-radius:9px; cursor:pointer;
-  font-family:inherit; font-weight:700; font-size:var(--text-sm);
-  background:transparent; border:1px solid var(--line); color:var(--paper);
-  transition:background .18s, border-color .18s, transform .12s;
-}
-#langBtn:active{ transform:scale(.97); }
 
 [dir="rtl"] .ex-meta{ margin:10px 38px 10px 0; }
 [dir="rtl"] .video-wrap{ margin:12px 38px 0 0; }
@@ -695,13 +687,13 @@ body:not([data-tab="coach"]) #coachFabTip{ display:none; }
 /* gradient hover — desktop / fine pointer only, so touch taps don't stick */
 @media (hover:hover) and (pointer:fine){
   .btn-sm, .plan-toggle button,
-  .days-list button, #langBtn, #menuBtn, #daysBtn, .timer-skip{
+  .days-list button, #menuBtn, #daysBtn, .timer-skip{
     background-repeat:no-repeat; background-size:220% 100%; background-position:100% 0;
     transition:background-position .4s ease, background-color .18s, border-color .18s,
                color .18s, transform .12s, box-shadow .18s;
   }
   .btn-sm:hover, .plan-toggle button:hover,
-  .days-list button:hover, #langBtn:hover, #menuBtn:hover, #daysBtn:hover, .timer-skip:hover{
+  .days-list button:hover, #menuBtn:hover, #daysBtn:hover, .timer-skip:hover{
     background-image:linear-gradient(115deg, rgba(140,140,140,.16), transparent 60%);
     background-image:linear-gradient(115deg,
         color-mix(in srgb, var(--rust) 40%, transparent),
@@ -738,7 +730,6 @@ body:not([data-tab="coach"]) #coachFabTip{ display:none; }
 /* --- offline-first sync (sync.js) --- */
 #gymSyncBox .sync-hint{ font-size:var(--text-sm); opacity:.7; margin:.4rem 0 0; }
 #gymSyncBox .sync-signed{ font-size:var(--text-sm); margin:.3rem 0; }
-#gymSyncBox #gymSyncOut{ margin-top:.4rem; }
 
 /* --- onboarding + anonymous gating (ui.js / app.js) --- */
 #onboarding{
@@ -1602,9 +1593,9 @@ body.onboarding-open #appNav{ display:none !important; }
 #topBar[hidden],
 body.onboarding-open #topBar,
 body:has(#videoModal.show) #topBar{ display:none !important; }
-/* keep the centred hero titles clear of the fixed bar on phones */
+/* keep the centred hero titles clear of the fixed bars on phones */
 @media (max-width:899.98px){
-  body.has-topbar header.hero{ padding-top:72px; }
+  header.hero{ padding-top:72px; }
 }
 .tb-streak{
   display:inline-flex; align-items:center; height:44px; padding:0 12px;
@@ -1727,7 +1718,6 @@ body:has(#videoModal.show) #topBar{ display:none !important; }
 .prof-btn:active{ transform:scale(.97); }
 .prof-btn-primary{ background:var(--rust); border-color:var(--rust); color:#fff; align-self:stretch; margin-top:4px; }
 .prof-btn-primary:disabled{ opacity:.6; cursor:default; }
-.prof-signout{ width:100%; text-align:center; color:var(--danger); border-color:var(--rust-soft); }
 .prof-field{ display:flex; flex-direction:column; gap:4px; margin-bottom:12px; font-size:var(--text-sm); color:var(--paper-dim); }
 .prof-field input{
   padding:10px 12px; border-radius:9px; border:1px solid var(--line); background:var(--panel2);
@@ -1790,4 +1780,40 @@ body:has(#videoModal.show) #topBar{ display:none !important; }
 .food-del-btn:disabled{ opacity:.5; cursor:default; }
 @media (prefers-reduced-motion: reduce){
   .food-progress-fill{ transition:none; }
+}
+
+/* ============================================================
+   Display preferences (theme + language), top-left. Sits on the
+   inline-START edge, opposite #topBar, so in RTL both mirror. The
+   >=900px nav rail also lives on the start edge, so it is offset past it.
+   ============================================================ */
+#topPrefs{
+  position:fixed; z-index:110;
+  top:calc(env(safe-area-inset-top) + 10px); left:calc(12px + env(safe-area-inset-left)); right:auto;
+  display:flex; align-items:center; gap:4px;
+  padding:4px; border-radius:var(--radius-pill);
+  background:var(--nav-bg); border:1px solid var(--line);
+  box-shadow:var(--elev-1);
+  backdrop-filter:blur(14px) saturate(1.2); -webkit-backdrop-filter:blur(14px) saturate(1.2);
+}
+[dir="rtl"] #topPrefs{ left:auto; right:calc(12px + env(safe-area-inset-right)); }
+body.onboarding-open #topPrefs,
+body:has(#videoModal.show) #topPrefs{ display:none !important; }
+.tp-btn{
+  display:inline-flex; align-items:center; justify-content:center;
+  min-width:44px; height:44px; padding:0; border-radius:var(--radius-pill); cursor:pointer;
+  font-family:inherit; font-size:var(--text-sm); font-weight:800;
+  color:var(--paper); background:transparent; border:1px solid transparent;
+  transition:background var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+}
+.tp-btn:hover{ background:var(--panel2); }
+.tp-btn:active{ transform:scale(.94); }
+.tp-btn svg{ width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.tp-moon{ display:none; }
+:root[data-theme="light"] .tp-sun{ display:none; }
+:root[data-theme="light"] .tp-moon{ display:block; }
+.tp-lang{ padding:0 14px; background:var(--panel2); border-color:var(--line); }
+@media (min-width:900px){
+  #topPrefs{ left:calc(var(--side-w) + 12px); }
+  [dir="rtl"] #topPrefs{ left:auto; right:calc(var(--side-w) + 12px); }
 }
