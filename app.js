@@ -765,7 +765,8 @@ function notesKey(){ return (activePlan === "female" ? "female" : "male") + "_" 
 function activeDayStoreKey(){ return "gym_active_day_" + (activePlan || "male") + "_" + activeStyle; }
 
 // ---------------- STATE ----------------
-const todayStr = new Date().toISOString().slice(0,10);
+// Local calendar day, recomputed on every use so it survives midnight (see GymDate in ui.js).
+function todayStr(){ return window.GymDate.key(); }
 let activeDay = localStorage.getItem(activeDayStoreKey()) || DAYS[0].id;
 if(!DAYS.some(d=>d.id===activeDay)) activeDay = DAYS[0].id;
 
@@ -781,7 +782,7 @@ if(!DAYS.some(d=>d.id===activeDay)) activeDay = DAYS[0].id;
   const rotatable = DAYS === DAYS_MALE || DAYS === DAYS_FEMALE || DAYS === DAYS_MALE_CAL || DAYS === DAYS_FEMALE_CAL;
   if(!rotatable) return;
   const last = loadJSON("gymday_last_completed", null);
-  if(!last || !last.dayId || last.date === todayStr) return; // nothing to do, or completed today (not "the day after" yet)
+  if(!last || !last.dayId || last.date === todayStr()) return; // nothing to do, or completed today (not "the day after" yet)
   const idx = DAYS.findIndex(d=>d.id===last.dayId);
   if(idx === -1) return; // that day isn't part of the currently active plan
   activeDay = DAYS[(idx + 1) % DAYS.length].id;
@@ -825,7 +826,7 @@ if(activeSession && activeSession.segStart === undefined){
   saveJSON("gym_session_active", activeSession);
 }
 
-function sessionKey(dayId){ return todayStr + "_" + dayId; }
+function sessionKey(dayId){ return todayStr() + "_" + dayId; }
 
 // ---------------- RENDER ----------------
 const exList = document.getElementById("exList");
@@ -975,10 +976,10 @@ function renderExercises(){
       // (not on every click once already complete) so applyDayRotation()
       // can auto-select the next day in rotation on a later day's visit.
       if(!wasComplete && isDayComplete(activeDay)){
-        saveJSON("gymday_last_completed", { date: todayStr, dayId: activeDay });
+        saveJSON("gymday_last_completed", { date: todayStr(), dayId: activeDay });
       }
       if(window.GymCalendar && typeof window.GymCalendar.onCheckChanged === "function"){
-        window.GymCalendar.onCheckChanged(activeDay, todayStr);
+        window.GymCalendar.onCheckChanged(activeDay, todayStr());
       }
     };
   });
@@ -993,8 +994,8 @@ function renderExercises(){
       const r = rInput.value || rInput.placeholder;
       if(!w || w===t("wtPH")) return;
       weights[id] = weights[id] || [];
-      const todayEntryIdx = weights[id].findIndex(e=>e.date===todayStr);
-      const entry = { date: todayStr, w, r };
+      const todayEntryIdx = weights[id].findIndex(e=>e.date===todayStr());
+      const entry = { date: todayStr(), w, r };
       if(todayEntryIdx >= 0) weights[id][todayEntryIdx] = entry;
       else weights[id].push(entry);
       saveJSON("gym_weights", weights);
@@ -1345,7 +1346,7 @@ sessionBtn.onclick = ()=>{
   if(activeSession && activeSession.dayId === activeDay){
     const durationSec = sessionElapsedSec();
     sessions[activeDay] = sessions[activeDay] || [];
-    sessions[activeDay].push({ date: todayStr, durationSec });
+    sessions[activeDay].push({ date: todayStr(), durationSec });
     saveJSON("gym_sessions", sessions);
     activeSession = null;
     localStorage.removeItem("gym_session_active");
@@ -1384,6 +1385,21 @@ if(navigator.storage && navigator.storage.persist){
 window.GymApplyExternalUpdate = function(){
   try { location.reload(); } catch(e){}
 };
+
+// A tab left open across local midnight: re-render and refresh the calendar so
+// "today" moves on. Checked on return to the tab and on a slow timer (todayStr()
+// itself is already live, so any write after midnight uses the new day).
+let renderedDay = todayStr();
+function checkDayRollover(){
+  const now = todayStr();
+  if(now === renderedDay) return;
+  renderedDay = now;
+  renderAll();
+  if(window.GymCalendar) window.GymCalendar.refresh(true);
+}
+document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) checkDayRollover(); });
+window.addEventListener("focus", checkDayRollover);
+setInterval(checkDayRollover, 30000);
 
 // ---------------- WARM-UP VIDEO ----------------
 const warmupBtn = document.getElementById("warmupVidBtn");

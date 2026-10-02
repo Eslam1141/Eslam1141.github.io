@@ -152,12 +152,7 @@
   }
 
   // ---------------- state ----------------
-  function todayStr(offsetDays) {
-    var d = new Date();
-    if (offsetDays) d.setDate(d.getDate() + offsetDays);
-    var y = d.getFullYear(), m = ("0" + (d.getMonth() + 1)).slice(-2), day = ("0" + d.getDate()).slice(-2);
-    return y + "-" + m + "-" + day;
-  }
+  function todayStr(offsetDays) { return window.GymDate.key(offsetDays); }
   function guessMealType() {
     var hr = new Date().getHours();
     if (hr < 11) return "breakfast";
